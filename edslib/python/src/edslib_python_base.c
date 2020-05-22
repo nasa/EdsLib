@@ -106,6 +106,8 @@
 
 #include "edslib_python_internal.h"
 
+static char         EDSLIB_PYTHON_BYTES_FORMAT[] = "B";
+
 static void         EdsLib_Python_ObjectBase_dealloc(PyObject * obj);
 static int          EdsLib_Python_ObjectBase_init(PyObject *obj, PyObject *args, PyObject *kwds);
 static PyObject *   EdsLib_Python_ObjectBase_repr(PyObject *obj);
@@ -583,7 +585,7 @@ static int EdsLib_Python_ObjectBase_getbuffer(PyObject *obj, Py_buffer *view, in
     view->itemsize = 1;
     if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT)
     {
-        view->format = "B";
+        view->format = EDSLIB_PYTHON_BYTES_FORMAT;
     }
     if ((flags & PyBUF_ND) == PyBUF_ND)
     {

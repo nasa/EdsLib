@@ -62,7 +62,7 @@ typedef struct
 /*
 **  volume table.
 */
-OS_VolumeInfo_t OS_VolumeTable [NUM_TABLE_ENTRIES] =
+OS_VolumeInfo_t OS_VolumeTable [OS_MAX_FILE_SYSTEMS] =
 {
         /*
          ** The following entry is a "pre-mounted" path to a non-volatile device

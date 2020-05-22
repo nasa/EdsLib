@@ -154,6 +154,7 @@ else ()
         add_library(edslib_python_module MODULE
             src/edslib_python_module.c
             $<TARGET_OBJECTS:edslib_python_pic>
+            $<TARGET_OBJECTS:edslib_runtime_pic>
         )
 
         # Per Python naming conventions, the output file should be called only "EdsLib"
