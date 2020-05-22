@@ -90,7 +90,7 @@ PyTypeObject EdsLib_Python_ContainerIteratorType =
 static void EdsLib_Python_ContainerIterator_dealloc(PyObject * obj)
 {
     EdsLib_Python_ContainerIterator_t *self = (EdsLib_Python_ContainerIterator_t*)obj;
-    _PyObject_GC_UNTRACK(self);
+    PyObject_GC_UnTrack(self);
     Py_XDECREF(self->refobj);
     PyObject_GC_Del(self);
 }
@@ -321,7 +321,7 @@ static PyObject *   EdsLib_Python_ObjectContainer_iter(PyObject *obj)
     result->Position = 0;
     Py_INCREF(obj);
     result->refobj = obj;
-    _PyObject_GC_TRACK(result);
+    PyObject_GC_Track(result);
 
     return (PyObject*)result;
 }
