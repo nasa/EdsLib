@@ -232,7 +232,7 @@ void CFE_SB_MapListenerComponent(CFE_SB_SoftwareBus_PubSub_Interface_t *Output, 
 
     if (UT_Stub_CopyToLocal(UT_KEY(CFE_SB_MapListenerComponent), (uint8_t*)Output, sizeof(*Output)) < sizeof(*Output))
     {
-        Output->MsgId = Input->Telecommand.TopicId;
+        Output->MsgId = 0x1800 | Input->Telecommand.TopicId;
     }
 }
 
@@ -242,7 +242,7 @@ void CFE_SB_UnmapListenerComponent(CFE_SB_Listener_Component_t *Output, const CF
 
     if (UT_Stub_CopyToLocal(UT_KEY(CFE_SB_UnmapListenerComponent), (uint8_t*)Output, sizeof(*Output)) < sizeof(*Output))
     {
-        Output->Telecommand.TopicId = Input->MsgId;
+        Output->Telecommand.TopicId = (Input->MsgId & 0x7FF);
     }
 }
 
