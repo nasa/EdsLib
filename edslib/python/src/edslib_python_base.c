@@ -134,7 +134,7 @@ PyTypeObject EdsLib_Python_ObjectBaseType =
     .tp_call = EdsLib_Python_ObjectBase_call,
     .tp_as_buffer = &EdsLib_Python_ObjectBase_BufferProcs,
     .tp_flags = Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE,
-    .tp_doc = "EDS Object"
+    .tp_doc = PyDoc_STR("EDS Object")
 };
 
 static void EdsLib_Python_ObjectBase_dealloc(PyObject * obj)

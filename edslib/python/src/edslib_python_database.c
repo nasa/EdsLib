@@ -323,4 +323,3 @@ static PyObject *EdsLib_Python_Database_getentry(PyObject *obj, PyObject *key)
 
     return result;
 }
-

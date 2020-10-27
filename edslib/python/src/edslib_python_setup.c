@@ -1,5 +1,6 @@
 /*
  * LEW-19710-1, CCSDS SOIS Electronic Data Sheet Implementation
+ * LEW-20211-1, Python Bindings for the Core Flight Executive Mission Library
  * 
  * Copyright (c) 2020 United States Government as represented by
  * the Administrator of the National Aeronautics and Space Administration.
@@ -78,6 +79,8 @@ PyObject* EdsLib_Python_CreateModule(void)
                 PyType_Ready(&EdsLib_Python_AccessorType) != 0 ||
                 PyType_Ready(&EdsLib_Python_PackedObjectType) != 0 ||
                 PyType_Ready(&EdsLib_Python_ContainerIteratorType) != 0 ||
+				PyType_Ready(&EdsLib_Python_EnumEntryIteratorType) != 0 ||
+				PyType_Ready(&EdsLib_Python_ContainerEntryIteratorType) != 0 ||
                 PyType_Ready(&EdsLib_Python_ObjectBaseType) != 0 ||
                 PyType_Ready(&EdsLib_Python_ObjectScalarType) != 0 ||
                 PyType_Ready(&EdsLib_Python_ObjectNumberType) != 0 ||

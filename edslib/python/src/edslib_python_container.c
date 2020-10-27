@@ -84,7 +84,8 @@ PyTypeObject EdsLib_Python_ContainerIteratorType =
     .tp_traverse = EdsLib_Python_ContainerIterator_traverse,
     .tp_clear = EdsLib_Python_ContainerIterator_clear,
     .tp_iter = PyObject_SelfIter,
-    .tp_iternext = EdsLib_Python_ContainerIterator_iternext
+    .tp_iternext = EdsLib_Python_ContainerIterator_iternext,
+    .tp_doc = PyDoc_STR("EDS ContainerIteratorType")
 };
 
 static void EdsLib_Python_ContainerIterator_dealloc(PyObject * obj)

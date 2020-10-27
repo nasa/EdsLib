@@ -1,5 +1,6 @@
 /*
  * LEW-19710-1, CCSDS SOIS Electronic Data Sheet Implementation
+ * LEW-20211-1, Python Bindings for the Core Flight Executive Mission Library
  * 
  * Copyright (c) 2020 United States Government as represented by
  * the Administrator of the National Aeronautics and Space Administration.
@@ -64,6 +65,7 @@ typedef struct
 {
     PyHeapTypeObject type_base;
     EdsLib_Python_Database_t *EdsDb;
+    PyObject *BaseName;
     PyObject *EdsTypeName;
     EdsLib_Id_t EdsId;
     char FormatInfo[EDSLIB_PYTHON_FORMATCODE_LEN];
@@ -76,6 +78,13 @@ typedef struct
     Py_ssize_t Position;
     PyObject* refobj;
 } EdsLib_Python_ContainerIterator_t;
+
+typedef struct
+{
+    PyObject_HEAD
+    uint16_t Index;
+    PyObject* refobj;
+} EdsLib_Python_EnumerationIterator_t;
 
 typedef struct
 {
@@ -173,6 +182,8 @@ extern PyTypeObject EdsLib_Python_BufferType;
 extern PyTypeObject EdsLib_Python_AccessorType;
 extern PyTypeObject EdsLib_Python_PackedObjectType;
 extern PyTypeObject EdsLib_Python_ContainerIteratorType;
+extern PyTypeObject EdsLib_Python_EnumEntryIteratorType;
+extern PyTypeObject EdsLib_Python_ContainerEntryIteratorType;
 
 extern PyTypeObject EdsLib_Python_ObjectBaseType;
 extern PyTypeObject EdsLib_Python_ObjectNumberType;

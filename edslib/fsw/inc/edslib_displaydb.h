@@ -1,5 +1,6 @@
 /*
  * LEW-19710-1, CCSDS SOIS Electronic Data Sheet Implementation
+ * LEW-20211-1, Python Bindings for the Core Flight Executive Mission Library
  * 
  * Copyright (c) 2020 United States Government as represented by
  * the Administrator of the National Aeronautics and Space Administration.
@@ -336,6 +337,9 @@ int32_t EdsLib_Scalar_FromString(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t 
 const char *EdsLib_DisplayDB_GetEnumLabel(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, const EdsLib_GenericValueBuffer_t *ValueBuffer);
 void EdsLib_DisplayDB_GetEnumValue(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, const char *String, EdsLib_GenericValueBuffer_t *ValueBuffer);
 void EdsLib_DisplayDB_IterateEnumValues(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, EdsLib_SymbolCallback_t Callback, void *Arg);
+
+intmax_t EdsLib_DisplayDB_GetEnumValueByIndex(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, uint16_t Index);
+const char *EdsLib_DisplayDB_GetEnumLabelByIndex(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, uint16_t Index, char *Buffer, uint32_t BufferSize);
 
 /**
  * Base64 encoding helper function
