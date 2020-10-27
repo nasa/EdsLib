@@ -1,5 +1,6 @@
 #
 # LEW-19710-1, CCSDS SOIS Electronic Data Sheet Implementation
+# LEW-20211-1, Python Bindings for the Core Flight Executive Mission Library
 # 
 # Copyright (c) 2020 United States Government as represented by
 # the Administrator of the National Aeronautics and Space Administration.
@@ -173,4 +174,5 @@ endif (SUPPORTS_SHARED_LIBS)
 
 add_subdirectory(fsw)
 add_subdirectory(lua)
+add_subdirectory(python)
 

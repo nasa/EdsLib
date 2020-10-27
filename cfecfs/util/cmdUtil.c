@@ -300,6 +300,7 @@ static void Enumerate_Constraint_Callback(const EdsLib_DatabaseObject_t *GD, con
     case EDSLIB_BASICTYPE_BINARY:
         strncpy(Buffer, ConstraintValue->Value.StringData, CONSTRAINT_BUFSIZE-1);
         Buffer[CONSTRAINT_BUFSIZE-1] = 0;
+        break;
     default:
         break;
     }
@@ -573,12 +574,6 @@ int main(int argc, char *argv[]) {
     {
         printf("Actual Indication Argument EdsId=%x / %s\n", (unsigned int)CommandData.ActualArg,
                 EdsLib_DisplayDB_GetBaseName(&EDS_DATABASE, CommandData.ActualArg));
-    }
-
-    if (EdsLib_DataTypeDB_GetTypeInfo(&EDS_DATABASE, CommandData.ActualArg, &CommandData.EdsTypeInfo) != EDSLIB_SUCCESS)
-    {
-        fprintf(stderr,"Error retrieving info for code %x\n", (unsigned int)CommandData.ActualArg);
-        return EXIT_FAILURE;
     }
 
     if (EdsLib_DataTypeDB_GetTypeInfo(&EDS_DATABASE, CommandData.ActualArg, &CommandData.EdsTypeInfo) != EDSLIB_SUCCESS)
