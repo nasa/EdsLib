@@ -1,5 +1,6 @@
 /*
  * LEW-19710-1, CCSDS SOIS Electronic Data Sheet Implementation
+ * LEW-20211-1, Python Bindings for the Core Flight Executive Mission Library
  * 
  * Copyright (c) 2020 United States Government as represented by
  * the Administrator of the National Aeronautics and Space Administration.
@@ -496,7 +497,6 @@ const char *EdsLib_DisplayDB_GetEnumLabel(const EdsLib_DatabaseObject_t *GD, Eds
         }
     }
 
-
     if (TableEnt == NULL)
     {
         return NULL;
@@ -568,4 +568,65 @@ void EdsLib_DisplayDB_IterateEnumValues(const EdsLib_DatabaseObject_t *GD, EdsLi
         ++Symbol;
         --SymbolCount;
     }
+}
+
+const char * EdsLib_DisplayDB_GetEnumLabelByIndex(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, uint16_t Index, char *Buffer, uint32_t BufferSize)
+{
+	EdsLib_DatabaseRef_t TempRef;
+	const EdsLib_DisplayDB_Entry_t *DisplayInfoPtr;
+	const EdsLib_SymbolTableEntry_t *Symbol = NULL;
+	uint16_t SymbolCount;
+	const char * Result;
+
+	EdsLib_Decode_StructId(&TempRef, EdsId);
+	DisplayInfoPtr = EdsLib_DisplayDB_GetEntry(GD, &TempRef);
+
+	if (DisplayInfoPtr != NULL && DisplayInfoPtr->DisplayHint == EDSLIB_DISPLAYHINT_ENUM_SYMTABLE)
+	{
+		Symbol = DisplayInfoPtr->DisplayArg.SymTable;
+		SymbolCount = DisplayInfoPtr->DisplayArgTableSize;
+	}
+
+	if (Symbol != NULL && Index < SymbolCount)
+	{
+		Symbol = Symbol + Index;
+        snprintf(Buffer, BufferSize,"%s", Symbol->SymName);
+        Result = Buffer;
+	}
+	else
+	{
+		Result = UNDEF_STRING;
+	}
+
+	return Result;
+}
+
+intmax_t EdsLib_DisplayDB_GetEnumValueByIndex(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, uint16_t Index)
+{
+	EdsLib_DatabaseRef_t TempRef;
+	const EdsLib_DisplayDB_Entry_t *DisplayInfoPtr;
+	const EdsLib_SymbolTableEntry_t *Symbol = NULL;
+	uint16_t SymbolCount;
+	intmax_t Result;
+
+	EdsLib_Decode_StructId(&TempRef, EdsId);
+	DisplayInfoPtr = EdsLib_DisplayDB_GetEntry(GD, &TempRef);
+
+	if (DisplayInfoPtr != NULL && DisplayInfoPtr->DisplayHint == EDSLIB_DISPLAYHINT_ENUM_SYMTABLE)
+	{
+		Symbol = DisplayInfoPtr->DisplayArg.SymTable;
+		SymbolCount = DisplayInfoPtr->DisplayArgTableSize;
+	}
+
+	if (Symbol != NULL && Index < SymbolCount)
+	{
+		Symbol = Symbol + Index;
+		Result = Symbol->SymValue;
+	}
+	else
+	{
+		Result = (intmax_t) EDSLIB_FAILURE;
+	}
+
+	return Result;
 }

@@ -1,5 +1,6 @@
 /*
  * LEW-19710-1, CCSDS SOIS Electronic Data Sheet Implementation
+ * LEW-20211-1, Python Bindings for the Core Flight Executive Mission Library
  * 
  * Copyright (c) 2020 United States Government as represented by
  * the Administrator of the National Aeronautics and Space Administration.
@@ -32,6 +33,7 @@
  */
 
 #include "edslib_python_internal.h"
+#include <structmember.h>
 
 static PyObject *   EdsLib_Python_DatabaseEntry_new(PyTypeObject *obj, PyObject *args, PyObject *kwds);
 static int          EdsLib_Python_DatabaseEntry_init(PyObject *obj, PyObject *args, PyObject *kwds);
@@ -42,6 +44,17 @@ static int          EdsLib_Python_DatabaseEntry_clear(PyObject *obj);
 static Py_ssize_t   EdsLib_Python_DatabaseEntry_len(PyObject *obj);
 static PyObject *   EdsLib_Python_DatabaseEntry_seq_item(PyObject *obj, Py_ssize_t idx);
 static PyObject *   EdsLib_Python_DatabaseEntry_map_subscript(PyObject *obj, PyObject *subscr);
+static PyObject *   EdsLib_Python_DatabaseEntry_iter(PyObject *obj);
+
+static void         EdsLib_Python_EnumEntryIterator_dealloc(PyObject * obj);
+static int          EdsLib_Python_EnumEntryIterator_traverse(PyObject *obj, visitproc visit, void *arg);
+static int          EdsLib_Python_EnumEntryIterator_clear(PyObject *obj);
+static PyObject *   EdsLib_Python_EnumEntryIterator_iternext(PyObject *obj);
+
+static void         EdsLib_Python_ContainerEntryIterator_dealloc(PyObject * obj);
+static int          EdsLib_Python_ContainerEntryIterator_traverse(PyObject *obj, visitproc visit, void *arg);
+static int          EdsLib_Python_ContainerEntryIterator_clear(PyObject *obj);
+static PyObject *   EdsLib_Python_ContainerEntryIterator_iternext(PyObject *obj);
 
 static PySequenceMethods EdsLib_Python_DatabaseEntry_SequenceMethods =
 {
@@ -55,6 +68,12 @@ static PyMappingMethods EdsLib_Python_DatabaseEntry_MappingMethods =
         .mp_subscript = EdsLib_Python_DatabaseEntry_map_subscript
 };
 
+static struct PyMemberDef EdsLib_Python_DatabaseEntry_members[] =
+{
+        {"Name", T_OBJECT_EX, offsetof(EdsLib_Python_DatabaseEntry_t, BaseName), READONLY, "Database Name" },
+        {NULL}  /* Sentinel */
+};
+
 PyTypeObject EdsLib_Python_DatabaseEntryType =
 {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -64,13 +83,45 @@ PyTypeObject EdsLib_Python_DatabaseEntryType =
     .tp_new = EdsLib_Python_DatabaseEntry_new,
     .tp_as_sequence = &EdsLib_Python_DatabaseEntry_SequenceMethods,
     .tp_as_mapping = &EdsLib_Python_DatabaseEntry_MappingMethods,
+    .tp_members = EdsLib_Python_DatabaseEntry_members,
     .tp_init = EdsLib_Python_DatabaseEntry_init,
     .tp_repr = EdsLib_Python_DatabaseEntry_repr,
     .tp_traverse = EdsLib_Python_DatabaseEntry_traverse,
     .tp_clear = EdsLib_Python_DatabaseEntry_clear,
     .tp_base = &PyType_Type,
+    .tp_iter = EdsLib_Python_DatabaseEntry_iter,
     .tp_flags = Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_GC,
-    .tp_doc = "EDS database entry"
+    .tp_doc = PyDoc_STR("EDS database entry")
+};
+
+PyTypeObject EdsLib_Python_EnumEntryIteratorType =
+{
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = EDSLIB_PYTHON_ENTITY_NAME("EnumerationEntryIterator"),
+    .tp_basicsize = sizeof(EdsLib_Python_EnumerationIterator_t),
+    .tp_dealloc = EdsLib_Python_EnumEntryIterator_dealloc,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = EdsLib_Python_EnumEntryIterator_traverse,
+    .tp_clear = EdsLib_Python_EnumEntryIterator_clear,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = EdsLib_Python_EnumEntryIterator_iternext,
+    .tp_doc = PyDoc_STR("EDS EnumerationIteratorType")
+};
+
+PyTypeObject EdsLib_Python_ContainerEntryIteratorType =
+{
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = EDSLIB_PYTHON_ENTITY_NAME("ContainerEntryIterator"),
+    .tp_basicsize = sizeof(EdsLib_Python_ContainerIterator_t),
+    .tp_dealloc = EdsLib_Python_ContainerEntryIterator_dealloc,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = EdsLib_Python_ContainerEntryIterator_traverse,
+    .tp_clear = EdsLib_Python_ContainerEntryIterator_clear,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = EdsLib_Python_ContainerEntryIterator_iternext,
+    .tp_doc = PyDoc_STR("EDS ContainerIteratorType")
 };
 
 static void EdsLib_Python_DatabaseEntry_GetFormatCodes(char *buffer, const EdsLib_Python_Database_t *refdb, EdsLib_Id_t EdsId)
@@ -393,6 +444,7 @@ PyTypeObject *EdsLib_Python_DatabaseEntry_GetFromEdsId_Impl(EdsLib_Python_Databa
         Py_INCREF(refdb);
         selfptr->dbent.EdsDb = refdb;
         selfptr->dbent.EdsId = EdsId;
+        selfptr->dbent.BaseName = PyUnicode_FromFormat("%s", EdsLib_DisplayDB_GetBaseName(refdb->GD, EdsId));
         selfptr->dbent.EdsTypeName = PyUnicode_FromFormat("%s/%s",
                 EdsLib_DisplayDB_GetNamespace(refdb->GD, EdsId),
                 EdsLib_DisplayDB_GetBaseName(refdb->GD, EdsId));
@@ -434,6 +486,7 @@ static int EdsLib_Python_DatabaseEntry_traverse(PyObject *obj, visitproc visit, 
 {
     EdsLib_Python_DatabaseEntry_t *self = (EdsLib_Python_DatabaseEntry_t *)obj;
     Py_VISIT(self->EdsDb);
+    Py_VISIT(self->BaseName);
     Py_VISIT(self->EdsTypeName);
     return EdsLib_Python_DatabaseEntryType.tp_base->tp_traverse(obj, visit, arg);
 }
@@ -442,6 +495,7 @@ static int EdsLib_Python_DatabaseEntry_clear(PyObject *obj)
 {
     EdsLib_Python_DatabaseEntry_t *self = (EdsLib_Python_DatabaseEntry_t *)obj;
     Py_CLEAR(self->EdsDb);
+    Py_CLEAR(self->BaseName);
     Py_CLEAR(self->EdsTypeName);
     return EdsLib_Python_DatabaseEntryType.tp_base->tp_clear(obj);
 }
@@ -599,6 +653,7 @@ static PyObject *EdsLib_Python_DatabaseEntry_seq_item(PyObject *obj, Py_ssize_t 
 
     EdsLib_DataTypeDB_TypeInfo_t TypeInfo;
     EdsLib_DataTypeDB_GetTypeInfo(self->EdsDb->GD, self->EdsId, &TypeInfo);
+
     /*
      * for containers, grab the entry name from the list, and then
      * return the corresponding attribute by that name.  This two advantages:
@@ -632,7 +687,6 @@ static PyObject *EdsLib_Python_DatabaseEntry_seq_item(PyObject *obj, Py_ssize_t 
     {
         result = EdsLib_Python_ElementAccessor_CreateFromEntityInfo(&EntityInfo);
     }
-
     Py_XDECREF(attribute);
 
     return result;
@@ -685,3 +739,213 @@ Py_ssize_t EdsLib_Python_DatabaseEntry_GetMaxSize(PyTypeObject* objtype)
     return DerivInfo.MaxSize.Bytes;
 }
 
+static PyObject *  EdsLib_Python_DatabaseEntry_iter(PyObject *obj)
+{
+    EdsLib_Python_DatabaseEntry_t *dbent = (EdsLib_Python_DatabaseEntry_t *)obj;
+    EdsLib_Python_EnumerationIterator_t *EnumIter;
+    EdsLib_Python_ContainerIterator_t *ContainerIter;
+    EdsLib_DisplayHint_t DisplayHint;
+    PyObject *result;
+
+    /* sanity check that the db entry is an EDS entry is iterable (Container or Enumeration) */
+    DisplayHint = EdsLib_DisplayDB_GetDisplayHint(dbent->EdsDb->GD, dbent->EdsId);
+    switch(DisplayHint)
+    {
+    case EDSLIB_DISPLAYHINT_ENUM_SYMTABLE:
+        EnumIter = PyObject_GC_New(EdsLib_Python_EnumerationIterator_t, &EdsLib_Python_EnumEntryIteratorType);
+
+        if (EnumIter == NULL)
+        {
+            return NULL;
+        }
+
+        EnumIter->Index = 0;
+        Py_INCREF(obj);
+        EnumIter->refobj = obj;
+
+        result = (PyObject *)EnumIter;
+        PyObject_GC_Track(result);
+
+        break;
+    case EDSLIB_DISPLAYHINT_MEMBER_NAMETABLE:
+        /* sanity check that the db entry has a valid subentry list (it should for all containers) */
+        if (dbent->SubEntityList == NULL || !PyList_Check(dbent->SubEntityList))
+        {
+            return PyErr_Format(PyExc_TypeError, "%s is not an mappable EDS type", Py_TYPE(obj)->tp_name);
+        }
+    	ContainerIter = PyObject_GC_New(EdsLib_Python_ContainerIterator_t, &EdsLib_Python_ContainerEntryIteratorType);
+    	if (ContainerIter == NULL)
+    	{
+    		return NULL;
+    	}
+        ContainerIter->Position = 0;
+        Py_INCREF(obj);
+        ContainerIter->refobj = obj;
+        result = (PyObject *)ContainerIter;
+        PyObject_GC_Track(result);
+    	break;
+    default:
+        return PyErr_Format(PyExc_TypeError, "%s is not an EDS Iterable type (Container or Enumeration)", Py_TYPE(obj)->tp_name);
+    }
+
+    return result;
+}
+
+
+static void EdsLib_Python_EnumEntryIterator_dealloc(PyObject * obj)
+{
+    EdsLib_Python_EnumerationIterator_t *self = (EdsLib_Python_EnumerationIterator_t*)obj;
+    PyObject_GC_UnTrack(self);
+    Py_XDECREF(self->refobj);
+    PyObject_GC_Del(self);
+}
+
+static int EdsLib_Python_EnumEntryIterator_traverse(PyObject *obj, visitproc visit, void *arg)
+{
+    EdsLib_Python_EnumerationIterator_t *self = (EdsLib_Python_EnumerationIterator_t*)obj;
+    Py_VISIT(self->refobj);
+    return 0;
+}
+
+static int EdsLib_Python_EnumEntryIterator_clear(PyObject *obj)
+{
+    EdsLib_Python_EnumerationIterator_t *self = (EdsLib_Python_EnumerationIterator_t*)obj;
+    Py_CLEAR(self->refobj);
+    return 0;
+}
+
+static PyObject *EdsLib_Python_EnumEntryIterator_iternext(PyObject *obj)
+{
+	EdsLib_Python_EnumerationIterator_t *self = (EdsLib_Python_EnumerationIterator_t*)obj;
+    EdsLib_Python_DatabaseEntry_t *dbent = NULL;
+    const char * Label;
+    char LabelBuffer[64];
+    intmax_t Value;
+    PyObject *key = NULL;
+    PyObject *value = NULL;
+    PyObject *result = NULL;
+
+    do
+    {
+    	if (self->refobj == NULL)
+        {
+            break;
+        }
+
+        dbent = (EdsLib_Python_DatabaseEntry_t *)self->refobj;
+        Label = EdsLib_DisplayDB_GetEnumLabelByIndex(dbent->EdsDb->GD, dbent->EdsId, self->Index, LabelBuffer, sizeof(LabelBuffer));
+        Value = EdsLib_DisplayDB_GetEnumValueByIndex(dbent->EdsDb->GD, dbent->EdsId, self->Index);
+
+        if (strcmp(Label,"UNDEFINED") != 0)
+        {
+            key = PyUnicode_FromString(Label);
+            value = PyLong_FromLong(Value);
+
+            if ((key == NULL) || (value == NULL))
+            {
+            	/* end */
+            	Py_CLEAR(self->refobj);
+            	break;
+            }
+
+            Py_INCREF(key);
+            Py_INCREF(value);
+            ++self->Index;
+            result = PyTuple_Pack(2, key, value);
+        }
+    }
+    while(0);
+
+    Py_XDECREF(key);
+    Py_XDECREF(value);
+
+    return result;
+}
+
+static void EdsLib_Python_ContainerEntryIterator_dealloc(PyObject * obj)
+{
+    EdsLib_Python_ContainerIterator_t *self = (EdsLib_Python_ContainerIterator_t*)obj;
+    PyObject_GC_UnTrack(self);
+    Py_XDECREF(self->refobj);
+    PyObject_GC_Del(self);
+}
+
+static int EdsLib_Python_ContainerEntryIterator_traverse(PyObject *obj, visitproc visit, void *arg)
+{
+    EdsLib_Python_ContainerIterator_t *self = (EdsLib_Python_ContainerIterator_t*)obj;
+    Py_VISIT(self->refobj);
+    return 0;
+}
+
+static int EdsLib_Python_ContainerEntryIterator_clear(PyObject *obj)
+{
+    EdsLib_Python_ContainerIterator_t *self = (EdsLib_Python_ContainerIterator_t*)obj;
+    Py_CLEAR(self->refobj);
+    return 0;
+}
+
+static PyObject *EdsLib_Python_ContainerEntryIterator_iternext(PyObject *obj)
+{
+    EdsLib_Python_ContainerIterator_t *self = (EdsLib_Python_ContainerIterator_t*)obj;
+    EdsLib_Python_DatabaseEntry_t *dbent = NULL;
+
+    PyObject *str;
+    const char *keystr;
+
+    EdsLib_DataTypeDB_EntityInfo_t CompInfo;
+    PyObject *sub_obj = NULL;
+    EdsLib_Python_DatabaseEntry_t *sub_dbent = NULL;
+    PyObject *key = NULL;
+    PyObject *dbname = NULL;
+    PyObject *entry = NULL;
+    PyObject *result = NULL;
+
+    do
+    {
+    	if (self->refobj == NULL)
+        {
+            break;
+        }
+
+        dbent = (EdsLib_Python_DatabaseEntry_t *)self->refobj;
+        if (self->Position < PyList_GET_SIZE(dbent->SubEntityList))
+        {
+            key = PyList_GET_ITEM(dbent->SubEntityList, self->Position); /* borrowed ref */
+        }
+
+        if (key == NULL)
+        {
+            /* end */
+            Py_CLEAR(self->refobj);
+            break;
+        }
+        Py_INCREF(key);
+
+        str = PyUnicode_AsEncodedString(key, "utf-8", "~E~");
+        keystr = PyBytes_AS_STRING(str);
+
+        if (EdsLib_DisplayDB_LocateSubEntity(dbent->EdsDb->GD, dbent->EdsId, keystr, &CompInfo) == EDSLIB_SUCCESS)
+        {
+        	sub_obj = (PyObject *)EdsLib_Python_DatabaseEntry_GetFromEdsId_Impl(dbent->EdsDb, CompInfo.EdsId);
+        	sub_dbent = (EdsLib_Python_DatabaseEntry_t *) sub_obj;
+        	dbname = sub_dbent->EdsDb->DbName;
+        	entry = sub_dbent->EdsTypeName;
+        }
+
+        if ((entry == NULL) || (dbname == NULL))
+        {
+            break;
+        }
+        ++self->Position;
+        Py_INCREF(dbname);
+        Py_INCREF(entry);
+        result = PyTuple_Pack(3, key, dbname, entry);
+    }
+    while(0);
+
+    Py_XDECREF(key);
+    Py_XDECREF(dbname);
+    Py_XDECREF(entry);
+
+    return result;
+}
