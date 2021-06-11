@@ -57,9 +57,9 @@ static PyObject *   CFE_MissionLib_Python_TopicIterator_iternext(PyObject *obj);
 
 struct CbArg
 {
-	uint8_t CommandCode;
-	EdsLib_Id_t PossibleId;
-	EdsLib_Id_t EdsId;
+    uint8_t CommandCode;
+    EdsLib_Id_t PossibleId;
+    EdsLib_Id_t EdsId;
 };
 
 typedef struct CbArg CbArg_t;
@@ -69,7 +69,7 @@ void SubcommandCallback(const EdsLib_DatabaseObject_t *GD, const EdsLib_DataType
 
 static PyMethodDef CFE_MissionLib_Python_Topic_methods[] =
 {
-		{"GetCmdEdsId", CFE_MissionLib_Python_Topic_GetCmdEdsIdFromCode, METH_VARARGS, "Get a CFE command message EDS Object from a Topic"},
+        {"GetCmdEdsId", CFE_MissionLib_Python_Topic_GetCmdEdsIdFromCode, METH_VARARGS, "Get a CFE command message EDS Object from a Topic"},
         {NULL}  /* Sentinel */
 };
 
@@ -94,10 +94,10 @@ PyTypeObject CFE_MissionLib_Python_TopicType =
     .tp_repr = CFE_MissionLib_Python_Topic_repr,
     .tp_traverse = CFE_MissionLib_Python_Topic_traverse,
     .tp_clear = CFE_MissionLib_Python_Topic_clear,
-	.tp_iter = CFE_MissionLib_Python_Topic_iter,
+    .tp_iter = CFE_MissionLib_Python_Topic_iter,
     .tp_flags = Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_GC,
     .tp_weaklistoffset = offsetof(CFE_MissionLib_Python_Topic_t, WeakRefList),
-    .tp_doc = "Topic entry"
+    .tp_doc = PyDoc_STR("Topic entry")
 };
 
 PyTypeObject CFE_MissionLib_Python_TopicIteratorType =
@@ -112,7 +112,7 @@ PyTypeObject CFE_MissionLib_Python_TopicIteratorType =
     .tp_clear = CFE_MissionLib_Python_TopicIterator_clear,
     .tp_iter = PyObject_SelfIter,
     .tp_iternext = CFE_MissionLib_Python_TopicIterator_iternext,
-	.tp_doc = PyDoc_STR("CFE MissionLib TopicIteratorType")
+    .tp_doc = PyDoc_STR("CFE MissionLib TopicIteratorType")
 };
 
 static int CFE_MissionLib_Python_Topic_traverse(PyObject *obj, visitproc visit, void *arg)
@@ -131,6 +131,7 @@ static int CFE_MissionLib_Python_Topic_clear(PyObject *obj)
     Py_CLEAR(self->IntfObj);
     Py_CLEAR(self->TopicName);
     Py_CLEAR(self->TypeCache);
+
     return 0;
 }
 
@@ -327,7 +328,7 @@ static PyObject *CFE_MissionLib_Python_Topic_new(PyTypeObject *obj, PyObject *ar
 
         if (IntfObj == NULL)
         {
-        	break;
+            break;
         }
 
         // Set up the topic with either a TopicId or Topic Name
@@ -429,7 +430,7 @@ PyObject *CFE_MissionLib_Python_Topic_GetFromTopicName(CFE_MissionLib_Python_Int
 static PyObject *  CFE_MissionLib_Python_Topic_iter(PyObject *obj)
 {
     CFE_MissionLib_Python_Topic_t *Topic = (CFE_MissionLib_Python_Topic_t *) obj;
-	CFE_MissionLib_Python_TopicIterator_t *TopicIter;
+    CFE_MissionLib_Python_TopicIterator_t *TopicIter;
     PyObject *result = NULL;
 
     if (Topic->IndInfo.NumSubcommands > 0)
@@ -438,7 +439,7 @@ static PyObject *  CFE_MissionLib_Python_Topic_iter(PyObject *obj)
 
     	if (TopicIter == NULL)
     	{
-    		return NULL;
+            return NULL;
     	}
 
     	Py_INCREF(obj);
@@ -467,6 +468,7 @@ static int CFE_MissionLib_Python_TopicIterator_traverse(PyObject *obj, visitproc
 {
     CFE_MissionLib_Python_TopicIterator_t *self = (CFE_MissionLib_Python_TopicIterator_t*)obj;
     Py_VISIT(self->refobj);
+
     return 0;
 }
 
@@ -474,12 +476,13 @@ static int CFE_MissionLib_Python_TopicIterator_clear(PyObject *obj)
 {
     CFE_MissionLib_Python_TopicIterator_t *self = (CFE_MissionLib_Python_TopicIterator_t*)obj;
     Py_CLEAR(self->refobj);
+
     return 0;
 }
 
 static PyObject *CFE_MissionLib_Python_TopicIterator_iternext(PyObject *obj)
 {
-	CFE_MissionLib_Python_TopicIterator_t *self = (CFE_MissionLib_Python_TopicIterator_t*)obj;
+    CFE_MissionLib_Python_TopicIterator_t *self = (CFE_MissionLib_Python_TopicIterator_t*)obj;
     CFE_MissionLib_Python_Topic_t *topic = NULL;
     EdsLib_Python_Database_t *EdsDb;
     uint16_t idx;
@@ -503,17 +506,14 @@ static PyObject *CFE_MissionLib_Python_TopicIterator_iternext(PyObject *obj)
         if (EdsLib_DataTypeDB_GetDerivedTypeById(EdsDb->GD, topic->EdsId, idx, &PossibleId) == EDSLIB_SUCCESS)
         {
 
-        	key = PyUnicode_FromString(EdsLib_DisplayDB_GetBaseName(EdsDb->GD, PossibleId));
-        	Py_INCREF(key);
+            key = PyUnicode_FromString(EdsLib_DisplayDB_GetBaseName(EdsDb->GD, PossibleId));
+            edsid = PyLong_FromLong((long int)PossibleId);
 
-        	edsid = PyLong_FromLong((long int)PossibleId);
-        	Py_INCREF(edsid);
-
-        	if((key == NULL) || (edsid == NULL))
-        	{
-        		Py_CLEAR(self->refobj);
-        		break;
-        	}
+            if ((key == NULL) || (edsid == NULL))
+            {
+                Py_CLEAR(self->refobj);
+                break;
+            }
 
             ++self->Index;
             result = PyTuple_Pack(2, key, edsid);
@@ -530,59 +530,56 @@ static PyObject *CFE_MissionLib_Python_TopicIterator_iternext(PyObject *obj)
 void SubcommandCallback(const EdsLib_DatabaseObject_t *GD, const EdsLib_DataTypeDB_EntityInfo_t *MemberInfo,
         EdsLib_GenericValueBuffer_t *ConstraintValue, void *Arg)
 {
-	CbArg_t *Argument = (CbArg_t *) Arg;
+    CbArg_t *Argument = (CbArg_t *) Arg;
 
-	if (ConstraintValue->Value.u8 == Argument->CommandCode )
-	{
-		Argument->EdsId = Argument->PossibleId;
-	}
+    if (ConstraintValue->Value.u8 == Argument->CommandCode )
+    {
+        Argument->EdsId = Argument->PossibleId;
+    }
 }
 
 static PyObject *CFE_MissionLib_Python_Topic_GetCmdEdsIdFromCode(PyObject *obj, PyObject *args)
 {
-	CFE_MissionLib_Python_Topic_t *self = (CFE_MissionLib_Python_Topic_t*) obj;
+    CFE_MissionLib_Python_Topic_t *self = (CFE_MissionLib_Python_Topic_t*) obj;
     EdsLib_Python_Database_t *EdsDb;
-	PyObject *arg1;
-	PyObject *tempargs;
-	uint8_t CommandCode;
-	int32_t idx;
+    PyObject *arg1;
+    uint8_t CommandCode;
+    int32_t idx;
     EdsLib_Id_t PossibleId;
     EdsLib_ConstraintCallback_t Callback = SubcommandCallback;
     CbArg_t Argument;
-    PyObject *result;
+    PyObject *result = NULL;
 
     do
     {
-		if (!PyArg_UnpackTuple(args, "CommandCode", 1, 1, &arg1))
-		{
-			PyErr_Format(PyExc_RuntimeError, "Topic arguments expected: Command Code");
-			return NULL;
-		}
+        if (!PyArg_UnpackTuple(args, "Command Code", 1, 1, &arg1))
+        {
+            break;
+        }
 
-		// Get the command code from the input argument
-		if (PyNumber_Check(arg1))
-		{
-			tempargs = PyNumber_Long(arg1);
-			if (tempargs == NULL)
-			{
-				break;
-			}
+        // Get the command code from the input argument
+        if (PyLong_Check(arg1))
+        {
+            CommandCode = PyLong_AsUnsignedLong(arg1);
+        }
+        else
+        {
+            PyErr_SetString(PyExc_TypeError, "Command Code argument: long expected");
+            break;
+        }
 
-			CommandCode = PyLong_AsUnsignedLong(tempargs);
-		}
+        EdsDb = self->IntfObj->DbObj->EdsDbObj;
+        Argument.CommandCode = CommandCode;
 
-		EdsDb = self->IntfObj->DbObj->EdsDbObj;
-		Argument.CommandCode = CommandCode;
+        for (idx = 0; idx < self->IndInfo.NumSubcommands; idx++)
+        {
+            EdsLib_DataTypeDB_GetDerivedTypeById(EdsDb->GD, self->EdsId, idx, &PossibleId);
+            Argument.PossibleId = PossibleId;
+            EdsLib_DataTypeDB_ConstraintIterator(EdsDb->GD, self->EdsId, PossibleId, Callback, (void *)&Argument);
+        }
 
-		for (idx = 0; idx < self->IndInfo.NumSubcommands; idx++)
-		{
-			EdsLib_DataTypeDB_GetDerivedTypeById(EdsDb->GD, self->EdsId, idx, &PossibleId);
-			Argument.PossibleId = PossibleId;
-			EdsLib_DataTypeDB_ConstraintIterator(EdsDb->GD, self->EdsId, PossibleId, Callback, (void *)&Argument);
-		}
+        result = PyLong_FromLong((long int) Argument.EdsId);
     } while(0);
 
-    Py_XDECREF(tempargs);
-    result = PyLong_FromLong((long int) Argument.EdsId);
     return result;
 }

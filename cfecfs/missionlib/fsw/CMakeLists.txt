@@ -130,6 +130,20 @@ set_target_properties(cfe_missionlib PROPERTIES
     COMPILE_DEFINITIONS "_EDSLIB_BUILD_"
 )
 
+# CFE_MissionLib pic libraries
+add_library(cfe_missionlib_pic STATIC EXCLUDE_FROM_ALL
+    src/cfe_missionlib_api.c
+)
+set_target_properties(cfe_missionlib_pic PROPERTIES 
+    POSITION_INDEPENDENT_CODE TRUE COMPILE_DEFINITIONS "_EDSLIB_BUILD_")
+
+add_library(cfe_missionlib_runtime_pic STATIC EXCLUDE_FROM_ALL
+    src/cfe_missionlib_api.c
+    ${RUNTIME_SOURCE}
+)
+set_target_properties(cfe_missionlib_runtime_pic PROPERTIES 
+    POSITION_INDEPENDENT_CODE TRUE COMPILE_DEFINITIONS "_EDSLIB_BUILD_")
+
 if (ENABLE_UNIT_TESTS)
   add_subdirectory(ut-stubs)
 endif (ENABLE_UNIT_TESTS)

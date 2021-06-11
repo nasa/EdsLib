@@ -36,8 +36,24 @@
 #include <stdlib.h>
 #include "edslib_internal.h"
 
-
+/*
+ * CRC Algorithm: CRC-16/CCITT-FALSE
+ * Polynomial: 0x1021
+ * Initilization: 0xFFFF
+ * Input Reflection: False
+ * Output Reflection: False
+ * XOR Output: 0x0000
+ */
 #define EDSLIB_CRC16_CCITT_POLY     0x1021  /* x^16 + x^12 + x^5 + 1 */
+
+/*
+ * CRC Algorithm: CRC-8
+ * Polynomial: 0x07
+ * Initialization: 0x00
+ * Input Reflection: False
+ * Output Reflection: False
+ * XOR Output: 0x00
+ */
 #define EDSLIB_CRC8_POLY            0x07    /* x^8 + x^2 + x^1 + 1 */
 
 

@@ -59,7 +59,7 @@ static CFE_MissionLib_Python_Interface_t *CFE_MissionLib_Python_Interface_GetFro
 static PyMethodDef CFE_MissionLib_Python_Interface_methods[] =
 {
         {"Topic",  CFE_MissionLib_Python_Interface_gettopic, METH_O, "Lookup a Topic from an Interface."},
-		{"GetCmdMessage", CFE_MissionLib_Python_Interface_GetCmdMessage, METH_VARARGS, "Get a CFE command message EDS Object from a Topic"},
+        {"GetCmdMessage", CFE_MissionLib_Python_Interface_GetCmdMessage, METH_VARARGS, "Get a CFE command message EDS Object from a Topic"},
         {NULL}  /* Sentinel */
 };
 
@@ -85,7 +85,7 @@ PyTypeObject CFE_MissionLib_Python_InterfaceType =
     .tp_iter = CFE_MissionLib_Python_Interface_iter,
     .tp_flags = Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_GC,
     .tp_weaklistoffset = offsetof(CFE_MissionLib_Python_Interface_t, WeakRefList),
-    .tp_doc = "Interface database entry"
+    .tp_doc = PyDoc_STR("Interface database entry")
 };
 
 PyTypeObject CFE_MissionLib_Python_InterfaceIteratorType =
@@ -100,7 +100,7 @@ PyTypeObject CFE_MissionLib_Python_InterfaceIteratorType =
     .tp_clear = CFE_MissionLib_Python_InterfaceIterator_clear,
     .tp_iter = PyObject_SelfIter,
     .tp_iternext = CFE_MissionLib_Python_InterfaceIterator_iternext,
-	.tp_doc = PyDoc_STR("CFE MissionLib InterfaceIteratorType")
+    .tp_doc = PyDoc_STR("CFE MissionLib InterfaceIteratorType")
 };
 
 static int CFE_MissionLib_Python_Interface_traverse(PyObject *obj, visitproc visit, void *arg)
@@ -109,6 +109,7 @@ static int CFE_MissionLib_Python_Interface_traverse(PyObject *obj, visitproc vis
     Py_VISIT(self->DbObj);
     Py_VISIT(self->IntfName);
     Py_VISIT(self->TypeCache);
+
     return 0;
 }
 
@@ -118,6 +119,7 @@ static int CFE_MissionLib_Python_Interface_clear(PyObject *obj)
     Py_CLEAR(self->DbObj);
     Py_CLEAR(self->IntfName);
     Py_CLEAR(self->TypeCache);
+
     return 0;
 }
 
@@ -266,22 +268,22 @@ static PyObject *CFE_MissionLib_Python_Interface_new(PyTypeObject *obj, PyObject
         }
         else
         {
-        	if (arg3 != NULL)
-        	{
-        		tempargs = PyTuple_Pack(2, arg1, arg3);
-        	}
-        	else
-        	{
-        		tempargs = PyTuple_Pack(2, arg1, Py_None);
-        	}
+            if (arg3 != NULL)
+            {
+                tempargs = PyTuple_Pack(2, arg1, arg3);
+            }
+            else
+            {
+                tempargs = PyTuple_Pack(2, arg1, Py_None);
+            }
 
-        	if (tempargs == NULL)
-        	{
-        		break;
-        	}
-        	DbObj = (CFE_MissionLib_Python_Database_t*)PyObject_Call((PyObject*)&CFE_MissionLib_Python_DatabaseType, tempargs, NULL);
-        	Py_DECREF(tempargs);
-        	tempargs = NULL;
+            if (tempargs == NULL)
+            {
+                break;
+            }
+            DbObj = (CFE_MissionLib_Python_Database_t*)PyObject_Call((PyObject*)&CFE_MissionLib_Python_DatabaseType, tempargs, NULL);
+            Py_DECREF(tempargs);
+            tempargs = NULL;
         }
 
         if (DbObj == NULL)
@@ -384,29 +386,29 @@ PyObject *CFE_MissionLib_Python_Interface_GetFromIntfName(CFE_MissionLib_Python_
 static PyObject *  CFE_MissionLib_Python_Interface_iter(PyObject *obj)
 {
     CFE_MissionLib_Python_Interface_t *Intf = (CFE_MissionLib_Python_Interface_t *) obj;
-	CFE_MissionLib_Python_InterfaceIterator_t *IntfIter;
-	PyObject *result = NULL;
+    CFE_MissionLib_Python_InterfaceIterator_t *IntfIter;
+    PyObject *result = NULL;
 
-	if (Intf->IntfInfo.NumTopics != 0)
-	{
-    	IntfIter = PyObject_GC_New(CFE_MissionLib_Python_InterfaceIterator_t, &CFE_MissionLib_Python_InterfaceIteratorType);
+    if (Intf->IntfInfo.NumTopics != 0)
+    {
+        IntfIter = PyObject_GC_New(CFE_MissionLib_Python_InterfaceIterator_t, &CFE_MissionLib_Python_InterfaceIteratorType);
 
-    	if (IntfIter == NULL)
-    	{
-    		return NULL;
-    	}
+        if (IntfIter == NULL)
+        {
+            return NULL;
+        }
 
-    	IntfIter->Index = 1;
+        IntfIter->Index = 1;
 
-    	Py_INCREF(obj);
-    	IntfIter->refobj = obj;
+        Py_INCREF(obj);
+        IntfIter->refobj = obj;
 
-    	result = (PyObject *)IntfIter;
-    	PyObject_GC_Track(result);
+        result = (PyObject *)IntfIter;
+        PyObject_GC_Track(result);
     }
     else
     {
-    	PyErr_Format(PyExc_RuntimeError, "Not an iterable interface");
+        PyErr_Format(PyExc_RuntimeError, "Not an iterable interface");
     }
     return result;
 }
@@ -435,7 +437,7 @@ static int CFE_MissionLib_Python_InterfaceIterator_clear(PyObject *obj)
 
 static PyObject *CFE_MissionLib_Python_InterfaceIterator_iternext(PyObject *obj)
 {
-	CFE_MissionLib_Python_InterfaceIterator_t *self = (CFE_MissionLib_Python_InterfaceIterator_t*)obj;
+    CFE_MissionLib_Python_InterfaceIterator_t *self = (CFE_MissionLib_Python_InterfaceIterator_t*)obj;
     CFE_MissionLib_Python_Interface_t *intf = NULL;
     const char * Label = NULL;
     uint16_t idx;
@@ -455,8 +457,8 @@ static PyObject *CFE_MissionLib_Python_InterfaceIterator_iternext(PyObject *obj)
 
         do
         {
-        	Label = CFE_MissionLib_GetTopicName(intf->DbObj->IntfDb, intf->InterfaceId, idx);
-        	++idx;
+            Label = CFE_MissionLib_GetTopicName(intf->DbObj->IntfDb, intf->InterfaceId, idx);
+            ++idx;
         }
         while((Label == NULL) && (idx <= intf->IntfInfo.NumTopics+1));
 
@@ -470,10 +472,8 @@ static PyObject *CFE_MissionLib_Python_InterfaceIterator_iternext(PyObject *obj)
             	Py_CLEAR(self->refobj);
             	break;
             }
-            Py_INCREF(key);
 
             topicid = PyLong_FromLong(idx-1);
-            Py_INCREF(topicid);
 
             self->Index = idx;
             result = PyTuple_Pack(2, key, topicid);
