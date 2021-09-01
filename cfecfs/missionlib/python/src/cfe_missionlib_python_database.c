@@ -64,9 +64,9 @@ static PyObject *   CFE_MissionLib_Python_InstanceIterator_iternext(PyObject *ob
 
 static PyMethodDef CFE_MissionLib_Python_Database_methods[] =
 {
-		{"Interface",  CFE_MissionLib_Python_Database_GetInterface, METH_O, "Lookup an Interface type from DB."},
-		{"DecodeEdsId", CFE_MissionLib_Python_DecodeEdsId, METH_VARARGS, "Decode the EdsID from a packed cFE message"},
-		{"SetPubSub", CFE_MissionLib_Python_Set_PubSub, METH_VARARGS, "Set the PubSub parameters for a command message"},
+        {"Interface",  CFE_MissionLib_Python_Database_GetInterface, METH_O, "Lookup an Interface type from DB."},
+        {"DecodeEdsId", CFE_MissionLib_Python_DecodeEdsId, METH_VARARGS, "Decode the EdsID from a packed cFE message"},
+        {"SetPubSub", CFE_MissionLib_Python_Set_PubSub, METH_VARARGS, "Set the PubSub parameters for a command message"},
         {NULL}  /* Sentinel */
 };
 
@@ -89,7 +89,7 @@ PyTypeObject CFE_MissionLib_Python_DatabaseType =
     .tp_repr = CFE_MissionLib_Python_Database_repr,
     .tp_traverse = CFE_MissionLib_Python_Database_traverse,
     .tp_clear = CFE_MissionLib_Python_Database_clear,
-	.tp_iter = CFE_MissionLib_Python_Instance_iter,
+    .tp_iter = CFE_MissionLib_Python_Instance_iter,
     .tp_flags = Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_GC,
     .tp_weaklistoffset = offsetof(CFE_MissionLib_Python_Database_t, WeakRefList),
     .tp_doc = PyDoc_STR("Interface database")
@@ -107,7 +107,7 @@ PyTypeObject CFE_MissionLib_Python_InstanceIteratorType =
     .tp_clear = CFE_MissionLib_Python_InstanceIterator_clear,
     .tp_iter = PyObject_SelfIter,
     .tp_iternext = CFE_MissionLib_Python_InstanceIterator_iternext,
-	.tp_doc = PyDoc_STR("CFE MissionLib InterfaceIteratorType")
+    .tp_doc = PyDoc_STR("CFE MissionLib InstanceIteratorType")
 };
 
 static int CFE_MissionLib_Python_Database_traverse(PyObject *obj, visitproc visit, void *arg)
@@ -243,11 +243,11 @@ const CFE_MissionLib_SoftwareBus_Interface_t *CFE_MissionLib_Python_Database_Get
 
 static PyObject *CFE_MissionLib_Python_Database_new(PyTypeObject *obj, PyObject *args, PyObject *kwds)
 {
-	PyObject *arg1;
-	PyObject *arg2;
+    PyObject *arg1;
+    PyObject *arg2;
 
-	PyObject *tempargs;
-	const char *dbstr;
+    PyObject *tempargs;
+    const char *dbstr;
     PyObject *nameobj;
     char *p;
     char tempstring[512];
@@ -377,7 +377,7 @@ static PyObject *CFE_MissionLib_Python_Database_GetInterface(PyObject *obj, PyOb
 static PyObject *CFE_MissionLib_Python_DecodeEdsId(PyObject *obj, PyObject *args)
 {
     CFE_MissionLib_Python_Database_t *IntfDb = (CFE_MissionLib_Python_Database_t *)obj;
-	PyObject *arg1;
+    PyObject *arg1;
     EdsLib_Python_Database_t *EdsDb;
 
     Py_ssize_t BytesSize;
@@ -388,17 +388,17 @@ static PyObject *CFE_MissionLib_Python_DecodeEdsId(PyObject *obj, PyObject *args
     CFE_SB_Publisher_Component_t PublisherParams;
     CFE_SB_Listener_Component_t ListenerParams;
 
-	EdsLib_Id_t EdsId;
-	uint16_t TopicId;
-	EdsLib_DataTypeDB_TypeInfo_t TypeInfo;
-	int32_t Status;
+    EdsLib_Id_t EdsId;
+    uint16_t TopicId;
+    EdsLib_DataTypeDB_TypeInfo_t TypeInfo;
+    int32_t Status;
 
-	PyObject *result = NULL;
+    PyObject *result = NULL;
 
     if (!PyArg_UnpackTuple(args, "DecodeEdsId", 1, 1, &arg1))
     {
         PyErr_Format(PyExc_RuntimeError, "encoded bytes string argument expected");
-    	return NULL;
+        return NULL;
     }
 
     Py_INCREF(arg1);
@@ -435,23 +435,23 @@ static PyObject *CFE_MissionLib_Python_DecodeEdsId(PyObject *obj, PyObject *args
 
         if (CFE_SB_PubSub_IsPublisherComponent(&PubSubParams))
         {
-			CFE_SB_UnmapPublisherComponent(&PublisherParams, &PubSubParams);
-			TopicId = PublisherParams.Telemetry.TopicId;
+            CFE_SB_UnmapPublisherComponent(&PublisherParams, &PubSubParams);
+            TopicId = PublisherParams.Telemetry.TopicId;
 
-			Status = CFE_MissionLib_GetArgumentType(IntfDb->IntfDb, CFE_SB_Telemetry_Interface_ID,
-					PublisherParams.Telemetry.TopicId, 1, 1, &EdsId);
+            Status = CFE_MissionLib_GetArgumentType(IntfDb->IntfDb, CFE_SB_Telemetry_Interface_ID,
+                    PublisherParams.Telemetry.TopicId, 1, 1, &EdsId);
         }
         else if (CFE_SB_PubSub_IsListenerComponent(&PubSubParams))
         {
-        	CFE_SB_UnmapListenerComponent(&ListenerParams, &PubSubParams);
-			TopicId = ListenerParams.Telecommand.TopicId;
+            CFE_SB_UnmapListenerComponent(&ListenerParams, &PubSubParams);
+            TopicId = ListenerParams.Telecommand.TopicId;
 
-        	Status = CFE_MissionLib_GetArgumentType(IntfDb->IntfDb, CFE_SB_Telecommand_Interface_ID,
-        			ListenerParams.Telecommand.TopicId, 1, 1, &EdsId);
+            Status = CFE_MissionLib_GetArgumentType(IntfDb->IntfDb, CFE_SB_Telecommand_Interface_ID,
+                    ListenerParams.Telecommand.TopicId, 1, 1, &EdsId);
         }
         else
         {
-        	Status = CFE_MISSIONLIB_INVALID_INTERFACE;
+            Status = CFE_MISSIONLIB_INVALID_INTERFACE;
         }
 
         if (Status != CFE_MISSIONLIB_SUCCESS)
@@ -460,8 +460,9 @@ static PyObject *CFE_MissionLib_Python_DecodeEdsId(PyObject *obj, PyObject *args
     	    break;
         }
 
-        //result = PyLong_FromLong((long int)EdsId);
-        result = PyTuple_Pack(2, PyLong_FromLong((long int)EdsId), PyLong_FromLong((long int) TopicId));
+        result = PyTuple_New(2);
+        PyTuple_SetItem(result, 0, PyLong_FromLong((long int) EdsId));
+        PyTuple_SetItem(result, 1, PyLong_FromLong((long int) TopicId));
     }
     while(0);
 
@@ -476,6 +477,7 @@ static PyObject *  CFE_MissionLib_Python_Set_PubSub(PyObject *obj, PyObject *arg
     PyObject *arg2;
     PyObject *arg3;
     PyObject *tempargs;
+    PyObject *result = NULL;
 
     EdsLib_Python_ObjectBase_t *Python_Packet;
     EdsLib_Python_Buffer_t *StorageBuffer;
@@ -490,6 +492,7 @@ static PyObject *  CFE_MissionLib_Python_Set_PubSub(PyObject *obj, PyObject *arg
         PyErr_Format(PyExc_RuntimeError, "Arguments expected: InstanceNumber, TopicId, and SpacePacket Message");
     	return Py_False;
     }
+
     Py_INCREF(arg1);
     Py_INCREF(arg2);
     Py_INCREF(arg3);
@@ -498,49 +501,48 @@ static PyObject *  CFE_MissionLib_Python_Set_PubSub(PyObject *obj, PyObject *arg
     {
     	if (PyNumber_Check(arg1))
     	{
-    		tempargs = PyNumber_Long(arg1);
-    		Py_INCREF(tempargs);
+            tempargs = PyNumber_Long(arg1);
 
-    		Params.Telecommand.InstanceNumber = PyLong_AsUnsignedLong(tempargs);
-    		Py_DECREF(tempargs);
+            Params.Telecommand.InstanceNumber = PyLong_AsUnsignedLong(tempargs);
+            Py_DECREF(tempargs);
     	}
     	else
     	{
-    		PyErr_Format(PyExc_RuntimeError, "InstanceNumber needs to be an integer");
-    		return Py_False;
+            PyErr_Format(PyExc_RuntimeError, "InstanceNumber needs to be an integer");
+            break;
     	}
 
+        if (PyNumber_Check(arg2))
+        {
+            tempargs = PyNumber_Long(arg2);
 
-    	if (PyNumber_Check(arg2))
+            Params.Telecommand.TopicId = PyLong_AsUnsignedLong(tempargs);
+            Py_DECREF(tempargs);
+        }
+        else
     	{
-    		tempargs = PyNumber_Long(arg2);
-    		Py_INCREF(tempargs);
-
-    		Params.Telecommand.TopicId = PyLong_AsUnsignedLong(tempargs);
-    		Py_DECREF(tempargs);
-    	}
-    	else
-    	{
-    		PyErr_Format(PyExc_RuntimeError, "InstanceNumber neesd to be an integer");
-    		return Py_False;
+            PyErr_Format(PyExc_RuntimeError, "TopicId needs to be an integer");
+            break;
     	}
 
     	// Dive through an EdsLib python base object to get to the actual EDS data
-    	Python_Packet = (EdsLib_Python_ObjectBase_t *) arg3;
-    	StorageBuffer = Python_Packet->StorageBuf;
-    	edsbuf = StorageBuffer->edsbuf;
-    	Packet = (CCSDS_SpacePacket_t *) edsbuf.Data;
+        Python_Packet = (EdsLib_Python_ObjectBase_t *) arg3;
+        StorageBuffer = Python_Packet->StorageBuf;
+        edsbuf = StorageBuffer->edsbuf;
+        Packet = (CCSDS_SpacePacket_t *) edsbuf.Data;
 
-    	CFE_SB_MapListenerComponent(&PubSub, &Params);
-    	CFE_SB_Set_PubSub_Parameters(Packet, &PubSub);
+        CFE_SB_MapListenerComponent(&PubSub, &Params);
+        CFE_SB_Set_PubSub_Parameters(Packet, &PubSub);
 
+        Py_INCREF(Py_True);
+        result = Py_True;
     } while(0);
 
     Py_XDECREF(arg1);
     Py_XDECREF(arg2);
     Py_XDECREF(arg3);
 
-    return Py_True;
+    return result;
 }
 
 static PyObject *  CFE_MissionLib_Python_Instance_iter(PyObject *obj)
@@ -552,7 +554,7 @@ static PyObject *  CFE_MissionLib_Python_Instance_iter(PyObject *obj)
 
     if (InstIter == NULL)
     {
-    	return NULL;
+        return NULL;
     }
 
     Py_INCREF(obj);
@@ -589,8 +591,8 @@ static int CFE_MissionLib_Python_InstanceIterator_clear(PyObject *obj)
 
 static PyObject *CFE_MissionLib_Python_InstanceIterator_iternext(PyObject *obj)
 {
-	CFE_MissionLib_Python_InstanceIterator_t *self = (CFE_MissionLib_Python_InstanceIterator_t*)obj;
-	CFE_MissionLib_Python_Database_t *dbobj = NULL;
+    CFE_MissionLib_Python_InstanceIterator_t *self = (CFE_MissionLib_Python_InstanceIterator_t*)obj;
+    CFE_MissionLib_Python_Database_t *dbobj = NULL;
     const char * Label = NULL;
     char Buffer[64];
     char CheckBuffer[64];
@@ -614,14 +616,12 @@ static PyObject *CFE_MissionLib_Python_InstanceIterator_iternext(PyObject *obj)
         snprintf(CheckBuffer, sizeof(CheckBuffer), "%u", (unsigned int) self->Index);
         if (strcmp(Label,CheckBuffer) == 0)
         {
-        	break;
+            break;
         }
 
         key = PyUnicode_FromString(Label);
-        Py_INCREF(key);
 
         instanceid = PyLong_FromLong((long int)self->Index);
-        Py_INCREF(instanceid);
 
         ++self->Index;
         result = PyTuple_Pack(2, key, instanceid);

@@ -405,6 +405,7 @@ PyTypeObject *EdsLib_Python_DatabaseEntry_GetFromEdsId_Impl(EdsLib_Python_Databa
                 refdb->DbName,
                 EdsLib_DisplayDB_GetNamespace(refdb->GD, EdsId),
                 EdsLib_DisplayDB_GetBaseName(refdb->GD, EdsId));
+
         if (typename == NULL)
         {
             break;
@@ -488,6 +489,8 @@ static int EdsLib_Python_DatabaseEntry_traverse(PyObject *obj, visitproc visit, 
     Py_VISIT(self->EdsDb);
     Py_VISIT(self->BaseName);
     Py_VISIT(self->EdsTypeName);
+    Py_VISIT(self->SubEntityList);
+
     return EdsLib_Python_DatabaseEntryType.tp_base->tp_traverse(obj, visit, arg);
 }
 
@@ -497,6 +500,8 @@ static int EdsLib_Python_DatabaseEntry_clear(PyObject *obj)
     Py_CLEAR(self->EdsDb);
     Py_CLEAR(self->BaseName);
     Py_CLEAR(self->EdsTypeName);
+    Py_CLEAR(self->SubEntityList);
+
     return EdsLib_Python_DatabaseEntryType.tp_base->tp_clear(obj);
 }
 
@@ -605,14 +610,18 @@ static int EdsLib_Python_DatabaseEntry_init(PyObject *obj, PyObject *args, PyObj
 
     EdsLib_Python_DatabaseEntryType.tp_base->tp_init(obj, subargs, NULL);
 
+    Py_DECREF(subargs);
+
     return 0;
 }
 
 static void EdsLib_Python_DatabaseEntry_dealloc(PyObject * obj)
 {
     EdsLib_Python_DatabaseEntry_t *self = (EdsLib_Python_DatabaseEntry_t *)obj;
-
-    Py_CLEAR(self->EdsDb);
+    Py_XDECREF(self->EdsDb);
+    Py_XDECREF(self->BaseName);
+    Py_XDECREF(self->EdsTypeName);
+    Py_XDECREF(self->SubEntityList);
 
     /*
      * Call the base type dealloc in case there is complicated logic
@@ -687,7 +696,7 @@ static PyObject *EdsLib_Python_DatabaseEntry_seq_item(PyObject *obj, Py_ssize_t 
     {
         result = EdsLib_Python_ElementAccessor_CreateFromEntityInfo(&EntityInfo);
     }
-    Py_XDECREF(attribute);
+    //Py_XDECREF(attribute);
 
     return result;
 }
@@ -739,7 +748,7 @@ Py_ssize_t EdsLib_Python_DatabaseEntry_GetMaxSize(PyTypeObject* objtype)
     return DerivInfo.MaxSize.Bytes;
 }
 
-static PyObject *  EdsLib_Python_DatabaseEntry_iter(PyObject *obj)
+static PyObject * EdsLib_Python_DatabaseEntry_iter(PyObject *obj)
 {
     EdsLib_Python_DatabaseEntry_t *dbent = (EdsLib_Python_DatabaseEntry_t *)obj;
     EdsLib_Python_EnumerationIterator_t *EnumIter;
@@ -848,8 +857,6 @@ static PyObject *EdsLib_Python_EnumEntryIterator_iternext(PyObject *obj)
             	break;
             }
 
-            Py_INCREF(key);
-            Py_INCREF(value);
             ++self->Index;
             result = PyTuple_Pack(2, key, value);
         }
@@ -889,7 +896,6 @@ static PyObject *EdsLib_Python_ContainerEntryIterator_iternext(PyObject *obj)
     EdsLib_Python_ContainerIterator_t *self = (EdsLib_Python_ContainerIterator_t*)obj;
     EdsLib_Python_DatabaseEntry_t *dbent = NULL;
 
-    PyObject *str;
     const char *keystr;
 
     EdsLib_DataTypeDB_EntityInfo_t CompInfo;
@@ -920,9 +926,7 @@ static PyObject *EdsLib_Python_ContainerEntryIterator_iternext(PyObject *obj)
             break;
         }
         Py_INCREF(key);
-
-        str = PyUnicode_AsEncodedString(key, "utf-8", "~E~");
-        keystr = PyBytes_AS_STRING(str);
+        keystr = (const char *)PyUnicode_DATA(key);
 
         if (EdsLib_DisplayDB_LocateSubEntity(dbent->EdsDb->GD, dbent->EdsId, keystr, &CompInfo) == EDSLIB_SUCCESS)
         {
