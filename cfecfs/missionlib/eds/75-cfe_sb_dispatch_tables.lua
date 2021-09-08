@@ -200,10 +200,19 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
         intf_commands[reqintf] = intfcmds
         for _,cmd in ipairs(intfcmds) do
           if (cmd.subcommand_arg) then
-            for i,subcommand in ipairs(cmd.args[cmd.subcommand_arg].type.edslib_derivtable_list) do
+            local argtype = cmd.args[cmd.subcommand_arg].type
+            for _,subcommand in ipairs(argtype.edslib_derivtable_list) do
+              -- Note that this list is not in value-order, the index relates to the lookup table, not the actual cmdcode value
+              -- To get the command code value, need to drill down into the constraint set.  This assumes a single value constraint.
               local cmdname = subcommand:get_flattened_name()
-              hdrout:add_documentation(string.format("Command code associated with %s_t", cmdname))
-              hdrout:write(string.format("#define %-60s %s", SEDS.to_macro_name(cmdname) .. "_CC", i-1))
+              local constraint = subcommand:find_first("CONSTRAINT_SET")
+              if (constraint) then
+                constraint = constraint:find_first("VALUE_CONSTRAINT")
+              end
+              if (constraint) then
+                hdrout:add_documentation(string.format("Command code associated with %s_t", cmdname))
+                hdrout:write(string.format("#define %-60s %s", SEDS.to_macro_name(cmdname) .. "_CC", constraint.attributes["value"]))
+              end
             end
           end
         end
@@ -482,4 +491,3 @@ dbout:end_group("};")
 dbout:add_whitespace(1)
 
 SEDS.output_close(dbout)
-
