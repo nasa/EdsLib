@@ -185,8 +185,8 @@ int main(int argc, char *argv[])
         return Status;
     }
 
-    CFE_SB_Get_PubSub_Parameters(&PubSubParams, &LocalBuffer.BaseObject);
-    CFE_SB_UnmapPublisherComponent(&PublisherParams, &PubSubParams);
+    CFE_MissionLib_Get_PubSub_Parameters(&PubSubParams, &LocalBuffer.BaseObject.Message);
+    CFE_MissionLib_UnmapPublisherComponent(&PublisherParams, &PubSubParams);
 
     Status = CFE_MissionLib_GetArgumentType(&CFE_SOFTWAREBUS_INTERFACE, CFE_SB_Telemetry_Interface_ID,
             PublisherParams.Telemetry.TopicId, 1, 1, &EdsId);

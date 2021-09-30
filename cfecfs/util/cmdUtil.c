@@ -498,9 +498,9 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    CFE_SB_MapListenerComponent(&CommandData.PubSub, &CommandData.Params);
+    CFE_MissionLib_MapListenerComponent(&CommandData.PubSub, &CommandData.Params);
 
-    CFE_SB_Set_PubSub_Parameters(&CommandBuffer.BaseObject, &CommandData.PubSub);
+    CFE_MissionLib_Set_PubSub_Parameters(&CommandBuffer.BaseObject.Message, &CommandData.PubSub);
 
     EdsRc = CFE_MissionLib_GetArgumentType(&CFE_SOFTWAREBUS_INTERFACE, CFE_SB_Telecommand_Interface_ID,
             CommandData.Params.Telecommand.TopicId, 1, 1, &CommandData.IntfArg);
