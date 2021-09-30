@@ -1,16 +1,16 @@
 /*
  * LEW-19710-1, CCSDS SOIS Electronic Data Sheet Implementation
- * 
+ *
  * Copyright (c) 2020 United States Government as represented by
  * the Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -53,7 +53,7 @@
 #include "testexec.h"
 #include "to_lab_eds_typedefs.h"
 
-#define TO_LAB_BASE_PORT        5020
+#define TO_LAB_BASE_PORT        1235
 #define CI_LAB_BASE_PORT        1234
 
 #define UDP_NET_BUFFER_SIZE     8192
@@ -338,13 +338,13 @@ int TestIntf_CI_TO_LAB_Create(lua_State *lua)
     if (TargetPort == 0)
     {
         /* If unspecified, send to the default UDP port that CI_LAB listens on */
-        TargetPort = CI_LAB_BASE_PORT + TargetNum;
+        TargetPort = CI_LAB_BASE_PORT + TargetNum - 1;
     }
 
     if (LocalPort == 0)
     {
         /* If unspecified, bind to the default UDP port that TO_LAB sends to */
-        LocalPort = TO_LAB_BASE_PORT + TargetNum;
+        LocalPort = TO_LAB_BASE_PORT + TargetNum - 1;
     }
 
     /* index 5 -- this is the object that will be returned */
@@ -466,4 +466,3 @@ int TestIntf_CI_TO_LAB_Create(lua_State *lua)
 
     return 1;
 } /* end TestIntf_CI_TO_LAB_Create */
-
