@@ -244,6 +244,7 @@ int32_t CFE_MissionLib_GetInterfaceInfo(const CFE_MissionLib_SoftwareBus_Interfa
     {
         Status = CFE_MISSIONLIB_SUCCESS;
         IntfInfo->NumCommands = Intf->InterfaceList[InterfaceId-1].NumCommands;
+        IntfInfo->NumTopics = Intf->InterfaceList[InterfaceId-1].NumTopics;
     }
 
     return Status;
@@ -404,7 +405,7 @@ const char *CFE_MissionLib_GetTopicName(const CFE_MissionLib_SoftwareBus_Interfa
     }
 
     TopicPtr = CFE_MissionLib_Lookup_Topic(IntfPtr, TopicId);
-    if (TopicPtr == NULL)
+    if ((TopicPtr == NULL) || (TopicPtr->InterfaceId != InterfaceType))
     {
         return NULL;
     }

@@ -38,14 +38,23 @@ PyObject *EdsLib_Python_DatabaseCache = NULL;
 
 static void         EdsLib_Python_Database_dealloc(PyObject * obj);
 static PyObject *   EdsLib_Python_Database_new(PyTypeObject *obj, PyObject *args, PyObject *kwds);
-static PyObject *   EdsLib_Python_Database_getentry(PyObject *obj, PyObject *key);
 static PyObject *   EdsLib_Python_Database_repr(PyObject *obj);
 static int          EdsLib_Python_Database_traverse(PyObject *obj, visitproc visit, void *arg);
 static int          EdsLib_Python_Database_clear(PyObject *obj);
 
+static PyObject *   EdsLib_Python_Database_getentry(PyObject *obj, PyObject *key);
+static PyObject *   EdsLib_Python_Database_IsContainer(PyObject *obj, PyObject *arg);
+static PyObject *   EdsLib_Python_Database_IsArray(PyObject *obj, PyObject *arg);
+static PyObject *   EdsLib_Python_Database_IsNumber(PyObject *obj, PyObject *arg);
+static PyObject *   EdsLib_Python_Database_IsEnum(PyObject *obj, PyObject *arg);
+
 static PyMethodDef EdsLib_Python_Database_methods[] =
 {
-        {"Entry",  EdsLib_Python_Database_getentry, METH_O, "Lookup an EDS type from DB."},
+        {"Entry",       EdsLib_Python_Database_getentry, METH_O, "Lookup an EDS type from DB."},
+        {"IsContainer", EdsLib_Python_Database_IsContainer, METH_O, "Check if an object is a container."},
+        {"IsArray",     EdsLib_Python_Database_IsArray, METH_O, "Check if an object is an array."},
+        {"IsNumber",    EdsLib_Python_Database_IsNumber, METH_O, "Check if an object is a number."},
+        {"IsEnum",      EdsLib_Python_Database_IsEnum, METH_O, "Check if a database entry is an enumeration."},
         {NULL}  /* Sentinel */
 };
 
@@ -320,6 +329,93 @@ static PyObject *EdsLib_Python_Database_getentry(PyObject *obj, PyObject *key)
             EdsLib_DisplayDB_LookupTypeName(dbobj->GD, PyBytes_AsString(keybytes)));
 
     Py_DECREF(keybytes);
+
+    return result;
+}
+
+static PyObject *   EdsLib_Python_Database_IsContainer(PyObject *obj, PyObject *arg)
+{
+    PyObject *result;
+
+    if (Py_TYPE(arg)->tp_base == &EdsLib_Python_ObjectContainerType)
+    {
+        Py_INCREF(Py_True);
+        result = Py_True;
+    }
+    else
+    {
+        Py_INCREF(Py_False);
+        result = Py_False;
+    }
+
+    return result;
+}
+
+static PyObject *   EdsLib_Python_Database_IsArray(PyObject *obj, PyObject *arg)
+{
+    PyObject *result;
+
+    if (Py_TYPE(arg)->tp_base == &EdsLib_Python_ObjectArrayType)
+    {
+        Py_INCREF(Py_True);
+        result = Py_True;
+    }
+    else
+    {
+        Py_INCREF(Py_False);
+        result = Py_False;
+    }
+
+    return result;
+}
+
+static PyObject *   EdsLib_Python_Database_IsNumber(PyObject *obj, PyObject *arg)
+{
+    PyObject *result;
+
+    if (Py_TYPE(arg)->tp_base == &EdsLib_Python_ObjectNumberType)
+    {
+        Py_INCREF(Py_True);
+        result = Py_True;
+    }
+    else
+    {
+        Py_INCREF(Py_False);
+        result = Py_False;
+    }
+
+    return result;
+}
+
+static PyObject *   EdsLib_Python_Database_IsEnum(PyObject *obj, PyObject *arg)
+{
+    EdsLib_Python_DatabaseEntry_t *dbent;
+    EdsLib_DisplayHint_t DisplayHint;
+    PyTypeObject *base_type;
+
+    PyObject *result = NULL;
+
+    if (Py_TYPE(arg) == &EdsLib_Python_DatabaseEntryType)
+    {
+        dbent = (EdsLib_Python_DatabaseEntry_t *)arg;
+        DisplayHint = EdsLib_DisplayDB_GetDisplayHint(dbent->EdsDb->GD, dbent->EdsId);
+        base_type = dbent->type_base.ht_type.tp_base;
+
+        if ((DisplayHint == EDSLIB_DISPLAYHINT_ENUM_SYMTABLE) && (base_type == &EdsLib_Python_ObjectNumberType))
+        {
+            Py_INCREF(Py_True);
+            result = Py_True;
+        }
+        else
+        {
+            Py_INCREF(Py_False);
+            result = Py_False;
+        }
+    }
+    else
+    {
+        PyErr_Format(PyExc_TypeError, "Input argument must be an EdsLib Database Entry type");
+    }
 
     return result;
 }
