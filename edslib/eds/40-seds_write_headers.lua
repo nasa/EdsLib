@@ -72,7 +72,9 @@ local function write_c_struct_typedef(output,node)
       output:start_group("{")
       for idx,ref in ipairs(node.decode_sequence) do
         local c_name = ref.type:get_flattened_name()
-        if (ref.name and ref.type.max_size) then
+        -- If the entry refers to a base type, then use a buffer instead of a direct instance here,
+        -- but only if the derivatives actually do extend the type (i.e. add fields).
+        if (ref.name and ref.type.max_size and ref.type.max_size.bits > ref.type.resolved_size.bits) then
           c_name = c_name .. "_Buffer"
         end
         if (ref.entry) then
