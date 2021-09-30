@@ -39,8 +39,8 @@
 #include <string.h> /* memset() */
 
 #include <cfe_mission_cfg.h>
-#include "ccsds_spacepacket_eds_typedefs.h"
 #include "cfe_sb_eds_typedefs.h"
+#include "cfe_hdr_eds_typedefs.h"
 #include "cfe_mission_eds_parameters.h"
 #include "cfe_mission_eds_interface_parameters.h"
 #include "edslib_displaydb.h"
@@ -50,8 +50,8 @@
 
 #define BASE_SERVER_PORT 5021
 
-CCSDS_SpacePacket_Buffer_t   LocalBuffer;
-uint8_t NetworkBuffer[sizeof(LocalBuffer)];
+CFE_HDR_TelemetryHeader_Buffer_t       LocalBuffer;
+CFE_HDR_TelemetryHeader_PackedBuffer_t NetworkBuffer;
 
 static const char *optString = "c:?";
 
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
         EdsLib_Generate_Hexdump(stdout, NetworkBuffer, 0, n);
     }
 
-    EdsId = EDSLIB_MAKE_ID(EDS_INDEX(CCSDS_SPACEPACKET), CCSDS_TelemetryPacket_DATADICTIONARY);
+    EdsId = EDSLIB_MAKE_ID(EDS_INDEX(CFE_HDR), CFE_HDR_TelemetryHeader_DATADICTIONARY);
     Status = EdsLib_DataTypeDB_GetTypeInfo(&EDS_DATABASE, EdsId, &TypeInfo);
     if (Status != EDSLIB_SUCCESS)
     {
