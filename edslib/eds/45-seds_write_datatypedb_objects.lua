@@ -497,7 +497,7 @@ local function write_c_derivative_descriptor(output,basename,node)
   local valuemap = {}
   local valuelist = {}
 
-  if (node.max_size) then
+  if (node.max_size and node.max_size.bits > node.resolved_size.bits) then
     maxbits = node.max_size.bits
     bufobj = "_Buffer_t"
   else
