@@ -1,16 +1,16 @@
 --
 -- LEW-19710-1, CCSDS SOIS Electronic Data Sheet Implementation
--- 
+--
 -- Copyright (c) 2020 United States Government as represented by
 -- the Administrator of the National Aeronautics and Space Administration.
 -- All Rights Reserved.
--- 
+--
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
 -- You may obtain a copy of the License at
--- 
+--
 --    http://www.apache.org/licenses/LICENSE-2.0
--- 
+--
 -- Unless required by applicable law or agreed to in writing, software
 -- distributed under the License is distributed on an "AS IS" BASIS,
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -128,6 +128,7 @@ end
 for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
   local first_intf = 1 + #total_intfs
   local hdrout = SEDS.output_open(SEDS.to_filename("interface.h", ds.name),ds.xml_filename)
+  local cmdcode_list = {}
   hdrout:write(string.format("#include \"%s\"", SEDS.to_filename("typedefs.h", ds.name)))
   hdrout:add_whitespace(1)
 
@@ -148,7 +149,7 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
               args[i] = { type = stype, name = refnode.name }
               if (stype.derivative_decisiontree_map and
                 stype.derivative_decisiontree_map.entities and
-                stype.derivative_decisiontree_map.entities["Sec.Command"]) then
+                stype.derivative_decisiontree_map.entities["Sec.FunctionCode"]) then
                 subcommand_arg = i
               end
             end
@@ -210,8 +211,7 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
                 constraint = constraint:find_first("VALUE_CONSTRAINT")
               end
               if (constraint) then
-                hdrout:add_documentation(string.format("Command code associated with %s_t", cmdname))
-                hdrout:write(string.format("#define %-60s %s", SEDS.to_macro_name(cmdname) .. "_CC", constraint.attributes["value"]))
+                cmdcode_list[constraint.attributes["value"]] = cmdname
               end
             end
           end
@@ -247,6 +247,29 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
   end
 
   SEDS.output_close(hdrout)
+
+  -- Create a "cc.h" header file containing the command/function codes specificed as EDS value constraints
+  -- This info was collected above, but is easier to use in C files if not mixed with the interface declarations
+  -- It also needs to be put in a reasonable order and the macro names need to be scrubbed/fixed to match
+  local all_cmdcodes = {}
+  for cc in pairs(cmdcode_list) do
+    all_cmdcodes[1 + #all_cmdcodes] = cc
+  end
+  if (#all_cmdcodes > 0) then
+    table.sort(all_cmdcodes)
+    hdrout = SEDS.output_open(SEDS.to_filename("cc.h", ds.name),ds.xml_filename)
+    for _,cc in ipairs(all_cmdcodes) do
+      local cmdname = cmdcode_list[cc]
+      local macroname = SEDS.to_macro_name(cmdname)
+      -- If the command name ends in "_CMD" then lop it off
+      if (string.sub(macroname, -4, -1) == "_CMD") then
+        macroname = string.sub(macroname, 1, -5)
+      end
+      hdrout:add_documentation(string.format("Command code associated with %s_t", cmdname))
+      hdrout:write(string.format("#define %-60s %s",  macroname .. "_CC", cc))
+    end
+    SEDS.output_close(hdrout)
+  end
 
   hdrout = SEDS.output_open(SEDS.to_filename("dispatcher.h", ds.name), ds.xml_filename)
   hdrout:write(string.format("#include \"cfe_sb_eds.h\""))
