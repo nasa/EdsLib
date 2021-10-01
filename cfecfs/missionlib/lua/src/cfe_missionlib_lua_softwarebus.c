@@ -1,16 +1,16 @@
 /*
  * LEW-19710-1, CCSDS SOIS Electronic Data Sheet Implementation
- * 
+ *
  * Copyright (c) 2020 United States Government as represented by
  * the Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,7 +23,7 @@
  * \file     cfe_missionlib_lua_softwarebus.c
  * \ingroup  lua
  * \author   joseph.p.hickey@nasa.gov
- * 
+ *
  * Implementation of the CFE-EDS mission integration library Lua bindings
  */
 
@@ -62,7 +62,7 @@ static void CFE_MissionLib_Lua_MapPubSubParams(CFE_SB_SoftwareBus_PubSub_Interfa
         CFE_SB_Listener_Component_t Params;
         Params.Telecommand.InstanceNumber = IntfObj->InstanceNumber;
         Params.Telecommand.TopicId = IntfObj->TopicId;
-        CFE_SB_MapListenerComponent(PubSub, &Params);
+        CFE_MissionLib_MapListenerComponent(PubSub, &Params);
         break;
     }
     case CFE_SB_Telemetry_Interface_ID:
@@ -70,7 +70,7 @@ static void CFE_MissionLib_Lua_MapPubSubParams(CFE_SB_SoftwareBus_PubSub_Interfa
         CFE_SB_Publisher_Component_t Params;
         Params.Telemetry.InstanceNumber = IntfObj->InstanceNumber;
         Params.Telemetry.TopicId = IntfObj->TopicId;
-        CFE_SB_MapPublisherComponent(PubSub, &Params);
+        CFE_MissionLib_MapPublisherComponent(PubSub, &Params);
         break;
     }
     default:
@@ -88,7 +88,7 @@ static void CFE_MissionLib_Lua_UnmapPubSubParams(CFE_MissionLib_Lua_Interface_Us
     case CFE_SB_Telecommand_Interface_ID:
     {
         CFE_SB_Listener_Component_t Result;
-        CFE_SB_UnmapListenerComponent(&Result, PubSub);
+        CFE_MissionLib_UnmapListenerComponent(&Result, PubSub);
         IntfObj->TopicId = Result.Telecommand.TopicId;
         IntfObj->InstanceNumber = Result.Telecommand.InstanceNumber;
         break;
@@ -96,7 +96,7 @@ static void CFE_MissionLib_Lua_UnmapPubSubParams(CFE_MissionLib_Lua_Interface_Us
     case CFE_SB_Telemetry_Interface_ID:
     {
         CFE_SB_Publisher_Component_t Result;
-        CFE_SB_UnmapPublisherComponent(&Result, PubSub);
+        CFE_MissionLib_UnmapPublisherComponent(&Result, PubSub);
         IntfObj->TopicId = Result.Telemetry.TopicId;
         IntfObj->InstanceNumber = Result.Telemetry.InstanceNumber;
         break;
@@ -276,7 +276,7 @@ static int CFE_MissionLib_Lua_InterfaceObjectGetProperty(lua_State *lua)
         {
             CFE_SB_SoftwareBus_PubSub_Interface_t PubSub;
             CFE_MissionLib_Lua_MapPubSubParams(&PubSub, IntfObj);
-            lua_pushinteger(lua, PubSub.MsgId);
+            lua_pushinteger(lua, PubSub.MsgId.Value);
             retval = 1;
         }
     }
@@ -421,7 +421,7 @@ static int CFE_MissionLib_Lua_NewMessage(lua_State *lua)
     EdsLib_DataTypeDB_GetTypeInfo(DbObj->GD, ObjectUserData->EdsId, &ObjectUserData->TypeInfo);
 
     CFE_MissionLib_Lua_MapPubSubParams(&PubSub, IntfObj);
-    CFE_SB_Set_PubSub_Parameters(EdsLib_Binding_GetNativeObject(ObjectUserData), &PubSub);
+    CFE_MissionLib_Set_PubSub_Parameters(EdsLib_Binding_GetNativeObject(ObjectUserData), &PubSub);
     EdsLib_Binding_InitStaticFields(ObjectUserData);
 
     return 1;
@@ -441,7 +441,7 @@ static int CFE_MissionLib_Lua_IdentifyMessage(lua_State *lua)
     EdsLib_Id_t EdsId;
     int32_t Status;
 
-    EdsId = EDSLIB_MAKE_ID(EDS_INDEX(CCSDS_SPACEPACKET), CCSDS_SpacePacket_DATADICTIONARY);
+    EdsId = EDSLIB_MAKE_ID(EDS_INDEX(CFE_HDR), CFE_HDR_Message_DATADICTIONARY);
     Status = EdsLib_DataTypeDB_GetDerivedInfo(DbObj->GD, EdsId, &DerivInfo);
     if (Status != EDSLIB_SUCCESS)
     {
@@ -462,7 +462,7 @@ static int CFE_MissionLib_Lua_IdentifyMessage(lua_State *lua)
     ObjectUserData->EdsId = EdsId;
     EdsLib_DataTypeDB_GetTypeInfo(DbObj->GD, EdsId, &ObjectUserData->TypeInfo);
 
-    CFE_SB_Get_PubSub_Parameters(&PubSub, EdsLib_Binding_GetNativeObject(ObjectUserData));
+    CFE_MissionLib_Get_PubSub_Parameters(&PubSub, EdsLib_Binding_GetNativeObject(ObjectUserData));
 
     IntfObj = CFE_MissionLib_Lua_NewInterfaceObject(lua, lua_upvalueindex(1));
 

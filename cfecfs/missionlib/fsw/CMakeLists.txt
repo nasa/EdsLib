@@ -1,16 +1,16 @@
 #
 # LEW-19710-1, CCSDS SOIS Electronic Data Sheet Implementation
-# 
+#
 # Copyright (c) 2020 United States Government as represented by
 # the Administrator of the National Aeronautics and Space Administration.
 # All Rights Reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -126,8 +126,12 @@ file(REMOVE ${MISSION_BINARY_DIR}/inc/cfe_mission_eds_interface_parameters.h.tmp
 add_library(cfe_missionlib STATIC
     src/cfe_missionlib_api.c
 )
-set_target_properties(cfe_missionlib PROPERTIES
-    COMPILE_DEFINITIONS "_EDSLIB_BUILD_"
+target_compile_definitions(cfe_missionlib PRIVATE
+    "_EDSLIB_BUILD_"
+)
+target_include_directories(cfe_missionlib INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc
+    ${EDSLIB_FSW_SOURCE_DIR}/inc
 )
 
 # CFE_MissionLib pic libraries
@@ -144,6 +148,7 @@ add_library(cfe_missionlib_runtime_pic STATIC EXCLUDE_FROM_ALL
 set_target_properties(cfe_missionlib_runtime_pic PROPERTIES 
     POSITION_INDEPENDENT_CODE TRUE COMPILE_DEFINITIONS "_EDSLIB_BUILD_")
 
-if (ENABLE_UNIT_TESTS)
+# UT stubs are only needed for a CFS target build
+if (ENABLE_UNIT_TESTS AND IS_CFS_ARCH_BUILD)
   add_subdirectory(ut-stubs)
-endif (ENABLE_UNIT_TESTS)
+endif (ENABLE_UNIT_TESTS AND IS_CFS_ARCH_BUILD)
