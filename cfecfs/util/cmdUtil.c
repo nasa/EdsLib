@@ -63,7 +63,7 @@ typedef int socklen_t;
 #include "edslib_displaydb.h"
 #include "cfe_missionlib_api.h"
 #include "cfe_missionlib_runtime.h"
-#include "ccsds_spacepacket_eds_typedefs.h"
+#include "cfe_hdr_eds_typedefs.h"
 
 const char DEFAULT_COMPONENT[] = "Application";
 
@@ -189,8 +189,8 @@ typedef struct {
 } CommandData_t;
 
 
-CCSDS_SpacePacket_Buffer_t CommandBuffer;
-static uint8_t PackedCommand[sizeof(CCSDS_SpacePacket_Buffer_t)];
+CFE_HDR_CommandHeader_Buffer_t CommandBuffer;
+static CFE_HDR_CommandHeader_PackedBuffer_t PackedCommand;
 
 /*
 ** Declare the global command data
@@ -414,7 +414,7 @@ int main(int argc, char *argv[]) {
     }
 
     EdsRc = EdsLib_DataTypeDB_GetTypeInfo(&EDS_DATABASE,
-            EDSLIB_MAKE_ID(EDS_INDEX(CCSDS_SPACEPACKET), CCSDS_PriHdr_DATADICTIONARY),
+            EDSLIB_MAKE_ID(EDS_INDEX(CFE_HDR), CFE_HDR_CommandHeader_DATADICTIONARY),
             &CommandData.EdsHeaderInfo);
     if (EdsRc != EDSLIB_SUCCESS)
     {
@@ -439,7 +439,11 @@ int main(int argc, char *argv[]) {
 
     if (CommandData.PortNum == 0)
     {
-        CommandData.PortNum = DEFAULT_PORTNUM + CommandData.Params.Telecommand.InstanceNumber;
+        CommandData.PortNum = DEFAULT_PORTNUM;
+        if (CommandData.Params.Telecommand.InstanceNumber > 0)
+        {
+            CommandData.PortNum += CommandData.Params.Telecommand.InstanceNumber - 1;
+        }
     }
 
     Separator = strchr(CommandData.DestIntf, '.');
@@ -622,7 +626,7 @@ int main(int argc, char *argv[]) {
      * Note for the length field, the size of the primary header must be subtracted.
      * Hardcoding the sequence number / flags field for now.
      */
-    CommandBuffer.BaseObject.Hdr.BaseHdr.SeqFlag = 0x3;
+    CommandBuffer.BaseObject.Message.CCSDS.CommonHdr.SeqFlag = 0x3;
     EdsLib_DataTypeDB_PackCompleteObject(&EDS_DATABASE, &CommandData.ActualArg,
             PackedCommand, CommandBuffer.Byte,
             sizeof(PackedCommand) * 8, CommandData.EdsTypeInfo.Size.Bytes);
