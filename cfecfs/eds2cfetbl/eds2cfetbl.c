@@ -1,16 +1,16 @@
 /*
  * LEW-19710-1, CCSDS SOIS Electronic Data Sheet Implementation
- * 
+ *
  * Copyright (c) 2020 United States Government as represented by
  * the Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <strings.h>
 #include <expat.h>
 #include <getopt.h>
 #include <fcntl.h>
@@ -72,10 +73,16 @@ void LoadTemplateFile(lua_State *lua, const char *Filename)
     int obj_idx;
     void *tgtptr;
     size_t tgtsize;
-    ptrdiff_t NameLen;
+    size_t RuntimeAppNameLen;
     CFE_TBL_FileDef_t *CFE_TBL_FileDefPtr;
-    BASE_TYPES_ApiName_String_t AppName;
+    BASE_TYPES_ApiName_String_t RuntimeAppName;
     BASE_TYPES_ApiName_String_t TableName;
+    const char *EdsAppName;
+    size_t EdsAppNameLen;
+    char EdsTypeName[64];
+    EdsLib_Id_t EdsId;
+    EdsLib_DataTypeDB_TypeInfo_t TypeInfo;
+    uint16_t AppIdx;
 
     dlerror();
     dlhandle = dlopen(Filename, RTLD_LAZY | RTLD_LOCAL);
@@ -114,44 +121,157 @@ void LoadTemplateFile(lua_State *lua, const char *Filename)
         exit(EXIT_FAILURE);
     }
 
-    /* The TableName in the FileDef object is supposed to be of the form "AppName.TableName" -
-     * first split this into its constituent parts */
+    /*
+     * The TableName in the FileDef object is supposed to be of the form "AppName.TableName" -
+     * first split this into its constituent parts.
+     *
+     * Note, however, that the "AppName." part refers to the runtime app name, which often has
+     * a suffix of some sort (e.g. _APP).  It should be related to the EDS app name though,
+     * if naming conventions are followed.  (and if conventions are not followed, this tool
+     * is not likely to work).
+     */
     tmpstr = strchr(CFE_TBL_FileDefPtr->TableName, '.');
     if (tmpstr == NULL)
     {
-        NameLen = 0;
+        RuntimeAppNameLen = 0;
         tmpstr = CFE_TBL_FileDefPtr->TableName;
     }
     else
     {
-        NameLen = tmpstr - CFE_TBL_FileDefPtr->TableName;
+        RuntimeAppNameLen = tmpstr - CFE_TBL_FileDefPtr->TableName;
         ++tmpstr;
     }
 
-    if (NameLen >= sizeof(AppName))
+    if (RuntimeAppNameLen >= sizeof(RuntimeAppName))
     {
-        NameLen = sizeof(AppName) - 1;
+        RuntimeAppNameLen = sizeof(RuntimeAppName) - 1;
     }
-    memcpy(AppName, CFE_TBL_FileDefPtr->TableName, NameLen);
-    AppName[NameLen] = 0;
+
+    memcpy(RuntimeAppName, CFE_TBL_FileDefPtr->TableName, RuntimeAppNameLen);
+    RuntimeAppName[RuntimeAppNameLen] = 0;
+    printf("Runtime App Name: %s\n", RuntimeAppName);
+
+    /*
+     * It is common practice to have an "_APP" suffix to the runtime app name here,
+     * so this is done as a prefix match.
+     */
+    AppIdx = EDS_MAX_DATASHEETS;
+    while (true)
+    {
+        --AppIdx;
+        if (AppIdx == 0)
+        {
+            /*
+             * If the naming convention was not followed and no EDS entry is found for this app name,
+             * then this tool is unlikely work EXCEPT if the user has overloaded the "Description"
+             * field to refer to a specific EDS DB entry, so this will proceed if that is the case.
+             */
+            EdsAppName    = NULL;
+            EdsAppNameLen = 0;
+            printf("WARNING: No matching EDS package name for table: \'%s\'\n", CFE_TBL_FileDefPtr->TableName);
+            break;
+        }
+
+        /* Note that this API does not return NULL, it returns "UNDEF" if the AppIdx is not registered,
+         * but that should not happen with a static DB and an AppIdx within range */
+        EdsId = EDSLIB_MAKE_ID(AppIdx, 1);
+        EdsAppName    = EdsLib_DisplayDB_GetNamespace(&EDS_DATABASE, EdsId);
+        EdsAppNameLen = strlen(EdsAppName);
+        if (strncasecmp(EdsAppName, CFE_TBL_FileDefPtr->TableName, EdsAppNameLen) == 0)
+        {
+            printf("Matched EDS Package Name: %s\n", EdsAppName);
+            break;
+        }
+    }
+
+    /*
+     * Sometimes the app name is repeated in the table name, so skip it again if so
+     */
+    if (strncmp(RuntimeAppName, tmpstr, RuntimeAppNameLen) == 0)
+    {
+        tmpstr += RuntimeAppNameLen;
+    }
+    else if (EdsAppName != NULL && strncmp(EdsAppName, tmpstr, EdsAppNameLen) == 0)
+    {
+        tmpstr += EdsAppNameLen;
+    }
+
+    /* Skip punctuation/name separators */
+    while (ispunct((unsigned char) *tmpstr))
+    {
+        ++tmpstr;
+    }
 
     strncpy(TableName, tmpstr, sizeof(TableName) - 1);
     TableName[sizeof(TableName) - 1] = 0;
+    printf("Runtime Table Name: %s\n", TableName);
 
-    lua_getglobal(lua, AppName);
+    /* Now find an EDS type that might match */
+    EdsId = EDSLIB_ID_INVALID;
+    memset(EdsTypeName, 0, sizeof(EdsTypeName));
+
+    /*
+     * If the specific EDS type was indicated in the description field, then use it.
+     * Otherwise for backward compatibility attempt to deduce it from the AppName.TableName string
+     */
+    if (strchr(CFE_TBL_FileDefPtr->Description, '/') != NULL)
+    {
+        strncpy(EdsTypeName, CFE_TBL_FileDefPtr->Description, sizeof(EdsTypeName));
+        EdsId = EdsLib_DisplayDB_LookupTypeName(&EDS_DATABASE, EdsTypeName);
+    }
+
+    if (!EdsLib_Is_Valid(EdsId) && EdsAppName != NULL)
+    {
+        snprintf(EdsTypeName, sizeof(EdsTypeName), "%s/%s", EdsAppName, TableName);
+        EdsId = EdsLib_DisplayDB_LookupTypeName(&EDS_DATABASE, EdsTypeName);
+    }
+
+    /* as a last-ditch attempt, see if the ObjectName might be in the form of EDSAPP_EDSTYPE */
+    if (!EdsLib_Is_Valid(EdsId) && EdsAppName != NULL)
+    {
+        tmpstr = CFE_TBL_FileDefPtr->ObjectName;
+        if (strncmp(RuntimeAppName, tmpstr, RuntimeAppNameLen) == 0 && ispunct((unsigned char)tmpstr[RuntimeAppNameLen]))
+        {
+            tmpstr += RuntimeAppNameLen + 1;
+        }
+        else if (strncmp(EdsAppName, tmpstr, EdsAppNameLen) == 0 && ispunct((unsigned char)tmpstr[EdsAppNameLen]))
+        {
+            tmpstr += EdsAppNameLen + 1;
+        }
+        snprintf(EdsTypeName, sizeof(EdsTypeName), "%s/%s", EdsAppName, tmpstr);
+        EdsId = EdsLib_DisplayDB_LookupTypeName(&EDS_DATABASE, EdsTypeName);
+    }
+
+    if (!EdsLib_Is_Valid(EdsId) || EdsLib_DataTypeDB_GetTypeInfo(&EDS_DATABASE, EdsId, &TypeInfo) != EDSLIB_SUCCESS)
+    {
+        fprintf(stderr,"Error: Cannot get info for table EDS Type Name \'%s\' (id %x)\n", EdsTypeName, (unsigned int)EdsId);
+        exit(EXIT_FAILURE);
+    }
+
+    printf("--> Using EDS ID 0x%x for \'%s\' data structure, %lu bytes\n",(unsigned int)EdsId,EdsTypeName,(unsigned long)TypeInfo.Size.Bytes);
+
+    if (TypeInfo.Size.Bytes != CFE_TBL_FileDefPtr->ObjectSize)
+    {
+        fprintf(stderr,"Error: Data size mismatch for EDS Type \'%s\' (id %x): %lu(file)/%lu(EDS)\n",
+            EdsTypeName, (unsigned int)EdsId, (unsigned long)TypeInfo.Size.Bytes, (unsigned long)CFE_TBL_FileDefPtr->ObjectSize);
+        exit(EXIT_FAILURE);
+    }
+
+    lua_getglobal(lua, RuntimeAppName);
     if (lua_type(lua, -1) != LUA_TTABLE)
     {
         lua_pop(lua, 1);
         lua_newtable(lua);
         lua_pushvalue(lua, -1);
-        lua_setglobal(lua, AppName);
+        lua_setglobal(lua, RuntimeAppName);
     }
 
     lua_newtable(lua);
     obj_idx = lua_gettop(lua);
     lua_getglobal(lua, "EdsDB");
     lua_getfield(lua, -1, "NewObject");
-    lua_pushstring(lua, CFE_TBL_FileDefPtr->ObjectType);
+
+    lua_pushstring(lua, EdsTypeName);
     lua_pcall(lua, 1, 1, 1);    /* Call "MISSION_New_Object" for the object type */
     EdsLib_LuaBinding_GetNativeObject(lua, -1, &tgtptr, &tgtsize);
     if (tgtsize > 0)
@@ -170,7 +290,7 @@ void LoadTemplateFile(lua_State *lua, const char *Filename)
     lua_pushstring(lua, CFE_TBL_FileDefPtr->TgtFilename);
     lua_setfield(lua, obj_idx, "TgtFilename");  /* Set "TgtFilename" in Table object */
 
-    printf("Loaded Template: %s/%s\n", AppName, TableName);
+    printf("Loaded Template: %s/%s\n", RuntimeAppName, TableName);
     dlclose(dlhandle);
 
     /* Append the Applist table to hold the loaded table template objects */
@@ -242,10 +362,26 @@ int Write_CFE_EnacapsulationFile(lua_State *lua)
     FILE *OutputFile = NULL;
     const char *OutputName = luaL_checkstring(lua, 1);
     EdsLib_DataTypeDB_TypeInfo_t BlockInfo;
+    int lua_top;
+
+    lua_top = lua_gettop(lua);
+    lua_getglobal(lua, "EdsDB");
+    lua_pushstring(lua, "GetMetaData");
+    lua_gettable(lua, -2);
+    lua_pushvalue(lua, lua_top);
+    lua_call(lua, 1, 1);
+    lua_pushstring(lua, "TypeId");
+    lua_gettable(lua, -2);
+    PackedEdsId = luaL_checkinteger(lua, -1);
+    lua_settop(lua, lua_top);
+
+    printf("Generating file using EDS ID: %x\n", (unsigned int)PackedEdsId);
 
     PushEncodedBlob(lua);
 
     memset(&Buffer, 0, sizeof(Buffer));
+    Buffer.TblHeader.EdsAppId = EdsLib_Get_AppIdx(PackedEdsId);
+    Buffer.TblHeader.EdsFormatId = EdsLib_Get_FormatIdx(PackedEdsId);
     Buffer.TblHeader.NumBytes = lua_rawlen(lua, -1);
     strncpy(Buffer.TblHeader.TableName, luaL_checkstring(lua, 3), sizeof(Buffer.TblHeader.TableName));
 

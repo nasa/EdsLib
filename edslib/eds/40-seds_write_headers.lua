@@ -59,34 +59,41 @@ end
 -- -------------------------------------------------
 local function write_c_struct_typedef(output,node)
   local checksum = node.resolved_size.checksum
-  local struct_name = checksum and string.format("struct %s_%s", output.datasheet_name, checksum) or "void"
+  local struct_name = string.format("struct %s", SEDS.to_safe_identifier(node:get_qualified_name()))
+
+  -- this potentially renders create more than one struct with same checksum.
+  -- This just records the first/initial occurrence of this checksum
   if (not output.checksum_table[checksum]) then
     output.checksum_table[checksum] = struct_name
-    -- Note that the XML allows one to specify a container/interface with no members.
-    -- but C language generally frowns upon structs with no members.  So this check is
-    -- in place to avoid generating such code.
-    if (#node.decode_sequence > 0) then
-      output:add_documentation(string.format("Structure definition for %s \'%s\'", node.entity_type, node:get_qualified_name()),
-        "Data definition signature " .. checksum)
-      output:write(string.format("%s /* %s */", struct_name, SEDS.to_safe_identifier(node:get_qualified_name())))
-      output:start_group("{")
-      for idx,ref in ipairs(node.decode_sequence) do
-        local c_name = ref.type:get_flattened_name()
-        if (ref.name and ref.type.max_size) then
-          c_name = c_name .. "_Buffer"
-        end
-        if (ref.entry) then
-          output:add_documentation(ref.entry.attributes.shortdescription, ref.entry.longdescription)
-        end
-        output:write(string.format("%-50s %-30s /* %-3d bits/%-3d bytes */",
-          c_name .. "_t",
-          (ref.name or ref.type.name) .. ";",
-          ref.type.resolved_size.bits,
-          ref.type.resolved_size.bytes))
-      end
-      output:end_group("};")
-    end
   end
+
+  -- Note that the XML allows one to specify a container/interface with no members.
+  -- but C language generally frowns upon structs with no members.  So this check is
+  -- in place to avoid generating such code.
+  if (#node.decode_sequence > 0) then
+    output:add_documentation(string.format("Structure definition for %s \'%s\'", node.entity_type, node:get_qualified_name()),
+      "Data definition signature " .. checksum)
+    output:write(string.format("%s /* checksum=%s */", struct_name, checksum))
+    output:start_group("{")
+    for idx,ref in ipairs(node.decode_sequence) do
+      local c_name = ref.type:get_flattened_name()
+      -- If the entry refers to a base type, then use a buffer instead of a direct instance here,
+      -- but only if the derivatives actually do extend the type (i.e. add fields).
+      if (ref.name and ref.type.max_size and ref.type.max_size.bits > ref.type.resolved_size.bits) then
+        c_name = c_name .. "_Buffer"
+      end
+      if (ref.entry) then
+        output:add_documentation(ref.entry.attributes.shortdescription, ref.entry.longdescription)
+      end
+      output:write(string.format("%-50s %-30s /* %-3d bits/%-3d bytes */",
+        c_name .. "_t",
+        (ref.name or ref.type.name) .. ";",
+        ref.type.resolved_size.bits,
+        ref.type.resolved_size.bytes))
+    end
+    output:end_group("};")
+  end
+
   return { ctype = struct_name }
 end
 
@@ -169,7 +176,7 @@ end
 -- -------------------------------------------------
 local function write_c_enum_typedef(output,node)
   local list = node:find_first("ENUMERATION_LIST")
-  local enum_name = string.format("enum %s_%s", output.datasheet_name, node.resolved_size.checksum)
+  local enum_name = string.format("enum %s", SEDS.to_safe_identifier(node:get_qualified_name()))
   local enum_typedef = node:get_flattened_name() .. "_t"
   local enum_min, enum_max
   if (list) then

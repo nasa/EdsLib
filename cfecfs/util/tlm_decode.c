@@ -1,16 +1,16 @@
 /*
  * LEW-19710-1, CCSDS SOIS Electronic Data Sheet Implementation
- * 
+ *
  * Copyright (c) 2020 United States Government as represented by
  * the Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -39,8 +39,8 @@
 #include <string.h> /* memset() */
 
 #include <cfe_mission_cfg.h>
-#include "ccsds_spacepacket_eds_typedefs.h"
 #include "cfe_sb_eds_typedefs.h"
+#include "cfe_hdr_eds_typedefs.h"
 #include "cfe_mission_eds_parameters.h"
 #include "cfe_mission_eds_interface_parameters.h"
 #include "edslib_displaydb.h"
@@ -48,10 +48,10 @@
 #include "cfe_missionlib_api.h"
 
 
-#define BASE_SERVER_PORT 5021
+#define BASE_SERVER_PORT 1235
 
-CCSDS_SpacePacket_Buffer_t   LocalBuffer;
-uint8_t NetworkBuffer[sizeof(LocalBuffer)];
+CFE_HDR_TelemetryHeader_Buffer_t       LocalBuffer;
+CFE_HDR_TelemetryHeader_PackedBuffer_t NetworkBuffer;
 
 static const char *optString = "c:?";
 
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
         EdsLib_Generate_Hexdump(stdout, NetworkBuffer, 0, n);
     }
 
-    EdsId = EDSLIB_MAKE_ID(EDS_INDEX(CCSDS_SPACEPACKET), CCSDS_TelemetryPacket_DATADICTIONARY);
+    EdsId = EDSLIB_MAKE_ID(EDS_INDEX(CFE_HDR), CFE_HDR_TelemetryHeader_DATADICTIONARY);
     Status = EdsLib_DataTypeDB_GetTypeInfo(&EDS_DATABASE, EdsId, &TypeInfo);
     if (Status != EDSLIB_SUCCESS)
     {
@@ -185,8 +185,8 @@ int main(int argc, char *argv[])
         return Status;
     }
 
-    CFE_SB_Get_PubSub_Parameters(&PubSubParams, &LocalBuffer.BaseObject);
-    CFE_SB_UnmapPublisherComponent(&PublisherParams, &PubSubParams);
+    CFE_MissionLib_Get_PubSub_Parameters(&PubSubParams, &LocalBuffer.BaseObject.Message);
+    CFE_MissionLib_UnmapPublisherComponent(&PublisherParams, &PubSubParams);
 
     Status = CFE_MissionLib_GetArgumentType(&CFE_SOFTWAREBUS_INTERFACE, CFE_SB_Telemetry_Interface_ID,
             PublisherParams.Telemetry.TopicId, 1, 1, &EdsId);

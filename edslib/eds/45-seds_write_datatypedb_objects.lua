@@ -356,12 +356,13 @@ local function write_c_decode_sequence(output, listnode)
   -- Call handlers to get C DB field values for every entry in the decode sequence
   if (not output.checksum_table[checksum]) then
     output.checksum_table[checksum] = objname
+    local c_type_name = SEDS.to_safe_identifier(listnode:get_qualified_name())
 
     for i,ds in ipairs(listnode.decode_sequence) do
       entrylist[i] = do_get_fields({
         write_normal_entry_handler,
         ds.entry and special_entry_handler_table[ds.entry.entity_type]
-      }, nil, output, ds, objname)
+      }, nil, output, ds, c_type_name)
     end
 
     output:write(string.format("static const EdsLib_FieldDetailEntry_t %s[] =", nameext))
@@ -497,7 +498,7 @@ local function write_c_derivative_descriptor(output,basename,node)
   local valuemap = {}
   local valuelist = {}
 
-  if (node.max_size) then
+  if (node.max_size and node.max_size.bits > node.resolved_size.bits) then
     maxbits = node.max_size.bits
     bufobj = "_Buffer_t"
   else
@@ -551,8 +552,9 @@ local function write_c_derivative_descriptor(output,basename,node)
           end
 
           ent.RefObj = entnode[#entnode].type.edslib_refobj_initializer
-          ent.Offset = string.format("{ .Bits = %d, .Bytes = offsetof(struct %s_%s,%s) }",
-              bit, output.datasheet_name, node.resolved_size.checksum, cname)
+          ent.Offset = string.format("{ .Bits = %d, .Bytes = offsetof(struct %s,%s) }",
+              bit, SEDS.to_safe_identifier(node:get_qualified_name()), cname)
+
         end
 
         seq.EntryType = "EDSLIB_IDENT_SEQUENCE_ENTITY_LOCATION"
