@@ -34,7 +34,7 @@
 CFE_Status_t CFE_MSG_GetFcnCode(const CFE_MSG_Message_t *MsgPtr, CFE_MSG_FcnCode_t *FcnCode)
 {
     const CFE_HDR_CommandHeader_t *CmdPtr;
-    const CCSDS_CommonHdr_t *CommonHdr;
+    const CCSDS_CommonHdr_t *      CommonHdr;
 
     if (MsgPtr == NULL || FcnCode == NULL)
     {

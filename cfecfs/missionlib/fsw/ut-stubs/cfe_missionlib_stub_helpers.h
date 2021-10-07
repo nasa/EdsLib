@@ -29,7 +29,8 @@
 #include "utstubs.h"
 #include "utassert.h"
 
-void CFE_MissionLib_Stub_DefaultZeroOutput(UT_EntryKey_t FuncKey, const UT_StubContext_t *Context, void *OutputBuffer, size_t OutputSize);
+void CFE_MissionLib_Stub_DefaultZeroOutput(UT_EntryKey_t FuncKey, const UT_StubContext_t *Context, void *OutputBuffer,
+                                           size_t OutputSize);
 void CFE_MissionLib_Stub_DefaultStringOutput(UT_EntryKey_t FuncKey, const UT_StubContext_t *Context);
 
 #endif /* CFE_MISSIONLIB_STUB_HELPERS_H */

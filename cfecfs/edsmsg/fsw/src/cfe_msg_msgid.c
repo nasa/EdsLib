@@ -41,7 +41,7 @@
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_GetTypeFromMsgId(CFE_SB_MsgId_t MsgId, CFE_MSG_Type_t *Type)
 {
-    CFE_Status_t          Status;
+    CFE_Status_t                          Status;
     CFE_SB_SoftwareBus_PubSub_Interface_t Params;
 
     if (Type == NULL)
@@ -53,17 +53,17 @@ CFE_Status_t CFE_MSG_GetTypeFromMsgId(CFE_SB_MsgId_t MsgId, CFE_MSG_Type_t *Type
         Params.MsgId = MsgId;
         if (CFE_MissionLib_PubSub_IsListenerComponent(&Params))
         {
-            *Type = CFE_MSG_Type_Cmd;
+            *Type  = CFE_MSG_Type_Cmd;
             Status = CFE_SUCCESS;
         }
         else if (CFE_MissionLib_PubSub_IsPublisherComponent(&Params))
         {
-            *Type = CFE_MSG_Type_Tlm;
+            *Type  = CFE_MSG_Type_Tlm;
             Status = CFE_SUCCESS;
         }
         else
         {
-            *Type = CFE_MSG_Type_Invalid;
+            *Type  = CFE_MSG_Type_Invalid;
             Status = CFE_MSG_BAD_ARGUMENT;
         }
     }

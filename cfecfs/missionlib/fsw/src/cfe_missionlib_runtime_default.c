@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     cfe_missionlib_runtime_default.c
  * \ingroup  fsw
@@ -51,8 +50,7 @@
 #include "cfe_mission_eds_parameters.h"
 #include "cfe_missionlib_runtime.h"
 
-
-#define CFE_MISSIONLIB_GETSET_MSGID_BITS(hdr, action, ...) CFE_MissionLib_ ## hdr ## _ ## action (__VA_ARGS__)
+#define CFE_MISSIONLIB_GETSET_MSGID_BITS(hdr, action, ...) CFE_MissionLib_##hdr##_##action(__VA_ARGS__)
 
 #define CFE_MISSIONLIB_GET_MSGID_BITS(hdr, mid, pkt) CFE_MISSIONLIB_GETSET_MSGID_BITS(hdr, BitsToMsgId, mid, pkt)
 #define CFE_MISSIONLIB_SET_MSGID_BITS(hdr, pkt, mid) CFE_MISSIONLIB_GETSET_MSGID_BITS(hdr, BitsFromMsgId, pkt, mid)
@@ -68,32 +66,34 @@
  */
 
 /* Primary header type bits - always used */
-#define CFE_MISSIONLIB_MSGID_TYPE_MASK     0x3     /**< Bit mask to get the CMD/TLM type from MsgId Value */
-#define CFE_MISSIONLIB_MSGID_TYPE_SHIFT    11      /**< Bit shift to get the CMD/TLM type from MsgId Value */
+#define CFE_MISSIONLIB_MSGID_TYPE_MASK  0x3 /**< Bit mask to get the CMD/TLM type from MsgId Value */
+#define CFE_MISSIONLIB_MSGID_TYPE_SHIFT 11  /**< Bit shift to get the CMD/TLM type from MsgId Value */
 
-#define CFE_MISSIONLIB_MSGID_TELECOMMAND_BITS 0x3     /**< Fixed value to set in MsgId for command packets (LSB-justified) */
-#define CFE_MISSIONLIB_MSGID_TELEMETRY_BITS   0x1     /**< Fixed value to set in MsgId for telemetry packets (LSB-justified) */
+#define CFE_MISSIONLIB_MSGID_TELECOMMAND_BITS \
+    0x3 /**< Fixed value to set in MsgId for command packets (LSB-justified) */
+#define CFE_MISSIONLIB_MSGID_TELEMETRY_BITS \
+    0x1 /**< Fixed value to set in MsgId for telemetry packets (LSB-justified) */
 
 /* When using only basic (v1) headers, the TopicID + Subsystem are squeezed into the historical 11-bit field */
 #if CFE_MISSIONLIB_SELECTED_HDRTYPE == CFE_MISSIONLIB_SpacePacketBasic_HEADERS
 
-#define CFE_MISSIONLIB_MSGID_APID_MASK     0x003F  /**< Bit mask to get the APID from MsgId Value */
-#define CFE_MISSIONLIB_MSGID_APID_SHIFT    0       /**< Bit shift to get the APID from MsgId Value */
-#define CFE_MISSIONLIB_MSGID_SUBSYS_MASK   0x001F  /**< Bit mask to get the Subsystem ID from MsgId Value */
-#define CFE_MISSIONLIB_MSGID_SUBSYS_SHIFT  6       /**< Bit shift to get the Subsystem ID from MsgId Value */
-#define CFE_MISSIONLIB_MSGID_SYS_MASK      0       /**< Bit mask to get the System ID from MsgId Value */
-#define CFE_MISSIONLIB_MSGID_SYS_SHIFT     0       /**< Bit shift to get the System ID from MsgId Value */
+#define CFE_MISSIONLIB_MSGID_APID_MASK    0x003F /**< Bit mask to get the APID from MsgId Value */
+#define CFE_MISSIONLIB_MSGID_APID_SHIFT   0      /**< Bit shift to get the APID from MsgId Value */
+#define CFE_MISSIONLIB_MSGID_SUBSYS_MASK  0x001F /**< Bit mask to get the Subsystem ID from MsgId Value */
+#define CFE_MISSIONLIB_MSGID_SUBSYS_SHIFT 6      /**< Bit shift to get the Subsystem ID from MsgId Value */
+#define CFE_MISSIONLIB_MSGID_SYS_MASK     0      /**< Bit mask to get the System ID from MsgId Value */
+#define CFE_MISSIONLIB_MSGID_SYS_SHIFT    0      /**< Bit shift to get the System ID from MsgId Value */
 
 /* When using extended (v2) headers, more of the MsgId bits can be used */
 #elif CFE_MISSIONLIB_SELECTED_HDRTYPE == CFE_MISSIONLIB_SpacePacketApidQ_HEADERS
 
 /* Extended MsgId information - usable when extended headers are enabled, should be all 0 otherwise */
-#define CFE_MISSIONLIB_MSGID_APID_MASK     0x07FF  /**< Bit mask to get the APID from MsgId Value */
-#define CFE_MISSIONLIB_MSGID_APID_SHIFT    0       /**< Bit shift to get the APID from MsgId Value */
-#define CFE_MISSIONLIB_MSGID_SUBSYS_MASK   0x00FF  /**< Bit mask to get the Subsystem ID from MsgId Value */
-#define CFE_MISSIONLIB_MSGID_SUBSYS_SHIFT  16      /**< Bit shift to get the Subsystem ID from MsgId Value */
-#define CFE_MISSIONLIB_MSGID_SYS_MASK      0x007F  /**< Bit mask to get the System ID from MsgId Value */
-#define CFE_MISSIONLIB_MSGID_SYS_SHIFT     24      /**< Bit shift to get the System ID from MsgId Value */
+#define CFE_MISSIONLIB_MSGID_APID_MASK    0x07FF /**< Bit mask to get the APID from MsgId Value */
+#define CFE_MISSIONLIB_MSGID_APID_SHIFT   0      /**< Bit shift to get the APID from MsgId Value */
+#define CFE_MISSIONLIB_MSGID_SUBSYS_MASK  0x00FF /**< Bit mask to get the Subsystem ID from MsgId Value */
+#define CFE_MISSIONLIB_MSGID_SUBSYS_SHIFT 16     /**< Bit shift to get the Subsystem ID from MsgId Value */
+#define CFE_MISSIONLIB_MSGID_SYS_MASK     0x007F /**< Bit mask to get the System ID from MsgId Value */
+#define CFE_MISSIONLIB_MSGID_SYS_SHIFT    24     /**< Bit shift to get the System ID from MsgId Value */
 
 #else
 
@@ -150,7 +150,8 @@ static inline void CFE_MissionLib_SetMsgIdInterfaceType(CFE_SB_MsgId_t *MsgId, u
  * is not required to pack the bits this way, but the shifts/masks used above
  * will produce a MsgId bit pattern comparable to existing versions of CFE.
  */
-static inline void CFE_MissionLib_SpacePacketBasic_BitsToMsgId(CFE_SB_MsgId_t *MsgId, const CCSDS_SpacePacketBasic_t *Packet)
+static inline void CFE_MissionLib_SpacePacketBasic_BitsToMsgId(CFE_SB_MsgId_t *                MsgId,
+                                                               const CCSDS_SpacePacketBasic_t *Packet)
 {
     CFE_SB_MsgId_t ApidPart;
 
@@ -160,7 +161,8 @@ static inline void CFE_MissionLib_SpacePacketBasic_BitsToMsgId(CFE_SB_MsgId_t *M
     CFE_MissionLib_SetMsgIdInterfaceType(MsgId, Packet->CommonHdr.SecHdrFlags);
 }
 
-static inline void CFE_MissionLib_SpacePacketBasic_BitsFromMsgId(CCSDS_SpacePacketBasic_t *Packet, const CFE_SB_MsgId_t *MsgId)
+static inline void CFE_MissionLib_SpacePacketBasic_BitsFromMsgId(CCSDS_SpacePacketBasic_t *Packet,
+                                                                 const CFE_SB_MsgId_t *    MsgId)
 {
     CFE_SB_MsgId_t ApidPart;
 
@@ -168,13 +170,14 @@ static inline void CFE_MissionLib_SpacePacketBasic_BitsFromMsgId(CCSDS_SpacePack
     CFE_MissionLib_SetMsgIdApid(&ApidPart, CFE_MissionLib_GetMsgIdApid(MsgId));
     CFE_MissionLib_SetMsgIdSubsystem(&ApidPart, CFE_MissionLib_GetMsgIdSubsystem(MsgId));
 
-    Packet->CommonHdr.VersionId = 0;
-    Packet->CommonHdr.AppId = ApidPart.Value;
+    Packet->CommonHdr.VersionId   = 0;
+    Packet->CommonHdr.AppId       = ApidPart.Value;
     Packet->CommonHdr.SecHdrFlags = CFE_MissionLib_GetMsgIdInterfaceType(MsgId);
 }
 
 /* The following translations apply only for V2 (ApidQ) headers */
-static inline void CFE_MissionLib_SpacePacketApidQ_BitsToMsgId(CFE_SB_MsgId_t *MsgId, const CCSDS_SpacePacketApidQ_t *Packet)
+static inline void CFE_MissionLib_SpacePacketApidQ_BitsToMsgId(CFE_SB_MsgId_t *                MsgId,
+                                                               const CCSDS_SpacePacketApidQ_t *Packet)
 {
     CFE_MissionLib_SetMsgIdApid(MsgId, Packet->CommonHdr.AppId);
     CFE_MissionLib_SetMsgIdInterfaceType(MsgId, Packet->CommonHdr.SecHdrFlags);
@@ -182,32 +185,24 @@ static inline void CFE_MissionLib_SpacePacketApidQ_BitsToMsgId(CFE_SB_MsgId_t *M
     CFE_MissionLib_SetMsgIdSubsystem(MsgId, Packet->ApidQ.SubsystemId);
 }
 
-static inline void CFE_MissionLib_SpacePacketApidQ_BitsFromMsgId(CCSDS_SpacePacketApidQ_t *Packet, const CFE_SB_MsgId_t *MsgId)
+static inline void CFE_MissionLib_SpacePacketApidQ_BitsFromMsgId(CCSDS_SpacePacketApidQ_t *Packet,
+                                                                 const CFE_SB_MsgId_t *    MsgId)
 {
-    Packet->CommonHdr.VersionId = 1;
-    Packet->CommonHdr.AppId = CFE_MissionLib_GetMsgIdApid(MsgId);
+    Packet->CommonHdr.VersionId   = 1;
+    Packet->CommonHdr.AppId       = CFE_MissionLib_GetMsgIdApid(MsgId);
     Packet->CommonHdr.SecHdrFlags = CFE_MissionLib_GetMsgIdInterfaceType(MsgId);
-    Packet->ApidQ.SystemId = CFE_MissionLib_GetMsgIdSystem(MsgId);
-    Packet->ApidQ.SubsystemId = CFE_MissionLib_GetMsgIdSubsystem(MsgId);
+    Packet->ApidQ.SystemId        = CFE_MissionLib_GetMsgIdSystem(MsgId);
+    Packet->ApidQ.SubsystemId     = CFE_MissionLib_GetMsgIdSubsystem(MsgId);
 }
 
-#ifdef jphfix
-/*
- * This is a configuration error.  The only base types currently supported by this implementation
- * are "SpacePacketBasic" and "SpacePacketApidQ".  The configuration can either be corrected, or
- * support for the other header type must be added.
- */
-#error "MsgId Mappings not defined for this header style"
-#endif
-
-
-void CFE_MissionLib_MapListenerComponent(CFE_SB_SoftwareBus_PubSub_Interface_t *Output, const CFE_SB_Listener_Component_t *Input)
+void CFE_MissionLib_MapListenerComponent(CFE_SB_SoftwareBus_PubSub_Interface_t *Output,
+                                         const CFE_SB_Listener_Component_t *    Input)
 {
     memset(Output, 0, sizeof(*Output));
 
-    if (Input->Telecommand.InstanceNumber <=  CFE_MISSIONLIB_MSGID_SUBSYS_MASK &&
-            Input->Telecommand.TopicId >= CFE_MISSION_TELECOMMAND_BASE_TOPICID &&
-            Input->Telecommand.TopicId < CFE_MISSION_TELECOMMAND_MAX_TOPICID)
+    if (Input->Telecommand.InstanceNumber <= CFE_MISSIONLIB_MSGID_SUBSYS_MASK &&
+        Input->Telecommand.TopicId >= CFE_MISSION_TELECOMMAND_BASE_TOPICID &&
+        Input->Telecommand.TopicId < CFE_MISSION_TELECOMMAND_MAX_TOPICID)
     {
         CFE_MissionLib_SetMsgIdInterfaceType(&Output->MsgId, CFE_MISSIONLIB_MSGID_TELECOMMAND_BITS);
         CFE_MissionLib_SetMsgIdApid(&Output->MsgId, Input->Telecommand.TopicId - CFE_MISSION_TELECOMMAND_BASE_TOPICID);
@@ -215,7 +210,8 @@ void CFE_MissionLib_MapListenerComponent(CFE_SB_SoftwareBus_PubSub_Interface_t *
     }
 }
 
-void CFE_MissionLib_UnmapListenerComponent(CFE_SB_Listener_Component_t *Output, const CFE_SB_SoftwareBus_PubSub_Interface_t *Input)
+void CFE_MissionLib_UnmapListenerComponent(CFE_SB_Listener_Component_t *                Output,
+                                           const CFE_SB_SoftwareBus_PubSub_Interface_t *Input)
 {
     memset(Output, 0, sizeof(*Output));
 
@@ -231,13 +227,14 @@ bool CFE_MissionLib_PubSub_IsListenerComponent(const CFE_SB_SoftwareBus_PubSub_I
     return (CFE_MissionLib_GetMsgIdInterfaceType(&Params->MsgId) == CFE_MISSIONLIB_MSGID_TELECOMMAND_BITS);
 }
 
-void CFE_MissionLib_MapPublisherComponent(CFE_SB_SoftwareBus_PubSub_Interface_t *Output, const CFE_SB_Publisher_Component_t *Input)
+void CFE_MissionLib_MapPublisherComponent(CFE_SB_SoftwareBus_PubSub_Interface_t *Output,
+                                          const CFE_SB_Publisher_Component_t *   Input)
 {
     memset(Output, 0, sizeof(*Output));
 
-    if (Input->Telemetry.InstanceNumber <=  CFE_MISSIONLIB_MSGID_SUBSYS_MASK &&
-            Input->Telemetry.TopicId >= CFE_MISSION_TELEMETRY_BASE_TOPICID &&
-            Input->Telemetry.TopicId < CFE_MISSION_TELEMETRY_MAX_TOPICID)
+    if (Input->Telemetry.InstanceNumber <= CFE_MISSIONLIB_MSGID_SUBSYS_MASK &&
+        Input->Telemetry.TopicId >= CFE_MISSION_TELEMETRY_BASE_TOPICID &&
+        Input->Telemetry.TopicId < CFE_MISSION_TELEMETRY_MAX_TOPICID)
     {
         CFE_MissionLib_SetMsgIdInterfaceType(&Output->MsgId, CFE_MISSIONLIB_MSGID_TELEMETRY_BITS);
         CFE_MissionLib_SetMsgIdApid(&Output->MsgId, Input->Telemetry.TopicId - CFE_MISSION_TELEMETRY_BASE_TOPICID);
@@ -245,7 +242,8 @@ void CFE_MissionLib_MapPublisherComponent(CFE_SB_SoftwareBus_PubSub_Interface_t 
     }
 }
 
-void CFE_MissionLib_UnmapPublisherComponent(CFE_SB_Publisher_Component_t *Output, const CFE_SB_SoftwareBus_PubSub_Interface_t *Input)
+void CFE_MissionLib_UnmapPublisherComponent(CFE_SB_Publisher_Component_t *               Output,
+                                            const CFE_SB_SoftwareBus_PubSub_Interface_t *Input)
 {
     memset(Output, 0, sizeof(*Output));
 
@@ -261,138 +259,15 @@ bool CFE_MissionLib_PubSub_IsPublisherComponent(const CFE_SB_SoftwareBus_PubSub_
     return (CFE_MissionLib_GetMsgIdInterfaceType(&Params->MsgId) == CFE_MISSIONLIB_MSGID_TELEMETRY_BITS);
 }
 
-void CFE_MissionLib_Get_PubSub_Parameters(CFE_SB_SoftwareBus_PubSub_Interface_t *Params, const CFE_HDR_Message_t *Packet)
+void CFE_MissionLib_Get_PubSub_Parameters(CFE_SB_SoftwareBus_PubSub_Interface_t *Params,
+                                          const CFE_HDR_Message_t *              Packet)
 {
     memset(Params, 0, sizeof(*Params));
     CFE_MISSIONLIB_GET_MSGID_BITS(CFE_MISSION_MSG_HEADER_TYPE, &Params->MsgId, &Packet->CCSDS);
 }
 
-void CFE_MissionLib_Set_PubSub_Parameters(CFE_HDR_Message_t *Packet, const CFE_SB_SoftwareBus_PubSub_Interface_t *Params)
+void CFE_MissionLib_Set_PubSub_Parameters(CFE_HDR_Message_t *                          Packet,
+                                          const CFE_SB_SoftwareBus_PubSub_Interface_t *Params)
 {
     CFE_MISSIONLIB_SET_MSGID_BITS(CFE_MISSION_MSG_HEADER_TYPE, &Packet->CCSDS, &Params->MsgId);
 }
-
-#ifdef jphfix
-/*----------------------------------------------------------------
- *
- * Function: CFE_MSG_GetTypeFromMsgId
- *
- * Implemented per public API
- * See description in header file for argument/return detail
- *
- *-----------------------------------------------------------------*/
-CFE_Status_t CFE_MSG_GetTypeFromMsgId(CFE_SB_MsgId_t MsgId, CFE_MSG_Type_t *Type)
-{
-    CFE_SB_MsgIdValue_Atom_t Value;
-
-    if (Type == NULL)
-    {
-        return CFE_MSG_BAD_ARGUMENT;
-    }
-
-    Value = CFE_SB_MsgIdToValue(MsgId);
-
-    /* determine if cmd/tlm from base msgid bits */
-    switch ((Value >> CFE_MISSIONLIB_MSGID_TYPE_SHIFT) & CFE_MISSIONLIB_MSGID_TYPE_MASK)
-    {
-        case CFE_MISSIONLIB_MSGID_TLM_BITS:
-            *Type = CFE_MSG_Type_Tlm;
-            break;
-        case CFE_MISSIONLIB_MSGID_CMD_BITS:
-            *Type = CFE_MSG_Type_Cmd;
-            break;
-        default:
-            *Type = CFE_MSG_Type_Invalid;
-            break;
-    }
-
-    return CFE_SUCCESS;
-}
-
-CFE_Status_t CFE_MSG_GetMsgId(const CFE_MSG_Message_t *MsgPtr, CFE_SB_MsgId_t *MsgId)
-{
-    CFE_SB_MsgIdValue_Atom_t Value;
-    CFE_Status_t Status;
-
-    if (MsgPtr == NULL || MsgId == NULL)
-    {
-        return CFE_MSG_BAD_ARGUMENT;
-    }
-
-    Status = CFE_SUCCESS;
-    Value = 0;
-
-    /* determine if cmd/tlm and set base msgid bits */
-    switch (MsgPtr->Meta.Type)
-    {
-        case CFE_MSG_Type_Tlm:
-            Value |= CFE_MISSIONLIB_MSGID_TLM_BITS << CFE_MISSIONLIB_MSGID_TYPE_SHIFT;
-            break;
-        case CFE_MSG_Type_Cmd:
-            Value |= CFE_MISSIONLIB_MSGID_CMD_BITS << CFE_MISSIONLIB_MSGID_TYPE_SHIFT;
-            break;
-        default:
-            /* this can happen if e.g. an uninitialized msg is passed in */
-            Status = CFE_MSG_BAD_ARGUMENT;
-            break;
-    }
-
-    /* fill in all other bit fields if successful */
-    if (Status == CFE_SUCCESS)
-    {
-        if (CFE_MISSIONLIB_MSGID_SHDR_MASK != 0 && MsgPtr->Meta.HasSecondary)
-        {
-            Value |= CFE_MISSIONLIB_MSGID_SHDR_MASK << CFE_MISSIONLIB_MSGID_SHDR_SHIFT;
-        }
-
-        Value |= (MsgPtr->Meta.ApId & CFE_MISSIONLIB_MSGID_APID_MASK) << CFE_MISSIONLIB_MSGID_APID_SHIFT;
-        Value |= (MsgPtr->Meta.Subsystem & CFE_MISSIONLIB_MSGID_SUBSYS_MASK) << CFE_MISSIONLIB_MSGID_SUBSYS_SHIFT;
-        Value |= (MsgPtr->Meta.System & CFE_MISSIONLIB_MSGID_SYS_MASK) << CFE_MISSIONLIB_MSGID_SYS_SHIFT;
-    }
-
-    *MsgId = CFE_SB_ValueToMsgId(Value);
-
-    return Status;
-}
-
-CFE_Status_t CFE_MSG_SetMsgId(CFE_MSG_Message_t *MsgPtr, CFE_SB_MsgId_t MsgId)
-{
-    CFE_SB_MsgIdValue_Atom_t Value;
-    CFE_MSG_Type_t IdType;
-    CFE_Status_t Status;
-
-    if (MsgPtr == NULL)
-    {
-        return CFE_MSG_BAD_ARGUMENT;
-    }
-
-    /* determine if cmd/tlm from base msgid bits */
-    Status = CFE_MSG_GetTypeFromMsgId(MsgId, &IdType);
-
-    /* extract all other bit fields if successful */
-    if (Status == CFE_SUCCESS && IdType != CFE_MSG_Type_Invalid)
-    {
-        Value = CFE_SB_MsgIdToValue(MsgId);
-
-        MsgPtr->Meta.Type = IdType; /* note this may change the interpretation of secondary header fields */
-
-        /* Secondary should always be present for CFE SB use, but CCSDS does not require it */
-        if (CFE_MISSIONLIB_MSGID_SHDR_MASK == 0)
-        {
-            /* No bit in MsgId for sechdr presence; assume always present */
-            MsgPtr->Meta.HasSecondary = true;
-        }
-        else
-        {
-            MsgPtr->Meta.HasSecondary = (Value >> CFE_MISSIONLIB_MSGID_SHDR_SHIFT) & CFE_MISSIONLIB_MSGID_SHDR_MASK;
-        }
-
-
-        MsgPtr->Meta.ApId = (Value >> CFE_MISSIONLIB_MSGID_APID_SHIFT) & CFE_MISSIONLIB_MSGID_APID_MASK;
-        MsgPtr->Meta.Subsystem = (Value >> CFE_MISSIONLIB_MSGID_SUBSYS_SHIFT) & CFE_MISSIONLIB_MSGID_SUBSYS_MASK;
-        MsgPtr->Meta.System = (Value >> CFE_MISSIONLIB_MSGID_SYS_SHIFT) & CFE_MISSIONLIB_MSGID_SYS_MASK;
-    }
-
-    return Status;
-}
-#endif

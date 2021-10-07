@@ -32,7 +32,7 @@
 CFE_Status_t CFE_MSG_SetMsgTime(CFE_MSG_Message_t *MsgPtr, CFE_TIME_SysTime_t NewTime)
 {
     CFE_HDR_TelemetryHeader_t *TlmPtr;
-    const CCSDS_CommonHdr_t *CommonHdr;
+    const CCSDS_CommonHdr_t *  CommonHdr;
 
     if (MsgPtr == NULL)
     {
@@ -75,7 +75,7 @@ CFE_Status_t CFE_MSG_SetMsgTime(CFE_MSG_Message_t *MsgPtr, CFE_TIME_SysTime_t Ne
 CFE_Status_t CFE_MSG_GetMsgTime(const CFE_MSG_Message_t *MsgPtr, CFE_TIME_SysTime_t *Time)
 {
     const CFE_HDR_TelemetryHeader_t *TlmPtr;
-    const CCSDS_CommonHdr_t *CommonHdr;
+    const CCSDS_CommonHdr_t *        CommonHdr;
 
     if (MsgPtr == NULL || Time == NULL)
     {

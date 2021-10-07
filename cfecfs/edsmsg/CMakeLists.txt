@@ -21,6 +21,8 @@ add_library(${DEP} STATIC
 
     fsw/src/cfe_msg_sechdr_cmd.c
     fsw/src/cfe_msg_sechdr_tlm.c
+
+    fsw/src/cfe_msg_dispatcher.c
 )
 
 target_include_directories(${DEP} PUBLIC fsw/inc)

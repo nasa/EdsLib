@@ -27,7 +27,6 @@
 #include "cfe_msg.h"
 #include "cfe_missionlib_runtime.h"
 
-
 /*----------------------------------------------------------------
  *
  * Function: CFE_MSG_Init
@@ -39,7 +38,7 @@
 CFE_Status_t CFE_MSG_Init(CFE_MSG_Message_t *MsgPtr, CFE_SB_MsgId_t MsgId, CFE_MSG_Size_t Size)
 {
     CCSDS_CommonHdr_t *CommonHdr;
-    CFE_Status_t Status;
+    CFE_Status_t       Status;
 
     if (MsgPtr == NULL || Size < sizeof(CCSDS_CommonHdr_t))
     {
