@@ -83,12 +83,12 @@ union CFE_MSG_Message
     /**
      * EDS-defined base message structure
      */
-    CFE_HDR_Message_t    BaseMsg;
+    CFE_HDR_Message_t BaseMsg;
 
     /**
      * \brief Byte level access
      */
-    uint8                Byte[sizeof(CFE_HDR_Message_t)];
+    uint8 Byte[sizeof(CFE_HDR_Message_t)];
 };
 
 /**
@@ -129,6 +129,5 @@ static inline CFE_MSG_Message_t *CFE_MSG_CastBaseMsg(void *BaseMsg)
      */
     return ((CFE_MSG_Message_t *)BaseMsg);
 }
-
 
 #endif /* CFE_MSG_HDR_EDS_H */

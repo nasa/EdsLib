@@ -1,23 +1,22 @@
 /*
  * LEW-19710-1, CCSDS SOIS Electronic Data Sheet Implementation
- * 
+ *
  * Copyright (c) 2020 United States Government as represented by
  * the Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 
 /**
  * \file     cfe_missionlib_api.c
@@ -55,7 +54,8 @@
  * ***********************************************************************
  */
 
-static const CFE_MissionLib_InterfaceId_Entry_t *CFE_MissionLib_Lookup_SubIntf(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType)
+static const CFE_MissionLib_InterfaceId_Entry_t *
+CFE_MissionLib_Lookup_SubIntf(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType)
 {
     if (InterfaceType == 0 || InterfaceType > Intf->NumInterfaces)
     {
@@ -65,7 +65,8 @@ static const CFE_MissionLib_InterfaceId_Entry_t *CFE_MissionLib_Lookup_SubIntf(c
     return &Intf->InterfaceList[InterfaceType - 1];
 }
 
-static const CFE_MissionLib_TopicId_Entry_t *CFE_MissionLib_Lookup_Topic(const CFE_MissionLib_InterfaceId_Entry_t *IntfPtr, uint16_t TopicId)
+static const CFE_MissionLib_TopicId_Entry_t *
+CFE_MissionLib_Lookup_Topic(const CFE_MissionLib_InterfaceId_Entry_t *IntfPtr, uint16_t TopicId)
 {
     if (IntfPtr == NULL || TopicId == 0 || TopicId > IntfPtr->NumTopics)
     {
@@ -75,7 +76,8 @@ static const CFE_MissionLib_TopicId_Entry_t *CFE_MissionLib_Lookup_Topic(const C
     return &IntfPtr->TopicList[TopicId - 1];
 }
 
-static const CFE_MissionLib_Command_Prototype_Entry_t *CFE_MissionLib_Lookup_Command_Prototype(const CFE_MissionLib_InterfaceId_Entry_t *IntfPtr, uint16_t IndicationId)
+static const CFE_MissionLib_Command_Prototype_Entry_t *
+CFE_MissionLib_Lookup_Command_Prototype(const CFE_MissionLib_InterfaceId_Entry_t *IntfPtr, uint16_t IndicationId)
 {
     if (IntfPtr == NULL || IndicationId == 0 || IndicationId > IntfPtr->NumCommands)
     {
@@ -85,7 +87,9 @@ static const CFE_MissionLib_Command_Prototype_Entry_t *CFE_MissionLib_Lookup_Com
     return &IntfPtr->CommandList[IndicationId - 1];
 }
 
-static const CFE_MissionLib_Command_Definition_Entry_t *CFE_MissionLib_Lookup_Command_Definition(const CFE_MissionLib_InterfaceId_Entry_t *IntfPtr, const CFE_MissionLib_TopicId_Entry_t *TopicPtr, uint16_t IndicationId)
+static const CFE_MissionLib_Command_Definition_Entry_t *
+CFE_MissionLib_Lookup_Command_Definition(const CFE_MissionLib_InterfaceId_Entry_t *IntfPtr,
+                                         const CFE_MissionLib_TopicId_Entry_t *TopicPtr, uint16_t IndicationId)
 {
     if (IntfPtr == NULL || TopicPtr == NULL || IndicationId == 0 || IndicationId > IntfPtr->NumCommands)
     {
@@ -95,7 +99,10 @@ static const CFE_MissionLib_Command_Definition_Entry_t *CFE_MissionLib_Lookup_Co
     return &TopicPtr->CommandList[IndicationId - 1];
 }
 
-static const CFE_MissionLib_Argument_Entry_t *CFE_MissionLib_Lookup_Command_Argument(const CFE_MissionLib_Command_Definition_Entry_t *CmdPtr, const CFE_MissionLib_Command_Prototype_Entry_t *PrototypePtr, uint16_t ArgumentId)
+static const CFE_MissionLib_Argument_Entry_t *
+CFE_MissionLib_Lookup_Command_Argument(const CFE_MissionLib_Command_Definition_Entry_t *CmdPtr,
+                                       const CFE_MissionLib_Command_Prototype_Entry_t * PrototypePtr,
+                                       uint16_t                                         ArgumentId)
 {
     if (CmdPtr == NULL || PrototypePtr == NULL || ArgumentId == 0 || ArgumentId > PrototypePtr->NumArguments)
     {
@@ -105,7 +112,8 @@ static const CFE_MissionLib_Argument_Entry_t *CFE_MissionLib_Lookup_Command_Argu
     return &CmdPtr->ArgumentList[ArgumentId - 1];
 }
 
-static const CFE_MissionLib_Subcommand_Entry_t *CFE_MissionLib_Lookup_Subcommand(const CFE_MissionLib_Command_Definition_Entry_t *CmdPtr, uint16_t SubcommandId)
+static const CFE_MissionLib_Subcommand_Entry_t *
+CFE_MissionLib_Lookup_Subcommand(const CFE_MissionLib_Command_Definition_Entry_t *CmdPtr, uint16_t SubcommandId)
 {
     if (CmdPtr == NULL || SubcommandId == 0 || SubcommandId > CmdPtr->SubcommandCount)
     {
@@ -115,17 +123,17 @@ static const CFE_MissionLib_Subcommand_Entry_t *CFE_MissionLib_Lookup_Subcommand
     return &CmdPtr->SubcommandList[SubcommandId - 1];
 }
 
-
 /*
  * ***********************************************************************
  *  PUBLIC API FUNCTIONS (non-static)
  * ***********************************************************************
  */
 
-int32_t CFE_MissionLib_GetTopicInfo(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType, uint16_t TopicId, CFE_MissionLib_TopicInfo_t *TopicInfo)
+int32_t CFE_MissionLib_GetTopicInfo(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType,
+                                    uint16_t TopicId, CFE_MissionLib_TopicInfo_t *TopicInfo)
 {
     const CFE_MissionLib_InterfaceId_Entry_t *IntfPtr;
-    const CFE_MissionLib_TopicId_Entry_t *TopicPtr;
+    const CFE_MissionLib_TopicId_Entry_t *    TopicPtr;
 
     IntfPtr = CFE_MissionLib_Lookup_SubIntf(Intf, InterfaceType);
     if (IntfPtr == NULL)
@@ -144,17 +152,19 @@ int32_t CFE_MissionLib_GetTopicInfo(const CFE_MissionLib_SoftwareBus_Interface_t
         return CFE_MISSIONLIB_INVALID_INTERFACE;
     }
 
-    TopicInfo->DispatchTableId = TopicPtr->DispatchTableId;
+    TopicInfo->DispatchTableId     = TopicPtr->DispatchTableId;
     TopicInfo->DispatchStartOffset = TopicPtr->DispatchStartOffset;
 
     return CFE_MISSIONLIB_SUCCESS;
 }
 
-int32_t CFE_MissionLib_GetIndicationInfo(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType, uint16_t TopicId, uint16_t IndicationId, CFE_MissionLib_IndicationInfo_t *IndInfo)
+int32_t CFE_MissionLib_GetIndicationInfo(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType,
+                                         uint16_t TopicId, uint16_t IndicationId,
+                                         CFE_MissionLib_IndicationInfo_t *IndInfo)
 {
-    const CFE_MissionLib_InterfaceId_Entry_t *IntfPtr;
-    const CFE_MissionLib_TopicId_Entry_t *TopicPtr;
-    const CFE_MissionLib_Command_Prototype_Entry_t *CmdProtoPtr;
+    const CFE_MissionLib_InterfaceId_Entry_t *       IntfPtr;
+    const CFE_MissionLib_TopicId_Entry_t *           TopicPtr;
+    const CFE_MissionLib_Command_Prototype_Entry_t * CmdProtoPtr;
     const CFE_MissionLib_Command_Definition_Entry_t *CmdDefPtr;
 
     IntfPtr = CFE_MissionLib_Lookup_SubIntf(Intf, InterfaceType);
@@ -175,27 +185,28 @@ int32_t CFE_MissionLib_GetIndicationInfo(const CFE_MissionLib_SoftwareBus_Interf
     }
 
     CmdProtoPtr = CFE_MissionLib_Lookup_Command_Prototype(IntfPtr, IndicationId);
-    CmdDefPtr = CFE_MissionLib_Lookup_Command_Definition(IntfPtr, TopicPtr, IndicationId);
+    CmdDefPtr   = CFE_MissionLib_Lookup_Command_Definition(IntfPtr, TopicPtr, IndicationId);
     if (CmdProtoPtr == NULL || CmdDefPtr == NULL)
     {
         return CFE_MISSIONLIB_INVALID_INDICATION;
     }
 
     memset(IndInfo, 0, sizeof(*IndInfo));
-    IndInfo->NumArguments = CmdProtoPtr->NumArguments;
-    IndInfo->NumSubcommands = CmdDefPtr->SubcommandCount;
+    IndInfo->NumArguments         = CmdProtoPtr->NumArguments;
+    IndInfo->NumSubcommands       = CmdDefPtr->SubcommandCount;
     IndInfo->SubcommandArgumentId = CmdDefPtr->SubcommandArg;
 
     return CFE_MISSIONLIB_SUCCESS;
 }
 
-int32_t CFE_MissionLib_GetArgumentType(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType, uint16_t TopicId, uint16_t IndicationId, uint16_t ArgumentId, EdsLib_Id_t *Id)
+int32_t CFE_MissionLib_GetArgumentType(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType,
+                                       uint16_t TopicId, uint16_t IndicationId, uint16_t ArgumentId, EdsLib_Id_t *Id)
 {
-    const CFE_MissionLib_InterfaceId_Entry_t *IntfPtr;
-    const CFE_MissionLib_TopicId_Entry_t *TopicPtr;
-    const CFE_MissionLib_Command_Prototype_Entry_t *CmdProtoPtr;
+    const CFE_MissionLib_InterfaceId_Entry_t *       IntfPtr;
+    const CFE_MissionLib_TopicId_Entry_t *           TopicPtr;
+    const CFE_MissionLib_Command_Prototype_Entry_t * CmdProtoPtr;
     const CFE_MissionLib_Command_Definition_Entry_t *CmdDefPtr;
-    const CFE_MissionLib_Argument_Entry_t *ArgPtr;
+    const CFE_MissionLib_Argument_Entry_t *          ArgPtr;
 
     IntfPtr = CFE_MissionLib_Lookup_SubIntf(Intf, InterfaceType);
     if (IntfPtr == NULL)
@@ -215,7 +226,7 @@ int32_t CFE_MissionLib_GetArgumentType(const CFE_MissionLib_SoftwareBus_Interfac
     }
 
     CmdProtoPtr = CFE_MissionLib_Lookup_Command_Prototype(IntfPtr, IndicationId);
-    CmdDefPtr = CFE_MissionLib_Lookup_Command_Definition(IntfPtr, TopicPtr, IndicationId);
+    CmdDefPtr   = CFE_MissionLib_Lookup_Command_Definition(IntfPtr, TopicPtr, IndicationId);
     if (CmdProtoPtr == NULL || CmdDefPtr == NULL)
     {
         return CFE_MISSIONLIB_INVALID_INDICATION;
@@ -227,12 +238,13 @@ int32_t CFE_MissionLib_GetArgumentType(const CFE_MissionLib_SoftwareBus_Interfac
         return CFE_MISSIONLIB_INVALID_ARGUMENT;
     }
 
-    *Id = EDSLIB_MAKE_ID(ArgPtr->AppIndex,ArgPtr->TypeIndex);
+    *Id = EDSLIB_MAKE_ID(ArgPtr->AppIndex, ArgPtr->TypeIndex);
 
     return CFE_MISSIONLIB_SUCCESS;
 }
 
-int32_t CFE_MissionLib_GetInterfaceInfo(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceId, CFE_MissionLib_InterfaceInfo_t *IntfInfo)
+int32_t CFE_MissionLib_GetInterfaceInfo(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceId,
+                                        CFE_MissionLib_InterfaceInfo_t *IntfInfo)
 {
     int32_t Status;
 
@@ -242,21 +254,23 @@ int32_t CFE_MissionLib_GetInterfaceInfo(const CFE_MissionLib_SoftwareBus_Interfa
     }
     else
     {
-        Status = CFE_MISSIONLIB_SUCCESS;
-        IntfInfo->NumCommands = Intf->InterfaceList[InterfaceId-1].NumCommands;
-        IntfInfo->NumTopics = Intf->InterfaceList[InterfaceId-1].NumTopics;
+        Status                = CFE_MISSIONLIB_SUCCESS;
+        IntfInfo->NumCommands = Intf->InterfaceList[InterfaceId - 1].NumCommands;
+        IntfInfo->NumTopics   = Intf->InterfaceList[InterfaceId - 1].NumTopics;
     }
 
     return Status;
 }
 
-int32_t CFE_MissionLib_GetSubcommandOffset(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType, uint16_t TopicId, uint16_t IndicationId, uint16_t SubcommandId, uint16_t *Offset)
+int32_t CFE_MissionLib_GetSubcommandOffset(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType,
+                                           uint16_t TopicId, uint16_t IndicationId, uint16_t SubcommandId,
+                                           uint16_t *Offset)
 {
-    const CFE_MissionLib_InterfaceId_Entry_t *IntfPtr;
-    const CFE_MissionLib_TopicId_Entry_t *TopicPtr;
-    const CFE_MissionLib_Command_Prototype_Entry_t *CmdProtoPtr;
+    const CFE_MissionLib_InterfaceId_Entry_t *       IntfPtr;
+    const CFE_MissionLib_TopicId_Entry_t *           TopicPtr;
+    const CFE_MissionLib_Command_Prototype_Entry_t * CmdProtoPtr;
     const CFE_MissionLib_Command_Definition_Entry_t *CmdDefPtr;
-    const CFE_MissionLib_Subcommand_Entry_t *SubCmdPtr;
+    const CFE_MissionLib_Subcommand_Entry_t *        SubCmdPtr;
 
     IntfPtr = CFE_MissionLib_Lookup_SubIntf(Intf, InterfaceType);
     if (IntfPtr == NULL)
@@ -276,7 +290,7 @@ int32_t CFE_MissionLib_GetSubcommandOffset(const CFE_MissionLib_SoftwareBus_Inte
     }
 
     CmdProtoPtr = CFE_MissionLib_Lookup_Command_Prototype(IntfPtr, IndicationId);
-    CmdDefPtr = CFE_MissionLib_Lookup_Command_Definition(IntfPtr, TopicPtr, IndicationId);
+    CmdDefPtr   = CFE_MissionLib_Lookup_Command_Definition(IntfPtr, TopicPtr, IndicationId);
     if (CmdProtoPtr == NULL || CmdDefPtr == NULL)
     {
         return CFE_MISSIONLIB_INVALID_INDICATION;
@@ -293,16 +307,17 @@ int32_t CFE_MissionLib_GetSubcommandOffset(const CFE_MissionLib_SoftwareBus_Inte
     return CFE_MISSIONLIB_SUCCESS;
 }
 
-int32_t CFE_MissionLib_FindInterfaceByName(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, const char *IntfName, uint16_t *InterfaceIdBuffer)
+int32_t CFE_MissionLib_FindInterfaceByName(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, const char *IntfName,
+                                           uint16_t *InterfaceIdBuffer)
 {
     uint16_t InterfaceId;
-    int32_t Status = CFE_MISSIONLIB_INVALID_INTERFACE;
+    int32_t  Status = CFE_MISSIONLIB_INVALID_INTERFACE;
 
     for (InterfaceId = 0; InterfaceId < Intf->NumInterfaces; ++InterfaceId)
     {
         if (strcmp(Intf->InterfaceList[InterfaceId].InterfaceName, IntfName) == 0)
         {
-            Status = CFE_MISSIONLIB_SUCCESS;
+            Status             = CFE_MISSIONLIB_SUCCESS;
             *InterfaceIdBuffer = 1 + InterfaceId;
             break;
         }
@@ -311,12 +326,13 @@ int32_t CFE_MissionLib_FindInterfaceByName(const CFE_MissionLib_SoftwareBus_Inte
     return Status;
 }
 
-int32_t CFE_MissionLib_FindTopicByName(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType, const char *TopicName, uint16_t *TopicIdBuffer)
+int32_t CFE_MissionLib_FindTopicByName(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType,
+                                       const char *TopicName, uint16_t *TopicIdBuffer)
 {
     const CFE_MissionLib_InterfaceId_Entry_t *IntfPtr;
-    const CFE_MissionLib_TopicId_Entry_t *TopicPtr;
-    uint16_t TopicId;
-    int32_t Status;
+    const CFE_MissionLib_TopicId_Entry_t *    TopicPtr;
+    uint16_t                                  TopicId;
+    int32_t                                   Status;
 
     IntfPtr = CFE_MissionLib_Lookup_SubIntf(Intf, InterfaceType);
     if (IntfPtr == NULL)
@@ -329,11 +345,10 @@ int32_t CFE_MissionLib_FindTopicByName(const CFE_MissionLib_SoftwareBus_Interfac
         for (TopicId = 0; TopicId < IntfPtr->NumTopics; ++TopicId)
         {
             TopicPtr = &IntfPtr->TopicList[TopicId];
-            if (TopicPtr->InterfaceId == InterfaceType &&
-                    TopicPtr->TopicName != NULL &&
-                    strcmp(TopicPtr->TopicName, TopicName) == 0)
+            if (TopicPtr->InterfaceId == InterfaceType && TopicPtr->TopicName != NULL &&
+                strcmp(TopicPtr->TopicName, TopicName) == 0)
             {
-                Status = CFE_MISSIONLIB_SUCCESS;
+                Status         = CFE_MISSIONLIB_SUCCESS;
                 *TopicIdBuffer = 1 + TopicId;
                 break;
             }
@@ -343,12 +358,13 @@ int32_t CFE_MissionLib_FindTopicByName(const CFE_MissionLib_SoftwareBus_Interfac
     return Status;
 }
 
-int32_t CFE_MissionLib_FindCommandByName(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType, const char *CommandName, uint16_t *CommandIdBuffer)
+int32_t CFE_MissionLib_FindCommandByName(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType,
+                                         const char *CommandName, uint16_t *CommandIdBuffer)
 {
-    const CFE_MissionLib_InterfaceId_Entry_t *IntfPtr;
+    const CFE_MissionLib_InterfaceId_Entry_t *      IntfPtr;
     const CFE_MissionLib_Command_Prototype_Entry_t *CmdPtr;
-    uint16_t CommandId;
-    int32_t Status;
+    uint16_t                                        CommandId;
+    int32_t                                         Status;
 
     IntfPtr = CFE_MissionLib_Lookup_SubIntf(Intf, InterfaceType);
     if (IntfPtr == NULL)
@@ -363,7 +379,7 @@ int32_t CFE_MissionLib_FindCommandByName(const CFE_MissionLib_SoftwareBus_Interf
             CmdPtr = &IntfPtr->CommandList[CommandId];
             if (CmdPtr->CommandName != NULL && strcmp(CmdPtr->CommandName, CommandName) == 0)
             {
-                Status = CFE_MISSIONLIB_SUCCESS;
+                Status           = CFE_MISSIONLIB_SUCCESS;
                 *CommandIdBuffer = 1 + CommandId;
                 break;
             }
@@ -373,9 +389,10 @@ int32_t CFE_MissionLib_FindCommandByName(const CFE_MissionLib_SoftwareBus_Interf
     return Status;
 }
 
-const char *CFE_MissionLib_GetCommandName(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType, uint16_t CommandId)
+const char *CFE_MissionLib_GetCommandName(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType,
+                                          uint16_t CommandId)
 {
-    const CFE_MissionLib_InterfaceId_Entry_t *IntfPtr;
+    const CFE_MissionLib_InterfaceId_Entry_t *      IntfPtr;
     const CFE_MissionLib_Command_Prototype_Entry_t *CmdProtoPtr;
 
     IntfPtr = CFE_MissionLib_Lookup_SubIntf(Intf, InterfaceType);
@@ -393,10 +410,11 @@ const char *CFE_MissionLib_GetCommandName(const CFE_MissionLib_SoftwareBus_Inter
     return CmdProtoPtr->CommandName;
 }
 
-const char *CFE_MissionLib_GetTopicName(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType, uint16_t TopicId)
+const char *CFE_MissionLib_GetTopicName(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType,
+                                        uint16_t TopicId)
 {
     const CFE_MissionLib_InterfaceId_Entry_t *IntfPtr;
-    const CFE_MissionLib_TopicId_Entry_t *TopicPtr;
+    const CFE_MissionLib_TopicId_Entry_t *    TopicPtr;
 
     IntfPtr = CFE_MissionLib_Lookup_SubIntf(Intf, InterfaceType);
     if (IntfPtr == NULL)
@@ -426,15 +444,16 @@ const char *CFE_MissionLib_GetInterfaceName(const CFE_MissionLib_SoftwareBus_Int
     return IntfPtr->InterfaceName;
 }
 
-const char *CFE_MissionLib_GetInstanceName(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InstanceNum, char *Buffer, uint32_t BufferSize)
+const char *CFE_MissionLib_GetInstanceName(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InstanceNum,
+                                           char *Buffer, uint32_t BufferSize)
 {
-    uint16_t NameNum;
-    const char * const *InstanceName;
-    const char *Result;
+    uint16_t           NameNum;
+    const char *const *InstanceName;
+    const char *       Result;
 
     if (InstanceNum > 0 && Intf->InstanceList != NULL)
     {
-        NameNum = InstanceNum - 1;
+        NameNum      = InstanceNum - 1;
         InstanceName = Intf->InstanceList;
         while (*InstanceName != NULL && NameNum > 0)
         {
@@ -473,17 +492,17 @@ const char *CFE_MissionLib_GetInstanceName(const CFE_MissionLib_SoftwareBus_Inte
 
 uint16_t CFE_MissionLib_GetInstanceNumber(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, const char *String)
 {
-    uint16_t InstanceNum;
-    size_t PartLength;
+    uint16_t    InstanceNum;
+    size_t      PartLength;
     const char *EndPtr;
 
     PartLength = strlen(String);
     if (Intf->InstanceList != NULL)
     {
-        for(InstanceNum = 0; Intf->InstanceList[InstanceNum] != NULL; ++InstanceNum)
+        for (InstanceNum = 0; Intf->InstanceList[InstanceNum] != NULL; ++InstanceNum)
         {
             if (strncmp(Intf->InstanceList[InstanceNum], String, PartLength) == 0 &&
-                    Intf->InstanceList[InstanceNum][PartLength] == 0)
+                Intf->InstanceList[InstanceNum][PartLength] == 0)
             {
                 break;
             }
@@ -507,11 +526,12 @@ uint16_t CFE_MissionLib_GetInstanceNumber(const CFE_MissionLib_SoftwareBus_Inter
     return InstanceNum;
 }
 
-void CFE_MissionLib_EnumerateTopics(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType, CFE_MissionLib_TopicInfo_Callback_t Callback, void *OpaqueArg)
+void CFE_MissionLib_EnumerateTopics(const CFE_MissionLib_SoftwareBus_Interface_t *Intf, uint16_t InterfaceType,
+                                    CFE_MissionLib_TopicInfo_Callback_t Callback, void *OpaqueArg)
 {
     const CFE_MissionLib_InterfaceId_Entry_t *IntfPtr;
-    const CFE_MissionLib_TopicId_Entry_t *TopicPtr;
-    uint16_t TopicId;
+    const CFE_MissionLib_TopicId_Entry_t *    TopicPtr;
+    uint16_t                                  TopicId;
 
     IntfPtr = CFE_MissionLib_Lookup_SubIntf(Intf, InterfaceType);
     if (IntfPtr != NULL)
@@ -527,4 +547,3 @@ void CFE_MissionLib_EnumerateTopics(const CFE_MissionLib_SoftwareBus_Interface_t
         }
     }
 }
-

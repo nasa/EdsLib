@@ -29,10 +29,10 @@
 #include "cfe_mission_eds_parameters.h"
 #include "cfe_missionlib_runtime.h"
 
-#define CFE_MSG_SHDR_PRESENT_MASK_BIT  (CCSDS_SecHdrFlags_Tlm & CCSDS_SecHdrFlags_Cmd)
-#define CFE_MSG_SHDR_TYPE_MASK_BIT     (CCSDS_SecHdrFlags_Tlm ^ CCSDS_SecHdrFlags_Cmd)
-#define CFE_MSG_SHDR_TYPE_TLM_BIT      (CCSDS_SecHdrFlags_BareTlm & CCSDS_SecHdrFlags_Tlm)
-#define CFE_MSG_SHDR_TYPE_CMD_BIT      (CCSDS_SecHdrFlags_BareCmd & CCSDS_SecHdrFlags_Cmd)
+#define CFE_MSG_SHDR_PRESENT_MASK_BIT (CCSDS_SecHdrFlags_Tlm & CCSDS_SecHdrFlags_Cmd)
+#define CFE_MSG_SHDR_TYPE_MASK_BIT    (CCSDS_SecHdrFlags_Tlm ^ CCSDS_SecHdrFlags_Cmd)
+#define CFE_MSG_SHDR_TYPE_TLM_BIT     (CCSDS_SecHdrFlags_BareTlm & CCSDS_SecHdrFlags_Tlm)
+#define CFE_MSG_SHDR_TYPE_CMD_BIT     (CCSDS_SecHdrFlags_BareCmd & CCSDS_SecHdrFlags_Cmd)
 
 #ifdef jphfix
 CFE_MSG_Message_t *CFE_MSG_ConvertPtr(CFE_MSG_BaseMsg_t *BaseMsg)
@@ -137,7 +137,7 @@ CFE_Status_t CFE_MSG_GetType(const CFE_MSG_Message_t *MsgPtr, CFE_MSG_Type_t *Ty
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_SetType(CFE_MSG_Message_t *MsgPtr, CFE_MSG_Type_t Type)
 {
-    CCSDS_CommonHdr_t *Hdr;
+    CCSDS_CommonHdr_t *      Hdr;
     CCSDS_SecHdrFlags_Enum_t SetVal;
 
     if (MsgPtr == NULL)
@@ -145,8 +145,8 @@ CFE_Status_t CFE_MSG_SetType(CFE_MSG_Message_t *MsgPtr, CFE_MSG_Type_t Type)
         return CFE_MSG_BAD_ARGUMENT;
     }
 
-    Hdr = (CCSDS_CommonHdr_t *)MsgPtr;
-    SetVal  = 0;
+    Hdr    = (CCSDS_CommonHdr_t *)MsgPtr;
+    SetVal = 0;
 
     if (Type == CFE_MSG_Type_Tlm)
     {
@@ -201,7 +201,7 @@ CFE_Status_t CFE_MSG_GetHasSecondaryHeader(const CFE_MSG_Message_t *MsgPtr, bool
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_SetHasSecondaryHeader(CFE_MSG_Message_t *MsgPtr, bool HasSecondary)
 {
-    CCSDS_CommonHdr_t *Hdr;
+    CCSDS_CommonHdr_t *      Hdr;
     CCSDS_SecHdrFlags_Enum_t SetVal;
 
     if (MsgPtr == NULL)
