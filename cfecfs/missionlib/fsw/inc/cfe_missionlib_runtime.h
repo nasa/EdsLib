@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     cfe_missionlib_runtime.h
  * \ingroup  fsw
@@ -52,7 +51,7 @@
 #define CFE_MISSIONLIB_SpacePacketBasic_HEADERS 1
 #define CFE_MISSIONLIB_SpacePacketApidQ_HEADERS 2
 
-#define CFE_MISSIONLIB_CFGSYM_TO_HDRTYPE(hdr) CFE_MISSIONLIB_ ## hdr ## _HEADERS
+#define CFE_MISSIONLIB_CFGSYM_TO_HDRTYPE(hdr) CFE_MISSIONLIB_##hdr##_HEADERS
 #define CFE_MISSIONLIB_HDRTYPE(sym)           CFE_MISSIONLIB_CFGSYM_TO_HDRTYPE(sym)
 
 /*
@@ -63,28 +62,32 @@
  *
  * When used in a numeric context, it resolves to the CCSDS version field +1.
  */
-#define CFE_MISSIONLIB_SELECTED_HDRTYPE       CFE_MISSIONLIB_HDRTYPE(CFE_MISSION_MSG_HEADER_TYPE)
+#define CFE_MISSIONLIB_SELECTED_HDRTYPE CFE_MISSIONLIB_HDRTYPE(CFE_MISSION_MSG_HEADER_TYPE)
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
+    void CFE_MissionLib_MapListenerComponent(CFE_SB_SoftwareBus_PubSub_Interface_t *Output,
+                                             const CFE_SB_Listener_Component_t *    Input);
+    void CFE_MissionLib_UnmapListenerComponent(CFE_SB_Listener_Component_t *                Output,
+                                               const CFE_SB_SoftwareBus_PubSub_Interface_t *Input);
+    void CFE_MissionLib_MapPublisherComponent(CFE_SB_SoftwareBus_PubSub_Interface_t *Output,
+                                              const CFE_SB_Publisher_Component_t *   Input);
+    void CFE_MissionLib_UnmapPublisherComponent(CFE_SB_Publisher_Component_t *               Output,
+                                                const CFE_SB_SoftwareBus_PubSub_Interface_t *Input);
 
-void CFE_MissionLib_MapListenerComponent(CFE_SB_SoftwareBus_PubSub_Interface_t *Output, const CFE_SB_Listener_Component_t *Input);
-void CFE_MissionLib_UnmapListenerComponent(CFE_SB_Listener_Component_t *Output, const CFE_SB_SoftwareBus_PubSub_Interface_t *Input);
-void CFE_MissionLib_MapPublisherComponent(CFE_SB_SoftwareBus_PubSub_Interface_t *Output, const CFE_SB_Publisher_Component_t *Input);
-void CFE_MissionLib_UnmapPublisherComponent(CFE_SB_Publisher_Component_t *Output, const CFE_SB_SoftwareBus_PubSub_Interface_t *Input);
+    bool CFE_MissionLib_PubSub_IsListenerComponent(const CFE_SB_SoftwareBus_PubSub_Interface_t *Params);
+    bool CFE_MissionLib_PubSub_IsPublisherComponent(const CFE_SB_SoftwareBus_PubSub_Interface_t *Params);
 
-bool CFE_MissionLib_PubSub_IsListenerComponent(const CFE_SB_SoftwareBus_PubSub_Interface_t *Params);
-bool CFE_MissionLib_PubSub_IsPublisherComponent(const CFE_SB_SoftwareBus_PubSub_Interface_t *Params);
-
-void CFE_MissionLib_Get_PubSub_Parameters(CFE_SB_SoftwareBus_PubSub_Interface_t *Params, const CFE_HDR_Message_t *Packet);
-void CFE_MissionLib_Set_PubSub_Parameters(CFE_HDR_Message_t *Packet, const CFE_SB_SoftwareBus_PubSub_Interface_t *Params);
+    void CFE_MissionLib_Get_PubSub_Parameters(CFE_SB_SoftwareBus_PubSub_Interface_t *Params,
+                                              const CFE_HDR_Message_t *              Packet);
+    void CFE_MissionLib_Set_PubSub_Parameters(CFE_HDR_Message_t *                          Packet,
+                                              const CFE_SB_SoftwareBus_PubSub_Interface_t *Params);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-
-#endif  /* _CFE_MISSIONLIB_RUNTIME_H_ */
+#endif /* _CFE_MISSIONLIB_RUNTIME_H_ */
