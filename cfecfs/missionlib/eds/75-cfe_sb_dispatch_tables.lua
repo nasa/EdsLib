@@ -272,7 +272,7 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
   end
 
   hdrout = SEDS.output_open(SEDS.to_filename("dispatcher.h", ds.name), ds.xml_filename)
-  hdrout:write(string.format("#include \"cfe_sb_eds.h\""))
+  hdrout:write(string.format("#include \"cfe_msg_dispatcher.h\""))
   hdrout:write(string.format("#include \"%s\"", SEDS.to_filename("interfacedb.h", global_sym_prefix)))
   hdrout:write(string.format("#include \"%s\"", SEDS.to_filename("interface.h", ds.name)))
   hdrout:add_whitespace(1)
@@ -282,11 +282,11 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
     local entry = total_intfs[i]
     hdrout:start_group(string.format("static inline int32_t %s_Dispatch(",entry.output_name))
     hdrout:write(string.format("%-65s IndicationId,", entry.intf:get_flattened_name() .. "_IndicationId_t"))
-    hdrout:write(string.format("%-65s *Message,", "const CFE_SB_Msg_t"))
+    hdrout:write(string.format("%-65s *Message,", "const CFE_SB_Buffer_t"))
     hdrout:write(string.format("%-65s *DispatchTable","const " .. entry.output_name .. "_DispatchTable_t"))
     hdrout:end_group(")")
     hdrout:start_group("{")
-    hdrout:start_group("return CFE_SB_EDS_Dispatch(")
+    hdrout:start_group("return CFE_MSG_EdsDispatch(")
     hdrout:write(string.format("%s,", entry.intf:get_flattened_name() .. "_ID"))
     hdrout:write(string.format("IndicationId - %s,", entry.intf:get_flattened_name() .. "_INDICATION_BASE"))
     hdrout:write(string.format("%s_DISPATCHTABLE_ID,",entry.output_name))
