@@ -105,7 +105,7 @@ for _,instance in ipairs(SEDS.highlevel_interfaces) do
         tctm = tctm.reqinst.params[binding.provintf.name](),
         pubsub = pubsub.reqinst.params[tctm.provintf.name]()
       }
-      local MsgId = chain.pubsub.MsgId
+      local MsgId = chain.pubsub.MsgId.Value
       local TopicId = chain.tctm.TopicId
       -- Build the reverse lookup tables for Message Id and Topic Id
       -- Ensure that there are no conflicts between these indices
