@@ -1,16 +1,16 @@
 /*
  * LEW-19710-1, CCSDS SOIS Electronic Data Sheet Implementation
- * 
+ *
  * Copyright (c) 2020 United States Government as represented by
  * the Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -734,7 +734,10 @@ static int EdsLib_LuaBinding_EncodeObject(lua_State *lua)
     EdsLib_DataTypeDB_TypeInfo_t PackedInfo;
     EdsLib_Id_t PackMsg;
     uint32_t MaxByteSize;
-    luaL_Buffer PackBuf;
+    uint8_t LocalScratchBuffer[64];
+    void *PackBufPtr;
+    int32_t PackStatus;
+    int nret;
 
     ObjectUserData = luaL_checkudata(lua, 1, "EdsLib_Object");
 
@@ -750,20 +753,48 @@ static int EdsLib_LuaBinding_EncodeObject(lua_State *lua)
         MaxByteSize = ObjectUserData->TypeInfo.Size.Bytes;
     }
 
+    nret = 0;
     PackMsg = ObjectUserData->EdsId;
 
-    luaL_buffinit(lua, &PackBuf);
-    EdsLib_DataTypeDB_PackCompleteObject(ObjectUserData->GD,
-            &PackMsg,
-            luaL_prepbuffer(&PackBuf),
-            EdsLib_Binding_GetNativeObject(ObjectUserData),
-            8 * LUAL_BUFFERSIZE,
-            MaxByteSize);
+    /*
+     * Use the local stack scratch buffer for smaller objects, or
+     * Use the heap/malloc for larger objects
+     */
+    if (MaxByteSize <= sizeof(LocalScratchBuffer))
+    {
+        PackBufPtr = LocalScratchBuffer;
+    }
+    else
+    {
+        PackBufPtr = malloc(MaxByteSize);
+    }
 
-    EdsLib_DataTypeDB_GetTypeInfo(ObjectUserData->GD, PackMsg, &PackedInfo);
-    luaL_addsize(&PackBuf, (PackedInfo.Size.Bits + 7) / 8);
-    luaL_pushresult(&PackBuf);
-    return 1;
+    if (PackBufPtr != NULL)
+    {
+        memset(PackBufPtr, 0, MaxByteSize);
+
+        PackStatus = EdsLib_DataTypeDB_PackCompleteObject(ObjectUserData->GD,
+                &PackMsg,
+                PackBufPtr,
+                EdsLib_Binding_GetNativeObject(ObjectUserData),
+                8 * MaxByteSize,
+                MaxByteSize);
+
+        if (PackStatus == EDSLIB_SUCCESS)
+        {
+            EdsLib_DataTypeDB_GetTypeInfo(ObjectUserData->GD, PackMsg, &PackedInfo);
+            lua_pushlstring(lua, PackBufPtr, (PackedInfo.Size.Bits + 7) / 8);
+            ++nret;
+        }
+
+        /* Free the buffer if it was from heap */
+        if (PackBufPtr != LocalScratchBuffer)
+        {
+            free(PackBufPtr);
+        }
+    }
+
+    return nret;
 }
 
 static int EdsLib_LuaBinding_GetMetaData(lua_State *lua)

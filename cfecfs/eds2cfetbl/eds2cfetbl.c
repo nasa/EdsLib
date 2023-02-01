@@ -363,6 +363,8 @@ int Write_CFE_EnacapsulationFile(lua_State *lua)
     const char *OutputName = luaL_checkstring(lua, 1);
     EdsLib_DataTypeDB_TypeInfo_t BlockInfo;
     int lua_top;
+    const void *content_ptr;
+    size_t content_sz;
 
     lua_top = lua_gettop(lua);
     lua_getglobal(lua, "EdsDB");
@@ -378,6 +380,10 @@ int Write_CFE_EnacapsulationFile(lua_State *lua)
     printf("Generating file using EDS ID: %x\n", (unsigned int)PackedEdsId);
 
     PushEncodedBlob(lua);
+    if (lua_isnoneornil(lua, -1))
+    {
+        return luaL_error(lua, "%s: Failed to encode object", OutputName);
+    }
 
     memset(&Buffer, 0, sizeof(Buffer));
     Buffer.TblHeader.EdsAppId = EdsLib_Get_AppIdx(PackedEdsId);
@@ -411,7 +417,16 @@ int Write_CFE_EnacapsulationFile(lua_State *lua)
 
     fwrite(PackedFileHeader, FileHeaderBlockSize, 1, OutputFile);
     fwrite(PackedTblHeader, TblHeaderBlockSize, 1, OutputFile);
-    fwrite(lua_tostring(lua, -1), lua_rawlen(lua, -1), 1, OutputFile);
+    content_ptr = lua_tostring(lua, -1);
+    content_sz = lua_rawlen(lua, -1);
+    if (content_ptr != NULL && content_sz > 0)
+    {
+        fwrite(content_ptr, content_sz, 1, OutputFile);
+    }
+    else
+    {
+        fprintf(stderr, "WARNING: No content produced\n");
+    }
     fclose(OutputFile);
     printf("Wrote File: %s\n", OutputName);
     lua_pop(lua, 1);
