@@ -55,7 +55,7 @@ static const char SEDS_PREPROCESS_ENVIORNMENT;
 /* ------------------------------------------------------------------- */
 /**
  * Helper function to determine if a quoting is required, when converting a bare string
- * into a string that can be evaulated by Lua.
+ * into a string that can be evaluated by Lua.
  *
  * For instance, it is desirable in a string such as "4+1" to _not_ add extra quoting,
  * so the interpreter will see those as numbers and not as strings, and therefore produce

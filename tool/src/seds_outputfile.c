@@ -30,7 +30,7 @@
  * implement the style and syntax of the language being generated.  This mainly
  * includes an abstraction for:
  *  - File name conventions
- *  - Comment formats (delimeter characters which vary)
+ *  - Comment formats (delimiter characters which vary)
  *  - Grouping rules
  *  - Indentation rules
  */

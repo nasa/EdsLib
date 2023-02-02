@@ -36,7 +36,7 @@ local SEDS = {}
 
 -- -----------------------------------------------------------------------
 ---
--- to_safe_identifier: convert any string into a safe identifer for generated code
+-- to_safe_identifier: convert any string into a safe identifier for generated code
 --
 -- XML and EDS allow a greater variety of characters in names than other
 -- languages such as C/C++.  This helper method ensures that the string only

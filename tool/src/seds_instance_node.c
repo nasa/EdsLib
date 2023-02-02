@@ -27,7 +27,7 @@
  * Implements methods for "instance nodes" within the SEDS DOM
  *
  * Instance nodes refer to specific instantiations of SEDS components.  This is a deployment
- * construct and is not directly specfied in the SEDS schema, but this information is required
+ * construct and is not directly specified in the SEDS schema, but this information is required
  * to assemble an actual mission dictionary from EDS files.  These objects are created based
  * on the "InstanceRule" element types in the design parameter XML files.
  */
