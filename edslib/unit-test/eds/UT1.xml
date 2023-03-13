@@ -50,7 +50,7 @@
           <Dimension size="250" />
         </DimensionList>
       </ArrayDataType>
-      
+
       <ArrayDataType name="bitmask@20" dataTypeRef="uint8">
         <DimensionList>
           <Dimension size="3" />
@@ -83,7 +83,7 @@
           <Entry name="str" type="char@10" />
         </EntryList>
       </ContainerDataType>
-      
+
       <ArrayDataType name="BasicDataTypes@5" dataTypeRef="BasicDataTypes">
         <DimensionList>
           <Dimension size="5" />

@@ -4,9 +4,9 @@
    <Define name="BASE_TYPE" value="uint8" />
    <Define name="NUMBER_OF_WIDGETS" value="BASE_NUMBER" />
    <Define name="SIGNED_INTEGER_ENCODING" value="twosComplement" />
-      
+
    <DataTypeSet>
-      
+
       <!-- Fixed width integer types -->
       <IntegerDataType name="int8" shortDescription="Signed 8 bit integer">
         <IntegerDataEncoding sizeInBits="8" encoding="SIGNED_INTEGER_ENCODING" />
@@ -35,7 +35,7 @@
       <IntegerDataType name="memaddr" shortDescription="CPU memory address">
         <IntegerDataEncoding sizeInBits="64" encoding="unsigned" />
       </IntegerDataType>
-      
+
       <!-- Floating point types -->
       <FloatDataType name="float" shortDescription="Single precision (32 bit) floating point value">
         <FloatDataEncoding encodingAndPrecision="ieee754_2008_single" />
