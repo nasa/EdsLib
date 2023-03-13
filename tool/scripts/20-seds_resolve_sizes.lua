@@ -681,8 +681,12 @@ while (SEDS.get_error_count() == 0) do
 
   -- Make a pass through the "derived" table, to calculate
   -- the _maximum_ size of these objects (which is helpful for sizing buffers)
+  -- This also recognizes a special case of container inheritance where an empty base
+  -- is derived by several containers, each having only one single entry.  In this context
+  -- this becomes a union of all the derived container entries.
   for node,deriv_list in pairs(derived_node_table) do
     if (node.resolved_size) then
+      local is_union = (not node.basetype) and (#node.decode_sequence == 0)
       local pending_max_size = SEDS.new_size_object(node.resolved_size)
       for i,deriv_node in ipairs(deriv_list) do
         if (derived_node_table[deriv_node]) then
@@ -695,9 +699,11 @@ while (SEDS.get_error_count() == 0) do
           break
         end
         pending_max_size:union(deriv_size)
+        is_union = is_union and (#deriv_node.decode_sequence == 1)
       end
       if (pending_max_size) then
         resolved_count = resolved_count + 1
+        node.is_union = is_union
         node.max_size = pending_max_size
         derived_node_table[node] = nil
       elseif (resolve_error) then
