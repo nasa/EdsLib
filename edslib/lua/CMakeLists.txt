@@ -61,7 +61,13 @@ else (NOT LUALIB_FOUND)
     add_library(edslib_lua STATIC
         src/edslib_lua_objects.c
     )
-    target_link_libraries(edslib_lua ${LUALIB_LIBRARIES})
+    target_link_libraries(edslib_lua ${LUALIB_LDFLAGS})
+
+    add_library(edslib_lua_pic OBJECT EXCLUDE_FROM_ALL
+      src/edslib_lua_objects.c
+    )
+    set_target_properties(edslib_lua_pic PROPERTIES
+        POSITION_INDEPENDENT_CODE TRUE)
+    target_include_directories(edslib_lua_pic PUBLIC inc ${LUALIB_INCLUDE_DIRS})
 
 endif(NOT LUALIB_FOUND)
-

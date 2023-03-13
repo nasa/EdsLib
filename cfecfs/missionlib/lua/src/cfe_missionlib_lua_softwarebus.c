@@ -53,7 +53,7 @@
 
 static const char CFE_MISSIONLIB_INTFDB_KEY;
 
-static void CFE_MissionLib_Lua_MapPubSubParams(CFE_SB_SoftwareBus_PubSub_Interface_t *PubSub, const CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj)
+void CFE_MissionLib_Lua_MapPubSubParams(CFE_SB_SoftwareBus_PubSub_Interface_t *PubSub, const CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj)
 {
     switch (IntfObj->IntfId)
     {
@@ -81,7 +81,7 @@ static void CFE_MissionLib_Lua_MapPubSubParams(CFE_SB_SoftwareBus_PubSub_Interfa
     }
 }
 
-static void CFE_MissionLib_Lua_UnmapPubSubParams(CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj, const CFE_SB_SoftwareBus_PubSub_Interface_t *PubSub)
+void CFE_MissionLib_Lua_UnmapPubSubParams(CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj, const CFE_SB_SoftwareBus_PubSub_Interface_t *PubSub)
 {
     switch(IntfObj->IntfId)
     {
