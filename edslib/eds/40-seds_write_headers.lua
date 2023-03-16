@@ -59,7 +59,8 @@ end
 -- -------------------------------------------------
 local function write_c_struct_typedef(output,node)
   local checksum = node.resolved_size.checksum
-  local struct_name = string.format("struct %s", SEDS.to_safe_identifier(node:get_qualified_name()))
+  local struct_flavor = node.is_union and "union" or "struct"
+  local struct_name = string.format("%s %s", struct_flavor, SEDS.to_safe_identifier(node:get_qualified_name()))
 
   -- this potentially renders create more than one struct with same checksum.
   -- This just records the first/initial occurrence of this checksum
@@ -67,31 +68,49 @@ local function write_c_struct_typedef(output,node)
     output.checksum_table[checksum] = struct_name
   end
 
+  -- Structures which are union members do not need to be rendered as a separate typedef
+  if (node.basetype and node.basetype.is_union) then
+    return
+  end
+
   -- Note that the XML allows one to specify a container/interface with no members.
   -- but C language generally frowns upon structs with no members.  So this check is
   -- in place to avoid generating such code.
-  if (#node.decode_sequence > 0) then
+  if (#node.decode_sequence > 0 or node.is_union) then
     output:add_documentation(string.format("Structure definition for %s \'%s\'", node.entity_type, node:get_qualified_name()),
       "Data definition signature " .. checksum)
     output:write(string.format("%s /* checksum=%s */", struct_name, checksum))
     output:start_group("{")
-    for idx,ref in ipairs(node.decode_sequence) do
-      local c_name = ref.type:get_flattened_name()
-      -- If the entry refers to a base type, then use a buffer instead of a direct instance here,
-      -- but only if the derivatives actually do extend the type (i.e. add fields).
-      if (ref.name and ref.type.max_size and ref.type.max_size.bits > ref.type.resolved_size.bits) then
-        c_name = c_name .. "_Buffer"
+    if (node.is_union) then
+      local derivmap = node.derivative_decisiontree_map
+      for _,deriv in ipairs(derivmap.derivatives) do
+        local entry = deriv.decode_sequence[1]
+        if (entry.type) then
+          output:write(string.format("%-30s %s;", entry.type:get_flattened_name() .. "_t", SEDS.to_safe_identifier(entry.name)))
+        end
       end
-      if (ref.entry) then
-        output:add_documentation(ref.entry.attributes.shortdescription, ref.entry.longdescription)
+    else
+      for idx,ref in ipairs(node.decode_sequence) do
+        local c_name = ref.type:get_flattened_name()
+        -- If the entry refers to a base type, then use a buffer instead of a direct instance here,
+        -- but only if the derivatives actually do extend the type (i.e. add fields).
+        if (ref.name and ref.type.max_size and (ref.type.max_size.bits > ref.type.resolved_size.bits) and not ref.type.is_union) then
+          c_name = c_name .. "_Buffer"
+        end
+        if (ref.entry) then
+          output:add_documentation(ref.entry.attributes.shortdescription, ref.entry.longdescription)
+        end
+        output:write(string.format("%-50s %-30s /* %-3d bits/%-3d bytes */",
+          c_name .. "_t",
+          (ref.name or ref.type.name) .. ";",
+          ref.type.resolved_size.bits,
+          ref.type.resolved_size.bytes))
       end
-      output:write(string.format("%-50s %-30s /* %-3d bits/%-3d bytes */",
-        c_name .. "_t",
-        (ref.name or ref.type.name) .. ";",
-        ref.type.resolved_size.bits,
-        ref.type.resolved_size.bytes))
     end
     output:end_group("};")
+  else
+    -- Just output something as a clue that this structure was in the EDS but did not get rendered into a C type
+    output:write(string.format("/* Empty Structure: %s */",struct_name))
   end
 
   return { ctype = struct_name }
@@ -104,7 +123,7 @@ local function write_c_array_typedef(output,node)
   local basetype_name = node.datatyperef:get_flattened_name()
   local basetype_modifier = ""
 
-  if (node.datatyperef.max_size) then
+  if (node.datatyperef.max_size and not node.datatyperef.is_union) then
     basetype_name = basetype_name .. "_Buffer"
   end
 
@@ -306,10 +325,13 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
       if (node.resolved_size) then
         local packedsize = 0
         local buffname = node:get_flattened_name()
-        if (node.max_size) then
+        if (node.max_size and not node.is_union) then
           output:write(string.format("union %s_Buffer", buffname))
           output:start_group("{")
-          output:write(string.format("%-50s BaseObject;", node.header_data.typedef_name))
+          -- The base object may be empty in EDS, so do not make a C ref to an empty object
+          if (#node.decode_sequence > 0) then
+            output:write(string.format("%-50s BaseObject;", node.header_data.typedef_name))
+          end
           output:write(string.format("%-50s Byte[%d];", "uint8_t", node.max_size.bytes))
           local aligntype = (node.max_size.alignment <= 64) and tostring(node.max_size.alignment) or "max"
           output:write(string.format("%-50s Align%d;", "uint" .. aligntype .. "_t", node.max_size.alignment))
@@ -330,11 +352,10 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
     end
   end
 
-
   output:section_marker("Components")
   for comp in ds:iterate_subtree("COMPONENT") do
     comp.header_data = write_c_struct_typedef(output,comp)
-    if (comp.resolved_size) then
+    if (comp.resolved_size and comp.header_data) then
       local c_name = comp:get_flattened_name()
       comp.edslib_refobj_local_index = c_name .. "_DATADICTIONARY"
       comp.edslib_refobj_initializer = string.format("{ %s, %s }", ds.edslib_refobj_global_index,
