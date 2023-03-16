@@ -138,14 +138,14 @@ target_include_directories(cfe_missionlib INTERFACE
 add_library(cfe_missionlib_pic STATIC EXCLUDE_FROM_ALL
     src/cfe_missionlib_api.c
 )
-set_target_properties(cfe_missionlib_pic PROPERTIES 
+set_target_properties(cfe_missionlib_pic PROPERTIES
     POSITION_INDEPENDENT_CODE TRUE COMPILE_DEFINITIONS "_EDSLIB_BUILD_")
 
 add_library(cfe_missionlib_runtime_pic STATIC EXCLUDE_FROM_ALL
     src/cfe_missionlib_api.c
     ${RUNTIME_SOURCE}
 )
-set_target_properties(cfe_missionlib_runtime_pic PROPERTIES 
+set_target_properties(cfe_missionlib_runtime_pic PROPERTIES
     POSITION_INDEPENDENT_CODE TRUE COMPILE_DEFINITIONS "_EDSLIB_BUILD_")
 
 # UT stubs are only needed for a CFS target build

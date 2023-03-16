@@ -67,7 +67,7 @@ if (IS_CFS_MISSION_BUILD)
       while(DEFINED TGT${TGTID}_NAME)
           set(TGTNAMELIST "${TGTNAMELIST}DEFINE_TGTNAME(${TGT${TGTID}_NAME})\n")
           math(EXPR TGTID "${TGTID} + 1")
-      endwhile()  
+      endwhile()
   endif()
 
   # Update the output only if different - avoid unnecessary rebuilds

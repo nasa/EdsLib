@@ -1,16 +1,16 @@
 #
 # LEW-20211-1, Python Bindings for the Core Flight Executive Mission Library
-# 
+#
 # Copyright (c) 2020 United States Government as represented by
 # the Administrator of the National Aeronautics and Space Administration.
 # All Rights Reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,7 +23,7 @@
 #########################################################
 #
 # This code works with both Python 2 and Python 3.x
-# 
+#
 # Version 3.x is preferred.
 #
 # However some old software may only provide a Python2.7 module
@@ -36,8 +36,8 @@
 # Alternatively, the toolchain can also directly specify where
 # Python headers/libs can be found by setting cachevars directly:
 #  PYTHON_FOUND = TRUE
-#  PYTHON_INCLUDE_DIRS = directory containing Python headers  
-#  PYTHON_LIBS = libraries to put on link line (-l switches)  
+#  PYTHON_INCLUDE_DIRS = directory containing Python headers
+#  PYTHON_LIBS = libraries to put on link line (-l switches)
 #
 
 project(CFE_MISSIONLIB_PYTHONBINDINGS C)
@@ -46,30 +46,30 @@ if(NOT PYTHON_FOUND)
 
   # By default, try to find Python3>=3.4 if no version specified...
   #  This simplifies building as a simple local library.
-  
+
   # But do not assume this default when cross-compiling or building CFS,
   # because if the toolchain isn't configured correctly, searching could
   # find the wrong version and break the build
   # (in particular, pkg-config might find the host version instead of
-  # the cross version and try to use it) 
-  
+  # the cross version and try to use it)
+
   # In any sort of cross-compile or CFS build, then the user needs to
   # explicitly do something to enable Python bindings.
   if (NOT DEFINED CFE_MISSIONLIB_PYTHON_SEARCH_VERSION AND
-      NOT CMAKE_CROSSCOMPILING AND 
-      NOT IS_CFS_ARCH_BUILD) 
+      NOT CMAKE_CROSSCOMPILING AND
+      NOT IS_CFS_ARCH_BUILD)
     set(CFE_MISSIONLIB_PYTHON_SEARCH_VERSION python3>=3.4)
   endif()
-  
+
   if (CFE_MISSIONLIB_PYTHON_SEARCH_VERSION)
     find_edslib_dependency(PYTHON Python.h ${CFE_MISSIONLIB_PYTHON_SEARCH_VERSION})
   endif (CFE_MISSIONLIB_PYTHON_SEARCH_VERSION)
-  
+
 endif(NOT PYTHON_FOUND)
 
 # The final decision on whether to build the standalone module
 # should be made by the user or parent build script.
-option(CFE_MISSIONLIB_PYTHON_BUILD_STANDALONE_MODULE  
+option(CFE_MISSIONLIB_PYTHON_BUILD_STANDALONE_MODULE
     "Build a generic Python module that can be imported into standalone Python code"
     OFF)
 
@@ -86,33 +86,33 @@ else ()
     include_directories(${EDS_CFECFS_MISSIONLIB_FSW_SOURCE_DIR}/src)
     include_directories(${PYTHON_INCLUDE_DIRS})
     include_directories(${global_MISSION_DIR}/inc)
-    
+
     set(CFE_MISSIONLIB_PYTHON_SOURCE_LIST
         src/cfe_missionlib_python_database.c
         src/cfe_missionlib_python_interface.c
         src/cfe_missionlib_python_topic.c
         src/cfe_missionlib_python_setup.c
     )
-    
+
     #
     # The "static" library target is always defined but will only be built on demand
     # it should work pretty much the same with any build (with or without CFS)
     #
-    # This static library is used when building a custom Python interpreter executable 
+    # This static library is used when building a custom Python interpreter executable
     # that includes the EdsLib module built-in.  (Otherwise Python would typically use
     # a dynamic module with the "import" logic instead - see the "objects" target instead)
     #
-    add_library(cfe_missionlib_python_static STATIC EXCLUDE_FROM_ALL 
+    add_library(cfe_missionlib_python_static STATIC EXCLUDE_FROM_ALL
         ${CFE_MISSIONLIB_PYTHON_SOURCE_LIST})
-    target_link_libraries(cfe_missionlib_python_static 
+    target_link_libraries(cfe_missionlib_python_static
         ${PYTHON_LIBRARIES})
-    
+
     #
-    # The "cfe_missionlib_python_pic" library target is the basis for a dynamically-loaded 
+    # The "cfe_missionlib_python_pic" library target is the basis for a dynamically-loaded
     # Python modules.
     #
-    # This isn't directly built as a complete module here because this code does 
-    # not include an initialization/entry point function.  Such a function needs to 
+    # This isn't directly built as a complete module here because this code does
+    # not include an initialization/entry point function.  Such a function needs to
     # be supplied based on the environment it is being loaded into.
     #
     # This is compiled as position-independent code (PIC) if the toolchain supports it
@@ -127,16 +127,16 @@ else ()
     #    This depends on whether it is Python 2 or 3 -- see edslib_python_module.c
     #
     # This approach allows one or both of these targets to be built while
-    # building the core logic only once, while still creating a single module 
-    # file at runtime.    
-    add_library(cfe_missionlib_python_pic STATIC EXCLUDE_FROM_ALL 
+    # building the core logic only once, while still creating a single module
+    # file at runtime.
+    add_library(cfe_missionlib_python_pic STATIC EXCLUDE_FROM_ALL
         ${CFE_MISSIONLIB_PYTHON_SOURCE_LIST})
-    set_target_properties(cfe_missionlib_python_pic PROPERTIES 
+    set_target_properties(cfe_missionlib_python_pic PROPERTIES
         POSITION_INDEPENDENT_CODE TRUE)
     #target_link_libraries(cfe_missionlib_python_pic cfe_missionlib_pic )#missionlib_runtime_pic)
-    
+
     if (CFE_MISSIONLIB_PYTHON_BUILD_STANDALONE_MODULE)
-    
+
         #
         # Create a standalone Python module
         #
@@ -150,21 +150,21 @@ else ()
         # This is what Python looks for as it loads the module as part of "import"
         #  (The init function is a different signature depending on Python 2 or 3)
         #
-        add_library(cfe_missionlib_python_module MODULE 
+        add_library(cfe_missionlib_python_module MODULE
             src/cfe_missionlib_python_module.c
             $<TARGET_OBJECTS:cfe_missionlib_python_pic>
             $<TARGET_OBJECTS:edslib_runtime_pic>
             $<TARGET_OBJECTS:cfe_missionlib_runtime_pic>)
 
         # Per Python naming conventions, the output file should be called only "CFE_MissionLib"
-        # to match the name of the module it defines.  It will be installed into a 
+        # to match the name of the module it defines.  It will be installed into a
         # Python-specific subdirectory to avoid name conflicts with the non-Python MissionLib.
         set_target_properties(cfe_missionlib_python_module PROPERTIES PREFIX "" OUTPUT_NAME "CFE_MissionLib")
         #target_link_libraries(cfe_missionlib_python_module cfe_missionlib_python_pic edslib_runtime_pic)
-        
+
         install(TARGETS cfe_missionlib_python_module DESTINATION "lib/python")
-        
+
     endif (CFE_MISSIONLIB_PYTHON_BUILD_STANDALONE_MODULE)
 
 endif()
-  
+
