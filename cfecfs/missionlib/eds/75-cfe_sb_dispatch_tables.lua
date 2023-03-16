@@ -36,7 +36,6 @@ local mts_comp = SEDS.root:find_reference("CFE_SB/MTS", "COMPONENT")
 local components = {}
 local msgid_table = {}
 local topicid_table = {}
-local intf_commands = {}
 local total_intfs = {}
 local interface_list = {}
 local indication_id = 0
@@ -128,7 +127,6 @@ end
 for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
   local first_intf = 1 + #total_intfs
   local hdrout = SEDS.output_open(SEDS.to_filename("interface.h", ds.name),ds.xml_filename)
-  local cmdcode_list = {}
   hdrout:write(string.format("#include \"%s\"", SEDS.to_filename("typedefs.h", ds.name)))
   hdrout:add_whitespace(1)
 
@@ -155,8 +153,7 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
             end
           end
 
-          intfcmds[1 + #intfcmds] = { intf = reqintf, refnode = cmd, args = args,
-              subcommand_arg = subcommand_arg }
+          intfcmds[1 + #intfcmds] = { refnode = cmd, args = args, subcommand_arg = subcommand_arg }
 
           local compcmds = localintfs[reqintf.type]
           if (not compcmds) then
@@ -198,25 +195,9 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
           hdrout:write(string.format("typedef struct %s %s;", cmdstructname, reqintf.mapping_info.cmdstruct_typedef))
           hdrout:add_whitespace(1)
         end
-        intf_commands[reqintf] = intfcmds
-        for _,cmd in ipairs(intfcmds) do
-          if (cmd.subcommand_arg) then
-            local argtype = cmd.args[cmd.subcommand_arg].type
-            for _,subcommand in ipairs(argtype.edslib_derivtable_list) do
-              -- Note that this list is not in value-order, the index relates to the lookup table, not the actual cmdcode value
-              -- To get the command code value, need to drill down into the constraint set.  This assumes a single value constraint.
-              local cmdname = subcommand:get_flattened_name()
-              local constraint = subcommand:find_first("CONSTRAINT_SET")
-              if (constraint) then
-                constraint = constraint:find_first("VALUE_CONSTRAINT")
-              end
-              if (constraint) then
-                cmdcode_list[constraint.attributes["value"]] = cmdname
-              end
-            end
-          end
-        end
+        reqintf.intf_commands = intfcmds
         hdrout:add_whitespace(1)
+
       end
       local sorted_localintfs = {}
       for intf in pairs(localintfs) do
@@ -247,29 +228,6 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
   end
 
   SEDS.output_close(hdrout)
-
-  -- Create a "cc.h" header file containing the command/function codes specificed as EDS value constraints
-  -- This info was collected above, but is easier to use in C files if not mixed with the interface declarations
-  -- It also needs to be put in a reasonable order and the macro names need to be scrubbed/fixed to match
-  local all_cmdcodes = {}
-  for cc in pairs(cmdcode_list) do
-    all_cmdcodes[1 + #all_cmdcodes] = cc
-  end
-  if (#all_cmdcodes > 0) then
-    table.sort(all_cmdcodes)
-    hdrout = SEDS.output_open(SEDS.to_filename("cc.h", ds.name),ds.xml_filename)
-    for _,cc in ipairs(all_cmdcodes) do
-      local cmdname = cmdcode_list[cc]
-      local macroname = SEDS.to_macro_name(cmdname)
-      -- If the command name ends in "_CMD" then lop it off
-      if (string.sub(macroname, -4, -1) == "_CMD") then
-        macroname = string.sub(macroname, 1, -5)
-      end
-      hdrout:add_documentation(string.format("Command code associated with %s_t", cmdname))
-      hdrout:write(string.format("#define %-60s %s",  macroname .. "_CC", cc))
-    end
-    SEDS.output_close(hdrout)
-  end
 
   hdrout = SEDS.output_open(SEDS.to_filename("dispatcher.h", ds.name), ds.xml_filename)
   hdrout:write(string.format("#include \"cfe_msg_dispatcher.h\""))
@@ -365,8 +323,9 @@ for tid = 1,SEDS.get_define("CFE_MISSION/MAX_TOPICID") do
   local chain = topicid_table[tid]
   if (chain) then
     local intf = chain.binding.reqintf
+    local cmdlist = intf.intf_commands or {}
     local arg_list = {}
-    for j,cmd in ipairs(intf_commands[intf]) do
+    for j,cmd in ipairs(cmdlist) do
       if (#cmd.args > 0) then
         arg_list[j] = string.format("%s_%s_ARGUMENT_LIST",intf:get_flattened_name(), cmd.refnode.name)
         dbout:write(string.format("static const CFE_MissionLib_Argument_Entry_t %s[] =", arg_list[j]))
@@ -384,7 +343,7 @@ for tid = 1,SEDS.get_define("CFE_MISSION/MAX_TOPICID") do
       end
     end
 
-    for j,cmd in ipairs(intf_commands[intf]) do
+    for j,cmd in ipairs(cmdlist) do
       if (cmd.subcommand_arg) then
         local derivlist = cmd.args[cmd.subcommand_arg].type.edslib_derivtable_list
         dbout:write(string.format("static const CFE_MissionLib_Subcommand_Entry_t %s_%s_SUBCOMMAND_LIST[] =",
@@ -405,7 +364,7 @@ for tid = 1,SEDS.get_define("CFE_MISSION/MAX_TOPICID") do
     local cmd_def = string.format("%s_COMMANDS",intf:get_flattened_name())
     dbout:write(string.format("static const CFE_MissionLib_Command_Definition_Entry_t %s[] =",cmd_def))
     dbout:start_group("{")
-    for j,cmd in ipairs(intf_commands[intf]) do
+    for j,cmd in ipairs(cmdlist) do
       dbout:append_previous(",")
       dbout:start_group("{")
       if (cmd.subcommand_arg) then
