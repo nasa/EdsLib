@@ -398,40 +398,66 @@ static void seds_xmlparser_message(lua_State *lua, seds_user_message_t msgtype)
  */
 static int seds_xmlparser_recreate_xml(lua_State *lua)
 {
-    luaL_Buffer buf;
-    luaL_buffinit(lua, &buf);
-    luaL_addchar(&buf, '<');
-    luaL_addlstring(&buf, lua_tostring(lua, 1), lua_rawlen(lua, 1));
+    int tbl_val_idx;
+    int string_start;
 
-    lua_pushnil(lua);
-    while (lua_next(lua, 2))
+    string_start = lua_gettop(lua);
+    lua_pushstring(lua, "<");
+    lua_pushvalue(lua, 1);
+
+    if (lua_type(lua, 2) == LUA_TTABLE)
     {
-        if (lua_type(lua, -2) == LUA_TSTRING)
+        lua_pushnil(lua);
+
+        /*
+        * Note - lua_next pops 1 item from the stack, iterpreted as the prev table index, nil to start.
+        * It then pushes 2 items back on - the next table index, and the corresponding value.
+        * At the end of the table it pushes nothing back on, but still pops the last index.
+        */
+        while (lua_next(lua, 2))
         {
-            luaL_addchar(&buf, ' ');
-            luaL_addlstring(&buf, lua_tostring(lua, -2), lua_rawlen(lua, -2));
-            luaL_addstring(&buf, "=\"");
-            luaL_addlstring(&buf, lua_tostring(lua, -1), lua_rawlen(lua, -1));
-            luaL_addchar(&buf, '"');
+            /*
+            * The item at the top should be the value, the item at -1 should be the key.
+            * because the next code does multiple pushes, it is easier to capture the stack
+            * number as an absolute position rather than using offsets.
+            */
+            tbl_val_idx = lua_gettop(lua);
+            if (lua_type(lua, tbl_val_idx - 1) == LUA_TSTRING)
+            {
+                lua_pushstring(lua, " ");
+                lua_pushvalue(lua, tbl_val_idx - 1);
+                lua_pushstring(lua, "=\"");
+                lua_pushvalue(lua, tbl_val_idx);
+                lua_pushstring(lua, "\"");
+                lua_concat(lua, 5);
+
+                /*
+                * This puts the concatenated value immediately below the table index.
+                * Note that each iteration through this code adds 1 to the stack.
+                */
+                lua_insert(lua, tbl_val_idx - 2);
+            }
+            lua_pop(lua, 1);
         }
-        lua_pop(lua, 1);
     }
 
     if (lua_rawlen(lua, 3) == 0)
     {
         /* empty element */
-        luaL_addstring(&buf, "/>");
+        lua_pushstring(lua, "/>");
     }
     else
     {
-        luaL_addchar(&buf, '>');
-        luaL_addlstring(&buf, lua_tostring(lua, 3), lua_rawlen(lua, 3));
-        luaL_addstring(&buf, "</");
-        luaL_addlstring(&buf, lua_tostring(lua, 1), lua_rawlen(lua, 1));
-        luaL_addchar(&buf, '>');
+        lua_pushstring(lua, ">");
+        lua_pushvalue(lua, 3);
+        lua_pushstring(lua, "</");
+        lua_pushvalue(lua, 1);
+        lua_pushstring(lua, ">");
     }
 
-    luaL_pushresult(&buf);
+    /* Now everything that was added to the stack gets concatenated */
+    lua_concat(lua, lua_gettop(lua) - string_start);
+
     return 1;
 }
 
@@ -1168,4 +1194,3 @@ int seds_xmlparser_finish(lua_State *lua)
     lua_pop(lua, 1);
     return 1;
 }
-
