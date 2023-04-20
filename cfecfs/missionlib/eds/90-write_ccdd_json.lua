@@ -169,7 +169,6 @@ for _,instance in ipairs(SEDS.highlevel_interfaces) do
         output:write(string.format("\"%smid_name\": \"%s\",", prefix, msgid))
         output:write(string.format("\"%sdescription\": \"%s\",", prefix, reqintf.attributes.shortdescription or ""))
         if (cmd.cc_list) then
-          output:append_previous(",")
           output:start_group("\"cmd_codes\": [")
           for _,cc in ipairs(cmd.cc_list) do
             output:append_previous(",")
