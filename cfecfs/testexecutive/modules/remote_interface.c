@@ -399,7 +399,7 @@ static int TestIntf_Remote_Poll(lua_State *lua)
                     if (lua_gettop(lua) == 2)
                     {
                         /* Save the global registry and replace it with a temporary one */
-                        lua_rawgeti(lua, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS); /* idx 3 - saved global enivornment */
+                        lua_rawgeti(lua, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS); /* idx 3 - saved global environment */
                         lua_newtable(lua);                                     /* idx 4 - temp global state */
                         lua_pushcfunction(lua, TestIntf_Remote_Base64);
                         lua_setfield(lua, -2, "Base64");

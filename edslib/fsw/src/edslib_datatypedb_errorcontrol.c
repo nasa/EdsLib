@@ -27,7 +27,7 @@
  * Implementation of the error control algorithms for the "ErrorControl"
  * fields within container objects.  These all follow a naming convention
  * of "EdsLib_ErrorControlAlgorithm_<ALGO>()" and the prototypes of these
- * algorithms must be in edslib_database_types.h has they are referenced
+ * algorithms must be in edslib_database_types.h as they are referenced
  * directly from generated DB code.
  */
 
@@ -39,7 +39,7 @@
 /*
  * CRC Algorithm: CRC-16/CCITT-FALSE
  * Polynomial: 0x1021
- * Initilization: 0xFFFF
+ * Initialization: 0xFFFF
  * Input Reflection: False
  * Output Reflection: False
  * XOR Output: 0x0000

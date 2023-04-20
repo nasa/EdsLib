@@ -24,7 +24,7 @@
  * \author   joseph.p.hickey@nasa.gov
  *
  * Defines a runtime API for CFE to obtain information about
- * the software bus intefaces/routing and correlate with EDS.
+ * the software bus interfaces/routing and correlate with EDS.
  */
 
 #ifndef _CFE_MISSIONLIB_API_H_

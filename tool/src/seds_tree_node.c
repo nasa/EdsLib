@@ -293,7 +293,7 @@ static int seds_tree_mark_error(lua_State *lua)
  *  2: property key
  *
  * @note The static properties are all read only so there is no
- * correspnding "set" operation; all sets go directly into the
+ * corresponding "set" operation; all sets go directly into the
  * userdata object.
  */
 static int seds_tree_node_get_property(lua_State *lua)

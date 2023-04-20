@@ -425,11 +425,10 @@ int main(int argc, char *argv[])
      */
     seds_plugin_load_lua(lua, SEDS_RUNTIME_SCRIPT_FILE);
 
-
     /*
      * Execute the runtime script.
      *
-     * In module pardigm, the returned object is a table of functions
+     * In module paradigm, the returned object is a table of functions
      * This will be at the top of the stack in position 1
      */
     lua_call(lua, 0, 1);

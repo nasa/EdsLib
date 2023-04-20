@@ -116,7 +116,7 @@ such that any EDS-defined binary object can be converted into a native "C" repre
 vice versa.  This basic data handling functionality is critical to all subsequent operations,
 including later processing stages as well as flight software and ground tools.
 
-To acheive this, the directory provides a runtime library in the `fsw` subdirectory which can
+To achieve this, the directory provides a runtime library in the `fsw` subdirectory which can
 be linked with any C source code that needs to interpret or manipulate objects defined in EDS.
 
 Additionally this contains a set of scripts that operate within the EDS tool to generate compatible
@@ -428,7 +428,7 @@ This set of functions is provided as general purpose utilities:
 
 | Helper Function      | Purpose                                                       |
 |----------------------|---------------------------------------------------------------|
-| `to_safe_identifier` | Convert any string into a safe identifer for generated code   |
+| `to_safe_identifier` | Convert any string into a safe identifier for generated code  |
 | `to_macro_name`      | Convert any value into a macro name for C source files        |
 | `load_plugin`        | Loads a dynamic shared object (`.so`) extension into the tool |
 | `attach_db`          | Instantiate an EdsLib-Lua binding instance based on the DB    |

@@ -36,7 +36,7 @@ scripts and generate custom outputs from the same DOM.
 
 The following subdirectories are contained within this source tree:
 
-- `tools` contains the build tool to read EDS files, generate the DOM tree, and run scripts
+- `tool` contains the build tool to read EDS files, generate the DOM tree, and run scripts
 - `edslib` contains the runtime C library for dealing with EDS-defined objects
 - `doc` contains additional information about the DOM structure
 - `cfecfs` contains additional bindings/libraries for use with Core Flight System

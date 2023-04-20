@@ -148,7 +148,7 @@ const void *EdsLib_Python_ObjectPeek(PyObject *obj);
  *
  * For EDS objects which are not a fixed size this obtains the
  * maximum size for allocation purposes.  If the specified type
- * is the base type for other types, then this wil return
+ * is the base type for other types, then this will return
  * the size of the largest possible derivative type.
  */
 Py_ssize_t EdsLib_Python_DatabaseEntry_GetMaxSize(PyTypeObject* objtype);

@@ -135,7 +135,7 @@ struct CFE_MSG_TelemetryHeader
 };
 
 /**
- * Helper function to cast an aribtrary base pointer to a CFE_MSG_Message_t* for use with SB APIs
+ * Helper function to cast an arbitrary base pointer to a CFE_MSG_Message_t* for use with SB APIs
  */
 static inline CFE_MSG_Message_t *CFE_MSG_CastBaseMsg(void *BaseMsg)
 {

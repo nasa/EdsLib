@@ -56,7 +56,7 @@
 /**
  * Maximum size of string / binary data members in EdsLib_GenericValueUnion_t objects
  *
- * In cases where a value constraint on an structure is a string type, this
+ * In cases where a value constraint on a structure is a string type, this
  * defines the maximum length of the string.  Strings used as value constraints
  * in EDS container types are expected to be relatively short.
  *
@@ -258,7 +258,7 @@ struct EdsLib_DataTypeDB_EntityInfo
 typedef struct EdsLib_DataTypeDB_EntityInfo EdsLib_DataTypeDB_EntityInfo_t;
 
 /**
- * The callback function assocated with EdsLib_DataTypeDB_ConstraintIterator()
+ * The callback function associated with EdsLib_DataTypeDB_ConstraintIterator()
  *
  * @param GD the runtime database object
  * @param MemberInfo the type and offset location of the constrained field
@@ -708,7 +708,7 @@ int32_t EdsLib_DataTypeDB_IdentifyBuffer(const EdsLib_DatabaseObject_t *GD, EdsL
  * Convert the numeric value representation from its current type into the desired type
  *
  * If the current type and desired type is equal, then no change is made.  Otherwise, the value may be converted
- * as necessary to acheive the desired type.  The value buffer is modified in place.
+ * as necessary to achieve the desired type.  The value buffer is modified in place.
  *
  * @param ValueBuff An EdsLib value buffer object containing a numeric value
  * @param DesiredType The desired type of value

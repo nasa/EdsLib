@@ -486,8 +486,8 @@ static int seds_xmlparser_recreate_xml(lua_State *lua)
  * should be treated equivalently to the second syntax when building the in-memory
  * tree.
  *
- * This code will detect if the the namespace contains separator chars ('/') and if
- * so, it will break up the single node into multiple nodes with parent connections.
+ * This code will detect if the namespace contains separator chars ('/') and if so,
+ * it will break up the single node into multiple nodes with parent connections.
  *
  * Expected Lua input stack:
  *  1: Namespace node to break up.
