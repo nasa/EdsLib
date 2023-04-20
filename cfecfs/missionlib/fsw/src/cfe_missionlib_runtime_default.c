@@ -47,7 +47,6 @@
 #include "ccsds_spacepacket_eds_typedefs.h"
 #include "cfe_sb_eds_typedefs.h"
 #include "cfe_mission_eds_parameters.h"
-#include "cfe_mission_eds_parameters.h"
 #include "cfe_missionlib_runtime.h"
 
 #define CFE_MISSIONLIB_GETSET_MSGID_BITS(hdr, action, ...) CFE_MissionLib_##hdr##_##action(__VA_ARGS__)
