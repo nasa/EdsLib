@@ -505,6 +505,13 @@ int main(int argc, char *argv[])
        }
     }
 
+    /* All additional args are input files.  If none, this should be considered an error */
+    if (optind >= argc)
+    {
+        fprintf(stderr, "ERROR: No input files specified on command line.\n");
+        return EXIT_FAILURE;
+    }
+
     /* The CPUNAME and CPUNUMBER variables should both be defined.
      * If only one was provided then look up the other value in EDS */
     lua_getglobal(lua, "CPUNAME");
