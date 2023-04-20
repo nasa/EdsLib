@@ -32,7 +32,7 @@
 
 #include <lua.h>
 #include "cfe_missionlib_api.h"
-
+#include "cfe_sb_eds_typedefs.h"
 
 typedef struct
 {
@@ -47,5 +47,7 @@ typedef struct
 
 void CFE_MissionLib_Lua_SoftwareBus_Attach(lua_State *lua, const CFE_MissionLib_SoftwareBus_Interface_t *IntfDB);
 
-#endif  /* _CFE_MISSIONLIB_LUA_SOFTWAREBUS_H_ */
+void CFE_MissionLib_Lua_MapPubSubParams(CFE_SB_SoftwareBus_PubSub_Interface_t *PubSub, const CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj);
+void CFE_MissionLib_Lua_UnmapPubSubParams(CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj, const CFE_SB_SoftwareBus_PubSub_Interface_t *PubSub);
 
+#endif  /* _CFE_MISSIONLIB_LUA_SOFTWAREBUS_H_ */

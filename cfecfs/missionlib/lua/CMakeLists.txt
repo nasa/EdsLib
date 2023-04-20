@@ -34,4 +34,12 @@ if (LUALIB_FOUND)
     target_link_libraries(cfe_missionlib_lua_softwarebus edslib_lua cfe_missionlib cfe_missionlib_runtime_static)
     add_dependencies(cfe_missionlib_lua_softwarebus edstool-execute)
 
+    add_library(cfe_missionlib_lua_softwarebus_pic OBJECT
+        src/cfe_missionlib_lua_softwarebus.c
+    )
+    set_target_properties(cfe_missionlib_lua_softwarebus_pic PROPERTIES
+        POSITION_INDEPENDENT_CODE TRUE
+    )
+    target_include_directories(cfe_missionlib_lua_softwarebus_pic PUBLIC inc ${LUALIB_INCLUDE_DIRS})
+
 endif()
