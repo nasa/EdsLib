@@ -53,54 +53,81 @@ end
 -- Helper function: write json-formatted fragments of the container parameters
 -- -------------------------------------------------------------------------
 local function write_json_container_members(output,ptype,mode)
+  local num_pads
   for _,ntype,refnode in ptype:iterate_members() do
     -- By checking refnode this includes only direct entries, not basetypes
     if (refnode) then
       local array_size
       local ctype
+      local json_name
 
-      output:append_previous(",")
-      output:start_group("{")
-      output:write(string.format("\"name\": \"%s\",", refnode.name))
-      output:write(string.format("\"description\": \"%s\",", refnode.attributes.shortdescription or ""))
+      if (ntype) then
+        json_name = refnode.name
 
-      -- If this is an array, move to the underlying type
-      if (ntype.entity_type == "ARRAY_DATATYPE") then
-        array_size = (array_size or 1) * ntype.total_elements
-        ntype = ntype.datatyperef
+        -- If this is an array, move to the underlying type
+        if (ntype.entity_type == "ARRAY_DATATYPE") then
+          array_size = (array_size or 1) * ntype.total_elements
+          ntype = ntype.datatyperef
+        end
+
+        -- Force certain output type translations that CCDD natively understands
+        if (ntype.entity_type == "STRING_DATATYPE") then
+          ctype = "char"
+          array_size = (array_size or 1) * ntype.length
+        elseif (SEDS.index_datatype_filter(ntype)) then
+          ctype = (ntype.is_signed and "int") or "uint"
+          ctype = ctype .. tostring(ntype.resolved_size.bits)
+        elseif (array_size and ntype.entity_type == "BOOLEAN_DATATYPE") then
+          -- HACK, fixup for boolean arrays, which are expressed as packed uint32s
+          ctype = "uint32"
+          array_size = math.ceil(array_size / 32)
+        else
+          ctype = (ntype.header_data and ntype.header_data.typedef_name) or ntype:get_flattened_name()
+        end
+
+      elseif (refnode.entity_type == "CONTAINER_PADDING_ENTRY") then
+
+        -- Padding entry, output as an array of uint8 spare bytes
+        -- Note that the name "Spare" is important, the CTF scripts do reference this field by name.
+        if (num_pads) then
+          num_pads = 1 + num_pads
+          json_name = string.format("Spare%d", num_pads)
+        else
+          num_pads = 1
+          json_name = "Spare"
+        end
+        if (refnode.sizeinbits <= 8) then
+          array_size = 0
+        else
+          array_size = math.ceil(refnode.sizeinbits / 8)
+        end
+        ctype = "uint8"
       end
 
-      -- Force certain output type translations that CCDD natively understands
-      if (ntype.entity_type == "STRING_DATATYPE") then
-        ctype = "char"
-        array_size = (array_size or 1) * ntype.length
-      elseif (SEDS.index_datatype_filter(ntype)) then
-        ctype = (ntype.is_signed and "int") or "uint"
-        ctype = ctype .. tostring(ntype.resolved_size.bits)
-      elseif (array_size and ntype.entity_type == "BOOLEAN_DATATYPE") then
-        -- HACK, fixup for boolean arrays, which are expressed as packed uint32s
-        ctype = "uint32"
-        array_size = math.ceil(array_size / 32)
-      else
-        ctype = (ntype.header_data and ntype.header_data.typedef_name) or ntype:get_flattened_name()
+      -- If the result was translatable to JSON, then output now
+      if (json_name) then
+        output:append_previous(",")
+        output:start_group("{")
+        output:write(string.format("\"name\": \"%s\",", json_name))
+        output:write(string.format("\"description\": \"%s\",", refnode.attributes.shortdescription or ""))
+
+        -- Existing examples seem to write array size of 0 if it is not an array
+        output:write(string.format("\"array_size\": \"%s\",", array_size or 0))
+        output:write(string.format("\"data_type\": \"%s\",", ctype))
+
+        -- The ccdd "bit_length" is for bitfields, not used in CFE CMD/TLM, so always output as 0
+        output:write(string.format("\"bit_length\": \"%s\",", 0))
+        -- HACK, recognize MsgID type values and treat these as atomics, not containers
+        if (ntype and SEDS.container_filter(ntype) and ntype:get_qualified_name() ~= "CFE_SB/MsgId") then
+          output:start_group("\"parameters\": [")
+          write_json_container_members(output,ntype)
+          output:end_group("]")
+        else
+          output:write("\"parameters\": []")
+        end
+
+        output:end_group("}")
       end
-
-      -- Existing examples seem to write array size of 0 if it is not an array
-      output:write(string.format("\"array_size\": \"%s\",", array_size or 0))
-      output:write(string.format("\"data_type\": \"%s\",", ctype))
-
-      -- The ccdd "bit_length" is for bitfields, not used in CFE CMD/TLM, so always output as 0
-      output:write(string.format("\"bit_length\": \"%s\",", 0))
-      -- HACK, recognize MsgID type values and treat these as atomics, not containers
-      if (SEDS.container_filter(ntype) and ntype:get_qualified_name() ~= "CFE_SB/MsgId") then
-        output:start_group("\"parameters\": [")
-        write_json_container_members(output,ntype)
-        output:end_group("]")
-      else
-        output:write("\"parameters\": []")
-      end
-
-      output:end_group("}")
     end
   end
 end
