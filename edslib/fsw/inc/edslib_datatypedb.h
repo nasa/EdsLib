@@ -73,7 +73,7 @@
 
 
 /**
- * Return codes for Edslib functions, packed into a int32_t type.
+ * Return codes for Edslib functions, packed into an int32_t type.
  *
  * In keeping with common paradigms, negative values are failures, zero
  * represents complete/normal success, other non-negative values can be
@@ -285,7 +285,7 @@ extern "C"
  * Initialize the EdsLib DataTypeDB internal state
  *
  * This should be called once during initialization by
- * programs wishing to use the the EDS DataTypeDB API calls.
+ * programs wishing to use the EDS DataTypeDB API calls.
  *
  * This function initializes all shared/global state information
  * internal to EdsLib.  In particular this will generate lookup

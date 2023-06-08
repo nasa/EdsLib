@@ -29,7 +29,7 @@
 -- with the same keys as "xml_attrs" but placeholders resolved
 --
 -- NOTE: the semantics of this replacement is not specified by CCSDS book 876,
--- which specfies it as an implementation-defined substitution.
+-- which specifies it as an implementation-defined substitution.
 -- -------------------------------------------------------------------------
 
 SEDS.info "SEDS parse defines START"
@@ -128,7 +128,7 @@ for n in SEDS.root:iterate_subtree() do
   local attributes = {}
 
   -- The evaluate function is defined locally, such that
-  -- it can use the value of "n" as a context to evaulate references
+  -- it can use the value of "n" as a context to evaluate references
   SEDS.set_eval_func(function(v)
     return basic_define_evaluate(n, v)
   end)

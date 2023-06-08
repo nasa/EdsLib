@@ -362,7 +362,7 @@ local function resolve_array_datatype_size(node)
   local member_size
 
   if (node.datatyperef.has_derivatives) then
-    -- containment relationsip: use maximum (buffer) size
+    -- containment relationship: use maximum (buffer) size
     member_size = node.datatyperef.max_size
   else
     -- basetype relationship, or simple containment: use basic resolved size
@@ -717,8 +717,8 @@ while (SEDS.get_error_count() == 0) do
   -- If the "unresolved" count ends up zero, then everything is satisfied - job done
   -- Otherwise, as long as the "resolved" count is non zero, then this indicates
   -- progress and the next pass may resolve more items.
-  -- The other possibilty, a resolved count of zero and a nonzero unresolved count,
-  -- constitutes an error.  Since no changes were made to the tree, subsquent passes
+  -- The other possibility, a resolved count of zero and a nonzero unresolved count,
+  -- constitutes an error.  Since no changes were made to the tree, subsequent passes
   -- will be no different.  The most likely cause of this would be a circular dependency.
 
   -- In this case, one more pass will be made, this time triggering an error message

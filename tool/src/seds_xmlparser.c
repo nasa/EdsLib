@@ -410,7 +410,7 @@ static int seds_xmlparser_recreate_xml(lua_State *lua)
         lua_pushnil(lua);
 
         /*
-        * Note - lua_next pops 1 item from the stack, iterpreted as the prev table index, nil to start.
+        * Note - lua_next pops 1 item from the stack, interpreted as the prev table index, nil to start.
         * It then pushes 2 items back on - the next table index, and the corresponding value.
         * At the end of the table it pushes nothing back on, but still pops the last index.
         */
@@ -727,7 +727,7 @@ static void seds_xmlparser_endtag(void *data, const XML_Char *el)
 
     case SEDS_NODETYPE_PACKAGE:
         /*
-         * Namespaces needs special handing in case they have
+         * Namespaces needs special handling in case they have
          * implicitly nested namespaces within them.
          *
          */
@@ -1133,7 +1133,7 @@ int seds_xmlparser_create(lua_State *lua)
         /*
          * Attach a garbage collector function.
          * This way, when the above object goes out of scope,
-         * the file can be closed an the XML parser object can be freed.
+         * the file can be closed and the XML parser object can be freed.
          *
          * This method works even in error conditions where the normal exit path
          * is not followed (i.e. if someone called lua_error)

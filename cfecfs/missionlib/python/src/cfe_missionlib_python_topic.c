@@ -389,7 +389,7 @@ PyObject *CFE_MissionLib_Python_Topic_repr(PyObject *obj)
     return PyUnicode_FromFormat("%s(%R,%R,%R)", obj->ob_type->tp_name, self->IntfObj->DbObj->DbName, self->IntfObj->IntfName, self->TopicName);
 }
 
-PyObject *CFE_MissionLib_Python_Topic_GetFromTopicName(CFE_MissionLib_Python_Interface_t *intfobj, PyObject *TopicName)
+PyObject *CFE_MissionLib_Python_Topic_GetFromTopicName(CFE_MissionLib_Python_Interface_t *obj, PyObject *TopicName)
 {
     CFE_MissionLib_Python_Topic_t *TopicEntry;
 

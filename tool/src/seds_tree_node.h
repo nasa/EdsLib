@@ -52,7 +52,7 @@ typedef enum
      */
 
    SEDS_NODETYPE_UNKNOWN,                 /**< Reserved value - for nodes that are ignored */
-   SEDS_NODETYPE_ROOT,                    /**< Root node of entire heirarchy */
+   SEDS_NODETYPE_ROOT,                    /**< Root node of entire hierarchy */
    SEDS_NODETYPE_CCSDS_STANDARD_FIRST,    /**< Reserved index marker - not used */
 
    /* Basic EDS node types */

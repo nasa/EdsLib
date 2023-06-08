@@ -49,7 +49,7 @@ local SEDS = {}
 --
 SEDS.to_safe_identifier = function (ident)
   -- Note that gsub actually returns two values.
-  -- The extra parethesis here only returns the first
+  -- The extra parentheses here only returns the first
   return (string.gsub(tostring(ident),"[^%w%d]+","_"))
 end
 

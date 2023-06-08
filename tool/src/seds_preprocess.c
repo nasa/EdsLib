@@ -45,7 +45,7 @@
 #include "seds_global.h"
 #include "seds_preprocess.h"
 
-static const char SEDS_PREPROCESS_ENVIORNMENT;
+static const char SEDS_PREPROCESS_ENVIRONMENT;
 
 /*******************************************************************************/
 /*                      Internal / static Helper Functions                     */
@@ -422,7 +422,7 @@ static int seds_resolve_load_references(lua_State *lua)
     lua_pushnil(lua);
     if (luaL_loadstring(lua, lua_tostring(lua, -2)) == LUA_OK)
     {
-        lua_rawgetp(lua, LUA_REGISTRYINDEX, &SEDS_PREPROCESS_ENVIORNMENT);
+        lua_rawgetp(lua, LUA_REGISTRYINDEX, &SEDS_PREPROCESS_ENVIRONMENT);
         lua_setfenv(lua, -2);
         lua_pushnil(lua);
     }
@@ -439,7 +439,7 @@ static int seds_resolve_load_references(lua_State *lua)
 
     lua_rawgeti(lua, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
     defenv = lua_gettop(lua);
-    lua_rawgetp(lua, LUA_REGISTRYINDEX, &SEDS_PREPROCESS_ENVIORNMENT);
+    lua_rawgetp(lua, LUA_REGISTRYINDEX, &SEDS_PREPROCESS_ENVIRONMENT);
     lua_rawseti(lua, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
 
     lua_pushnil(lua);
@@ -461,7 +461,7 @@ static int seds_resolve_load_references(lua_State *lua)
 static int seds_resolve_set_eval_func(lua_State *lua)
 {
     lua_settop(lua, 1);
-    lua_rawgetp(lua, LUA_REGISTRYINDEX, &SEDS_PREPROCESS_ENVIORNMENT);
+    lua_rawgetp(lua, LUA_REGISTRYINDEX, &SEDS_PREPROCESS_ENVIRONMENT);
     lua_insert(lua, 1);
     lua_setfield(lua, 1, "Evaluate");
     return 0;
@@ -489,5 +489,5 @@ void seds_preprocess_register_globals(lua_State *lua)
     lua_setfield(lua, 1, "set_eval_func");
 
     lua_newtable(lua);
-    lua_rawsetp(lua, LUA_REGISTRYINDEX, &SEDS_PREPROCESS_ENVIORNMENT);
+    lua_rawsetp(lua, LUA_REGISTRYINDEX, &SEDS_PREPROCESS_ENVIRONMENT);
 }

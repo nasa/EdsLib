@@ -196,7 +196,7 @@ EdsLib_MissionObject_t SAMPLE_EDS =
 
 The final application should be linked with `edslib_basic` and `SAMPLE_eds` libraries, which in turn depend on 
 all other component EDS libraries.  However, all "full" objects will be pruned by the linker because they will 
-not satisfy dependencies of this applicaiton.
+not satisfy dependencies of this application.
 
 
 \subsubsection dynamice Example dynamically linked C application

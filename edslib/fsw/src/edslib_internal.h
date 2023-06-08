@@ -200,7 +200,7 @@ typedef struct
 
 /**
  * Macro to set an iterator to the start of a given object
- * The object is specified directory as a EdsLib_DatabaseRef_t
+ * The object is specified directory as an EdsLib_DatabaseRef_t
  */
 #define EDSLIB_RESET_ITERATOR_FROM_REFOBJ(name,baseref)                 \
     do {                                                                \
@@ -210,7 +210,7 @@ typedef struct
 
 /**
  * Macro to set an iterator to the start of a given object
- * The object is specified directory as a EdsLib_Id_t
+ * The object is specified directory as an EdsLib_Id_t
  */
 #define EDSLIB_RESET_ITERATOR_FROM_EDSID(name,edsid)                            \
     do {                                                                        \

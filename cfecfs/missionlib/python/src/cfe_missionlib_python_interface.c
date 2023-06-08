@@ -367,7 +367,7 @@ static PyObject *CFE_MissionLib_Python_Interface_gettopic(PyObject *obj, PyObjec
     return result;
 }
 
-PyObject *CFE_MissionLib_Python_Interface_GetFromIntfName(CFE_MissionLib_Python_Database_t *dbobj, PyObject *IntfName)
+PyObject *CFE_MissionLib_Python_Interface_GetFromIntfName(CFE_MissionLib_Python_Database_t *obj, PyObject *InterfaceName)
 {
     int32_t status;
     uint16_t InterfaceId;

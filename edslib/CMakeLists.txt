@@ -68,7 +68,7 @@ function(find_edslib_dependency DEPNAME HEADER_FILE)
 
     # Fallback method for cross-compilation or when pkgconfig is not available.
     # NOTE: This method does not verify version of the library.  In a cross-compile
-    # enviornment it will just use whatever version is present in CMAKE_FIND_ROOT_PATH.
+    # environment it will just use whatever version is present in CMAKE_FIND_ROOT_PATH.
 
     # Attempt to get the real library name by stripping any version info from the args
     set(BASENAMES)

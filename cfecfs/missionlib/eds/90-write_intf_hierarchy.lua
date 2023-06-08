@@ -20,7 +20,7 @@
 
 -- ---------------------------------------------
 -- generate interface hierarchy graphic
--- This generates dot files based on the interface heirarchy which can be
+-- This generates dot files based on the interface hierarchy which can be
 -- easily turned into graphics using the "dot" tool.
 -- This script should run late in the processing stages
 -- ---------------------------------------------

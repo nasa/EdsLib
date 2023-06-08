@@ -24,7 +24,7 @@
 
     Purpose:
       This describes usage of objects as defined by CCSDS book 133 Space Packet Protocol,
-      as utilized by the Core Fligh System (cFS)
+      as utilized by the Core Flight System (cFS)
 
 -->
 <PackageFile xmlns="http://www.ccsds.org/schema/sois/seds">
@@ -41,7 +41,7 @@
 
       <IntegerDataType name="FunctionCode" shortDescription="The command ID contained within a command secondary header">
         <LongDescription>
-          Command codes in CFE range are 7 bits (0-127).  The most signficant bit (codes 128-255) are reserved.
+          Command codes in CFE range are 7 bits (0-127). The most significant bit (codes  128-255) are reserved.
         </LongDescription>
         <IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
         <Range>

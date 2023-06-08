@@ -221,7 +221,7 @@ if(IS_CFS_MISSION_BUILD)
 
 endif(IS_CFS_MISSION_BUILD)
 
-# UT stubs should only be necesary on a CFS target build
+# UT stubs should only be necessary on a CFS target build
 if (ENABLE_UNIT_TESTS AND IS_CFS_ARCH_BUILD)
   add_subdirectory(ut-stubs)
 endif (ENABLE_UNIT_TESTS AND IS_CFS_ARCH_BUILD)
