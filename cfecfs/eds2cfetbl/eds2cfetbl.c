@@ -179,8 +179,11 @@ void LoadTemplateFile(lua_State *lua, const char *Filename)
         EdsAppNameLen = strlen(EdsAppName);
         if (strncasecmp(EdsAppName, CFE_TBL_FileDefPtr->TableName, EdsAppNameLen) == 0)
         {
-            printf("Matched EDS Package Name: %s\n", EdsAppName);
-            break;
+            if (!isalpha((unsigned char)CFE_TBL_FileDefPtr->TableName[EdsAppNameLen]))
+            {
+                printf("Matched EDS Package Name: %s\n", EdsAppName);
+                break;
+            }
         }
     }
 
