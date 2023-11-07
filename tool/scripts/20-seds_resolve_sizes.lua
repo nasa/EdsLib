@@ -577,6 +577,16 @@ local function resolve_subrange_datatype_size(node)
   return true
 end
 
+-- -------------------------------------------------------------------------
+-- Alias data type size resolver
+-- -------------------------------------------------------------------------
+local function resolve_alias_datatype_size(node)
+  if (not node.type.resolved_size) then
+    return node.type
+  end
+  node.resolved_size = SEDS.new_size_object(node.type.resolved_size)
+  return true
+end
 
 -- -----------------------------------------------------------------------------------------
 --                              Main object size resolution routine
@@ -584,6 +594,7 @@ end
 
 local SEDS_SIZE_RESOLVE_TABLE =
 {
+  ALIAS_DATATYPE = resolve_alias_datatype_size,
   CONTAINER_DATATYPE = resolve_container_datatype_size,
   ARRAY_DATATYPE = resolve_array_datatype_size,
   ENUMERATION_DATATYPE = resolve_enumeration_datatype_size,

@@ -90,6 +90,7 @@ static const seds_stringmap_t XML_SEDS_STARTTAG_MAP[] =
         /* Element types defined by SEDS and supported by this toolchain */
         { .tag_name = XML_CHAR_C("ActivitySet"),            .tag_id = SEDS_NODETYPE_ACTIVITY_SET },
         { .tag_name = XML_CHAR_C("Activity"),               .tag_id = SEDS_NODETYPE_ACTIVITY },
+        { .tag_name = XML_CHAR_C("AliasDataType"),          .tag_id = SEDS_NODETYPE_ALIAS_DATATYPE          },
         { .tag_name = XML_CHAR_C("AlternateSet"),           .tag_id = SEDS_NODETYPE_ALTERNATE_SET           },
         { .tag_name = XML_CHAR_C("Alternate"),              .tag_id = SEDS_NODETYPE_ALTERNATE               },
         { .tag_name = XML_CHAR_C("ANDedConditions"),        .tag_id = SEDS_NODETYPE_ANDED_CONDITIONS        },

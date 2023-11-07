@@ -788,6 +788,10 @@ local function write_c_container_detail_object(output,node)
 
 end
 
+local function write_c_alias_detail_object(output,node)
+  return { ["Detail.Alias"] = "{ .RefObj = " .. node.type.edslib_refobj_initializer .. " }" }
+end
+
 
 -- -----------------------------------------------------------------------
 -- Generate "BasicType" field value for master table
@@ -797,7 +801,10 @@ local function get_object_detail_fields(output,node)
   local typemap
   local detailfunc
 
-  if (node.resolved_size) then
+  if (node.entity_type == "ALIAS_DATATYPE") then
+    detailfunc = write_c_alias_detail_object
+    typemap = "ALIAS"
+  elseif (node.resolved_size) then
     if (node.resolved_size.bits > 0) then
       if (node.entity_type == "INTEGER_DATATYPE" or node.entity_type == "ENUMERATION_DATATYPE") then
         typemap = (node.is_signed and "SIGNED" or "UNSIGNED") .. "_INT"
@@ -891,7 +898,7 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
   for idx,dsobj in ipairs(datasheet_objs) do
     output:append_previous(",")
     output:start_group(string.format("{ /* %s */", refnames[idx] or "(none)"))
-    for _,key in ipairs({ "Checksum", "BasicType", "Flags", "NumSubElements", "SizeInfo", "Detail.Array", "Detail.Container", "Detail.Number", "Detail.String" }) do
+    for _,key in ipairs({ "Checksum", "BasicType", "Flags", "NumSubElements", "SizeInfo", "Detail.Alias", "Detail.Array", "Detail.Container", "Detail.Number", "Detail.String" }) do
       if (dsobj[key]) then
         output:append_previous(",")
         output:write(string.format(".%s = %s", key, dsobj[key]))
