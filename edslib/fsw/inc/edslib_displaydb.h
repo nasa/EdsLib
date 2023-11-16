@@ -94,7 +94,7 @@ extern "C"
  * Initialize the DisplayDB subsystem
  *
  * This should be called once during initialization by
- * programs wishing to use the the Display API calls.
+ * programs wishing to use the Display API calls.
  */
 void EdsLib_DisplayDB_Initialize(void);
 
@@ -291,7 +291,7 @@ void EdsLib_Generate_Hexdump(void *output, const uint8_t *DataPtr, uint16_t Disp
 /* **************************************************************************************
  * EDS BINARY <-> STRING CONVERTERS
  *
- * Thes functions convert between user-friendly string representations and the numeric
+ * These functions convert between user-friendly string representations and the numeric
  * representations of EDS identifiers and EDS-defined datatypes.
  * **************************************************************************************/
 

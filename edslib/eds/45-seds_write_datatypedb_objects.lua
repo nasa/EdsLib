@@ -415,7 +415,7 @@ collect_descisiontree_values = function (state, low, high)
     refidx = greatermark
   end
 
-  -- Add additional values less than than the current value, if any
+  -- Add additional values less than the current value, if any
   collect_descisiontree_values(state,low,median-1)
   if (refidx ~= #state.list) then
     lessmark = #state.list

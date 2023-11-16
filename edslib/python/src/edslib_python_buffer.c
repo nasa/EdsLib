@@ -48,7 +48,7 @@ EdsLib_Binding_Buffer_Content_t* EdsLib_Python_Buffer_GetContentRef(EdsLib_Pytho
 {
     /*
      * Confirm writability
-     * Check if the user has requested writable flags on an non-writable buffer
+     * Check if the user has requested writable flags on a non-writable buffer
      */
     if ((userflags & PyBUF_WRITABLE) == PyBUF_WRITABLE && self->is_readonly)
     {

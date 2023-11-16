@@ -68,7 +68,7 @@
 typedef uint32_t EdsLib_Id_t;
 
 /**
- * A EdsLib_MsgId value that is never valid.
+ * An EdsLib_MsgId value that is never valid.
  * Because the appid of 0 is reserved, a valid EdsLib_MsgId can
  * never be all zero.
  */
@@ -98,12 +98,12 @@ enum
 /***************************************************************************************
  * INITIALIZERS
  *
- * These macros may be used to statically initialize a EdsLib_MsgId value.  They are done
+ * These macros may be used to statically initialize an EdsLib_MsgId value.  They are done
  * as macros rather than inline functions to allow use in compile-time initializers.
  ***************************************************************************************/
 
 /**
- * Initialize a EdsLib_MsgId representing a generic non-message data structure.
+ * Initialize an EdsLib_MsgId representing a generic non-message data structure.
  * The CPU number will be set to 0 (default) and the format type will be set
  * to indicate a generic data structure.
  *

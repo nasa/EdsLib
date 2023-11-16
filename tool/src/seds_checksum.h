@@ -71,7 +71,7 @@ void seds_checksum_init_table(void);
  *
  * @param sum previous checksum value
  * @param localvalue the integer value to incorporate into the checksum
- * @param signficant_bits the number of bits in localvalue to consider
+ * @param significant_bits the number of bits in localvalue to consider
  * @return updated checksum
  */
 seds_checksum_t seds_update_checksum_numeric(seds_checksum_t sum, uintmax_t localvalue, seds_integer_t significant_bits);

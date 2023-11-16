@@ -167,7 +167,7 @@ static PyObject *EdsLib_Python_ObjectContainer_keys(PyObject *obj)
     /* sanity check that the db entry has a valid subentry list (it should for all containers) */
     if (dbent->SubEntityList == NULL || !PyList_Check(dbent->SubEntityList))
     {
-        return PyErr_Format(PyExc_TypeError, "%s is not an mappable EDS type", Py_TYPE(obj)->tp_name);
+        return PyErr_Format(PyExc_TypeError, "%s is not a mappable EDS type", Py_TYPE(obj)->tp_name);
     }
 
     size = PyList_GET_SIZE(dbent->SubEntityList);
@@ -205,7 +205,7 @@ static PyObject *EdsLib_Python_ObjectContainer_values(PyObject *obj)
 
     if (dbent->SubEntityList == NULL || !PyList_Check(dbent->SubEntityList))
     {
-        return PyErr_Format(PyExc_TypeError, "%s is not an mappable EDS type", Py_TYPE(obj)->tp_name);
+        return PyErr_Format(PyExc_TypeError, "%s is not a mappable EDS type", Py_TYPE(obj)->tp_name);
     }
 
     size = PyList_GET_SIZE(dbent->SubEntityList);
@@ -250,7 +250,7 @@ static PyObject *EdsLib_Python_ObjectContainer_items(PyObject *obj)
 
     if (dbent->SubEntityList == NULL || !PyList_Check(dbent->SubEntityList))
     {
-        return PyErr_Format(PyExc_TypeError, "%s is not an mappable EDS type", Py_TYPE(obj)->tp_name);
+        return PyErr_Format(PyExc_TypeError, "%s is not a mappable EDS type", Py_TYPE(obj)->tp_name);
     }
 
     size = PyList_GET_SIZE(dbent->SubEntityList);
@@ -310,7 +310,7 @@ static PyObject *   EdsLib_Python_ObjectContainer_iter(PyObject *obj)
     /* sanity check that the db entry has a valid subentry list (it should for all containers) */
     if (dbent->SubEntityList == NULL || !PyList_Check(dbent->SubEntityList))
     {
-        return PyErr_Format(PyExc_TypeError, "%s is not an mappable EDS type", Py_TYPE(obj)->tp_name);
+        return PyErr_Format(PyExc_TypeError, "%s is not a mappable EDS type", Py_TYPE(obj)->tp_name);
     }
 
     result = PyObject_GC_New(EdsLib_Python_ContainerIterator_t, &EdsLib_Python_ContainerIteratorType);

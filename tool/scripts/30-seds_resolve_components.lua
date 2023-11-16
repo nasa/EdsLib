@@ -129,7 +129,7 @@ while (#pending_instance_list > 0 and SEDS.get_error_count() == 0) do
         provider_inst = SEDS.new_component_instance(provcomp, mapping.rule, instance.trigger or instance.component)
         pending_instance_list[1 + #pending_instance_list] = provider_inst
       else
-        -- For a other pattern (e.g. singleton), reuse the existing instance
+        -- For another pattern (e.g. singleton), reuse the existing instance
         provider_inst = mapping.rule.instance_list[1];
       end
       if (not provider_inst) then
@@ -166,7 +166,7 @@ while (#pending_instance_list > 0 and SEDS.get_error_count() == 0) do
     -- If there were no required interfaces, treat this as a "base" interface
     -- from which all communication is derived.  In the cFS world there should be
     -- only one of these and it should be the logical software bus.  This entertains
-    -- the possibilty that there is more than one of these such interfaces however
+    -- the possibility that there is more than one of these such interfaces however
     -- that is not really an expected mode of operation
     if (req_count == 0) then
       lowlevel_interfaces[1 + #lowlevel_interfaces] = instance

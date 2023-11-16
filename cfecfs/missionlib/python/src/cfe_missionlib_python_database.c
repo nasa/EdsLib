@@ -26,7 +26,7 @@
 ** Author: mathew.j.mccaskey@nasa.gov
 **
 ** Purpose:
-**   Implement python type which represents an CFE_MissionLib database
+**   Implement python type which represents a CFE_MissionLib database
 **
 **   Allows python code to dynamically load a database object and retrieve
 **   entries from it.

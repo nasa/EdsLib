@@ -154,7 +154,7 @@ PyObject *EdsLib_Python_ObjectBase_GenericNew(PyTypeObject *objtype, PyObject *k
     {
         /* sanity check -- this only constructs EDS object instance types */
         /* Note - A SubType is intended here, the base type is abstract,
-         * so to construct an object it should aways be a subtype */
+         * so to construct an object it should always be a subtype */
         if (!PyType_IsSubtype(objtype, &EdsLib_Python_ObjectBaseType))
         {
             PyErr_Format(PyExc_TypeError, "Cannot construct EDS objects of type %s\n",

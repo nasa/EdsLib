@@ -76,7 +76,7 @@ flight software; much of the logic is actually very generic.
 
 ### Application-independent Basic Reading and Preprocessing
 
-The basic tool in the `tool` subdirectory only provides an execution enviroment and
+The basic tool in the `tool` subdirectory only provides an execution environment and
 some preprocessing scripts.  It handles the task of reading the XML files and building
 a "Document Object Model" (DOM) tree in memory.
 
@@ -131,7 +131,7 @@ representation and the native representation of an object, using the generated m
 tables.  This foundation also acts as the basis for bindings to other higher level languages.  Two
 such bindings are provided, to Lua and JSON, in the `lua` and `json` directories, respectively.
 These leverage third party libraries that convert between "C" language values and the corresponding
-script languge.  Additional bindings can be easily added, such as Ruby or Python, as necessary.
+script language.  Additional bindings can be easily added, such as Ruby or Python, as necessary.
 
 __Scripts Provided__
 
@@ -195,7 +195,7 @@ __Scripts Provided__
 | `cfe_sb_parameter_map`     | Determine parameter values for all interface instances            |
 | `cfe_sb_dispatch_tables`   | Write C source files for dispatching software bus messages        |
 | `build_cfe_sb_interfacedb` | Write makefiles to build objects                                  |
-| `write_intf_heirarchy`     | Create dot files to graphically view the interface structure      |
+| `write_intf_hierarchy`     | Create dot files to graphically view the interface structure      |
 
 
 
@@ -212,7 +212,7 @@ dependency relationship between the two scripts.  If one script needs to execute
 before the other, scripts would need to be re-numbered to ensure correct ordering.
 
 
-# SEDS Tool Runtime Enviornment
+# SEDS Tool Runtime Environment
 
 All SEDS processing operations are implemented in Lua, and the basic tool provides an
 execution environment for these Lua scripts, calling each user-specified script in sequence.
@@ -294,7 +294,7 @@ connections have been consolidated for the sake of illustration.
 
 ### Example Interface Tree
 
-In order to make use of the interfaces described in EDS, the tool also generates an "interface heirarchy"
+In order to make use of the interfaces described in EDS, the tool also generates an "interface hierarchy"
 similar in structure to the DOM tree shown above.  While the DOM tree focuses on _definitions_, this tree
 describes actual _instances_ of the components described in EDS.
 
@@ -399,14 +399,14 @@ are worth noting here as they may be relevant to additional script development.
 ### Console output and reporting functions
 
 The following functions simplify the process of reporting status information to the user console.
-Thes can abstract different output/terminal environments and add context information (e.g. to format
+These can abstract different output/terminal environments and add context information (e.g. to format
 error messages such that IDE environments can automatically link to the relevant source file), and
 also give the user control over how the messages are ultimately displayed:
 
 | Function              | Purpose                                                       |
 |-----------------------|---------------------------------------------------------------|
 | `debug`               | Generate a "Debug" message to the console                     |
-| `info`                | Generate an "Information" messsage                            |
+| `info`                | Generate an "Information" message                            |
 | `warning`             | Generate a "Warning" message                                  |
 | `error`               | Generate an "Error" message                                   |
 | `fatal`               | Generate a "Fatal" message, **causes tool to abort**          |
@@ -439,10 +439,10 @@ This set of functions is provided as general purpose utilities:
 
 **NOTE**: The `sorted_keys` function operates on any standard Lua table and it is not specific
 to EDS processing in any way.  It is included here because the standard Lua table iteration
-function `pairs()` does not return the keys in a predicable or consistent order.  However,
+function `pairs()` does not return the keys in a predictable or consistent order.  However,
 ordering is often important when generating EDS output files, as one typically wants to produce
-consistent output between subsequent executions of the tool, to avoid superflous file changes.
-Obtaining the keys to a table in a consistent order is an important tool for acheving this goal.
+consistent output between subsequent executions of the tool, to avoid superfluous file changes.
+Obtaining the keys to a table in a consistent order is an important tool for achieving this goal.
 
 
 ### Output file generation functions
@@ -472,7 +472,7 @@ The filehandle returned from `SEDS.output_open` contains the following additiona
 **NOTE**: The `append_previous` method is used assist when generating line-oriented lists, where
 every line except the last element would have a comma.  In general, it is not known which
 type of punctuation to use on a given line until the _next_ line is generated.  This necessitates
-either putting the punctuation at the beginning of the next line, which is less readble, or by
+either putting the punctuation at the beginning of the next line, which is less readable, or by
 "peeking" ahead, which is tedious.  This method is a compromise that allows the line punctuation
 to be modified after the initial write.
 
@@ -482,7 +482,7 @@ to be modified after the initial write.
 General purpose filtering functions accept a single DOM node reference and return a boolean
 value indicating whether the node matches the filtering criteria.  A number of commonly-used
 filter criteria are available as predefined filters.  Additionally, a "factory" function is
-provided to simpify the process of creating new filters which match any arbitrary node type.
+provided to simplify the process of creating new filters which match any arbitrary node type.
 
 | Filter Factory Function    | Purpose                                                         |
 |----------------------------|-----------------------------------------------------------------|
@@ -522,7 +522,7 @@ usually _not_ need to perform this type of activity, but these are included for 
 ## Tree Node Property Reference
 
 Each node in the DOM tree have their own methods and properties associated with them.  The base
-tool creates the tree and intializes a basic set of properties on every node, based on the contents
+tool creates the tree and initializes a basic set of properties on every node, based on the contents
 of the XML source and the determined relationships between nodes.
 
 **NOTE**: Properties are dynamic and can be added, modified, or removed by any processing script.
@@ -643,7 +643,7 @@ Methods on `memreq` objects are:
 
 1) all properties are read-only, at least directly.  They are only modified via method calls above.
 2) the "checksum" is a 64-bit integer value.  This exceeds the quantity which can be reliably stored in a Lua number,
-   so it is reprensented as a hexadecimal ASCII string instead.  The string is always 16 characters long.
+   so it is represented as a hexadecimal ASCII string instead.  The string is always 16 characters long.
    
 
 ## Properties added during constraint resolution
