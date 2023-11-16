@@ -77,24 +77,41 @@ EdsLib_DataTypeDB_t EdsLib_DataTypeDB_GetTopLevel(const EdsLib_DatabaseObject_t 
 const EdsLib_DataTypeDB_Entry_t *EdsLib_DataTypeDB_GetEntry(const EdsLib_DatabaseObject_t *GD, const EdsLib_DatabaseRef_t *RefObj)
 {
     EdsLib_DataTypeDB_t Dict;
+    const EdsLib_DataTypeDB_Entry_t *DataDictEntry;
+    const EdsLib_DatabaseRef_t *CurrRef;
 
-    if (RefObj == NULL)
+    DataDictEntry = NULL;
+    CurrRef = RefObj;
+
+    while (true)
     {
-        return NULL;
+        if (CurrRef == NULL)
+        {
+            break;
+        }
+
+        Dict = EdsLib_DataTypeDB_GetTopLevel(GD, CurrRef->AppIndex);
+        if (Dict == NULL)
+        {
+            break;
+        }
+
+        if (CurrRef->TypeIndex >= Dict->DataTypeTableSize)
+        {
+            break;
+        }
+
+        DataDictEntry = &Dict->DataTypeTable[CurrRef->TypeIndex];
+
+        if (DataDictEntry->BasicType != EDSLIB_BASICTYPE_ALIAS)
+        {
+            break;
+        }
+
+        CurrRef = &DataDictEntry->Detail.Alias.RefObj;
     }
 
-    Dict = EdsLib_DataTypeDB_GetTopLevel(GD, RefObj->AppIndex);
-    if (Dict == NULL)
-    {
-        return NULL;
-    }
-
-    if (RefObj->TypeIndex >= Dict->DataTypeTableSize)
-    {
-        return NULL;
-    }
-
-    return &Dict->DataTypeTable[RefObj->TypeIndex];
+    return DataDictEntry;
 }
 
 

@@ -154,6 +154,7 @@ local function get_qualified_name(node)
     CONTAINER_TRAILER_ENTRY_LIST = ".",
     CONTAINER_ENTRY_LIST = ".",
     CONTAINER_DATATYPE = "/",
+    ALIAS_DATATYPE = "/",
     ARRAY_DATATYPE = "/",
     INTEGER_DATATYPE = "/",
     FLOAT_DATATYPE = "/",

@@ -249,6 +249,13 @@ struct EdsLib_StringDescriptor
 
 typedef struct EdsLib_StringDescriptor EdsLib_StringDescriptor_t;
 
+struct EdsLib_AliasDescriptor
+{
+    EdsLib_DatabaseRef_t RefObj;
+};
+
+typedef struct EdsLib_AliasDescriptor EdsLib_AliasDescriptor_t;
+
 union EdsLib_ObjectDetailDescriptor
 {
     const void *Ptr;
@@ -256,6 +263,7 @@ union EdsLib_ObjectDetailDescriptor
     const EdsLib_ArrayDescriptor_t *Array;
     const EdsLib_StringDescriptor_t String;
     const EdsLib_NumberDescriptor_t Number;
+    const EdsLib_AliasDescriptor_t  Alias;
 };
 
 typedef union EdsLib_ObjectDetailDescriptor EdsLib_ObjectDetailDescriptor_t;

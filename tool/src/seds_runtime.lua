@@ -162,6 +162,15 @@ SEDS.create_nodetype_filter = function (want_nodetype)
   else
     node_filtertable[want_nodetype] = true
   end
+
+  -- If a datatype alias is encountered, then check the type it refers to
+  if (node_filtertable["ALIAS_DATATYPE"]) then
+    node_filtertable["ALIAS_DATATYPE"] = function(node)
+      local tgtype = node.type and node.type.entity_type or "UNKNOWN"
+      return node_filtertable[tgtype]
+    end
+  end
+
   return function (node)
     local result = node_filtertable[node.entity_type]
     while (type(result) == "function") do
@@ -237,6 +246,7 @@ SEDS.basenode_filter = SEDS.create_nodetype_filter
 -- A filter function that will match any concrete SEDS data type
 SEDS.concrete_datatype_filter = SEDS.create_nodetype_filter
 {
+  "ALIAS_DATATYPE",
   "CONTAINER_DATATYPE",
   "ARRAY_DATATYPE",
   "INTEGER_DATATYPE",
@@ -251,6 +261,7 @@ SEDS.concrete_datatype_filter = SEDS.create_nodetype_filter
 -- A filter function that will match any SEDS data type, including generics
 SEDS.any_datatype_filter = SEDS.create_nodetype_filter
 {
+  "ALIAS_DATATYPE",
   "CONTAINER_DATATYPE",
   "ARRAY_DATATYPE",
   "INTEGER_DATATYPE",
@@ -266,12 +277,14 @@ SEDS.any_datatype_filter = SEDS.create_nodetype_filter
 -- A filter function that will match only containers (for base types)
 SEDS.container_filter = SEDS.create_nodetype_filter
 {
+  "ALIAS_DATATYPE",
   "CONTAINER_DATATYPE"
 }
 
 -- A filter function that will match only datatypes which are suitable for indices
 SEDS.index_datatype_filter = SEDS.create_nodetype_filter
 {
+  "ALIAS_DATATYPE",
   "INTEGER_DATATYPE",
   "ENUMERATION_DATATYPE",
   "SUBRANGE_DATATYPE"
@@ -280,6 +293,7 @@ SEDS.index_datatype_filter = SEDS.create_nodetype_filter
 -- A filter function that will match any scalar SEDS data type
 SEDS.scalar_datatype_filter = SEDS.create_nodetype_filter
 {
+  "ALIAS_DATATYPE",
   "INTEGER_DATATYPE",
   "STRING_DATATYPE",
   "FLOAT_DATATYPE",
@@ -291,6 +305,7 @@ SEDS.scalar_datatype_filter = SEDS.create_nodetype_filter
 -- A filter function that will match only numeric data types
 SEDS.numeric_datatype_filter = SEDS.create_nodetype_filter
 {
+  "ALIAS_DATATYPE",
   "INTEGER_DATATYPE",
   "FLOAT_DATATYPE",
   "SUBRANGE_DATATYPE"
@@ -313,6 +328,7 @@ SEDS.referredintf_filter = SEDS.create_nodetype_filter
 -- A filter which matches anything that has named sub-entities
 SEDS.subentity_filter = SEDS.create_nodetype_filter
 {
+  "ALIAS_DATATYPE",
   "CONTAINER_DATATYPE",
   "DECLARED_INTERFACE",
   "REQUIRED_INTERFACE",

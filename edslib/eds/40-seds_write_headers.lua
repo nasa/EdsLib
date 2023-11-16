@@ -241,6 +241,13 @@ local function write_c_define(output,def)
   end
 end
 
+-- -------------------------------------------------
+-- Helper function to write an integer typedef
+-- -------------------------------------------------
+local function write_c_alias_typedef(output,node)
+  return { ctype = node.type:get_flattened_name() .. "_t" }
+end
+
 -- -----------------------------------------------------------------------------------------
 --                              Main output routine begins
 -- -----------------------------------------------------------------------------------------
@@ -248,6 +255,7 @@ end
 -- Handler table for various data type nodes
 local datatype_output_handler =
 {
+  ALIAS_DATATYPE = write_c_alias_typedef,
   INTEGER_DATATYPE = write_c_integer_typedef,
   CONTAINER_DATATYPE = write_c_struct_typedef,
   ARRAY_DATATYPE = write_c_array_typedef,

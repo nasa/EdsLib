@@ -122,6 +122,7 @@ typedef enum
 
    SEDS_NODETYPE_DYNAMIC_DATATYPE_FIRST,  /**< Reserved index marker - not used */
    SEDS_NODETYPE_GENERIC_TYPE,            /**< Generic Type (deferred definition) */
+   SEDS_NODETYPE_ALIAS_DATATYPE,          /**< Alias Data type */
    SEDS_NODETYPE_DYNAMIC_DATATYPE_LAST,   /**< Reserved index marker - not used */
 
    SEDS_NODETYPE_INTERFACE_FIRST,         /**< Reserved index marker - not used */

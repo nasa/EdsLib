@@ -98,6 +98,7 @@ typedef enum
     EDSLIB_BASICTYPE_CONTAINER,       /**< References to multiple other data blobs of heterogeneous types */
     EDSLIB_BASICTYPE_ARRAY,           /**< References to multiple other data blobs of homogeneous type */
     EDSLIB_BASICTYPE_COMPONENT,       /**< References to component entities */
+    EDSLIB_BASICTYPE_ALIAS,           /**< References to component entities */
     EDSLIB_BASICTYPE_MAX              /**< Reserved value, should always be last */
 } EdsLib_BasicType_t;
 

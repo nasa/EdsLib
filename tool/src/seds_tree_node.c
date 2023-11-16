@@ -107,6 +107,7 @@ static const char *SEDS_NODETYPE_LOOKUP[SEDS_NODETYPE_MAX] =
         [SEDS_NODETYPE_STRING_DATATYPE] = "STRING_DATATYPE",
         [SEDS_NODETYPE_BOOLEAN_DATATYPE] = "BOOLEAN_DATATYPE",
         [SEDS_NODETYPE_SUBRANGE_DATATYPE] = "SUBRANGE_DATATYPE",
+        [SEDS_NODETYPE_ALIAS_DATATYPE] = "ALIAS_DATATYPE",
         [SEDS_NODETYPE_SCALAR_DATATYPE_LAST] = "SCALAR_DATATYPE_LAST",
         [SEDS_NODETYPE_COMPOUND_DATATYPE_FIRST] = "COMPOUND_DATATYPE_FIRST",
         [SEDS_NODETYPE_ARRAY_DATATYPE] = "ARRAY_DATATYPE",
@@ -492,6 +493,9 @@ void seds_tree_node_register_globals(lua_State *lua)
     lua_pushinteger(lua, SEDS_USER_MESSAGE_WARNING);
     lua_pushcclosure(lua, seds_tree_mark_error, 1);
     lua_setfield(lua, -2, "warning");
+    lua_pushinteger(lua, SEDS_USER_MESSAGE_INFO);
+    lua_pushcclosure(lua, seds_tree_mark_error, 1);
+    lua_setfield(lua, -2, "info");
     lua_pushcfunction(lua, seds_generic_props_enumerate_properties);
     lua_setfield(lua, -2, "get_properties");
 

@@ -261,6 +261,10 @@ local SEDS_ATTRIBUTE_TABLE =
   {
     datatyperef = { style="link", filter=SEDS.concrete_datatype_filter, required = true },
   },
+  ALIAS_DATATYPE =
+  {
+    type = { style="link", filter=SEDS.concrete_datatype_filter, required = true }
+  },
   DIMENSION =
   {
     indextyperef = { style="link", filter=SEDS.index_datatype_filter },
