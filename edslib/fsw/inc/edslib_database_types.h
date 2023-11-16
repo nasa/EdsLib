@@ -73,11 +73,13 @@ typedef double (*EdsLib_FloatingPointCalibratorFunc_t)(double x);
 typedef enum
 {
     EdsLib_ErrorControlType_INVALID = 0,
+    EdsLib_ErrorControlType_ALWAYS_ZERO,
     EdsLib_ErrorControlType_CHECKSUM,
     EdsLib_ErrorControlType_CHECKSUM_LONGITUDINAL,
     EdsLib_ErrorControlType_CRC8,
     EdsLib_ErrorControlType_CRC16_CCITT,
     EdsLib_ErrorControlType_CRC32,
+    EdsLib_ErrorControlType_CRC32C,
     EdsLib_ErrorControlType_MAX
 } EdsLib_ErrorControlType_t;
 

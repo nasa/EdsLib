@@ -69,11 +69,13 @@ static uintmax_t EdsLib_ErrorControlAlgorithm_CHECKSUM(const void *Base, uint32_
 static const EdsLib_ErrorControlImpl_t EDSLIB_ERRCTL_DISPATCH[EdsLib_ErrorControlType_MAX] =
 {
         [EdsLib_ErrorControlType_INVALID] = EdsLib_ErrorControlAlgorithm_ZERO,
+        [EdsLib_ErrorControlType_ALWAYS_ZERO] = EdsLib_ErrorControlAlgorithm_ZERO,
         [EdsLib_ErrorControlType_CHECKSUM] = EdsLib_ErrorControlAlgorithm_CHECKSUM,
         [EdsLib_ErrorControlType_CHECKSUM_LONGITUDINAL] = EdsLib_ErrorControlAlgorithm_CHECKSUM_LONGITUDINAL,
         [EdsLib_ErrorControlType_CRC8] = EdsLib_ErrorControlAlgorithm_CRC8,
         [EdsLib_ErrorControlType_CRC16_CCITT] = EdsLib_ErrorControlAlgorithm_CRC16_CCITT,
-        [EdsLib_ErrorControlType_CRC32] = EdsLib_ErrorControlAlgorithm_ZERO /* placeholder; not implemented yet */
+        [EdsLib_ErrorControlType_CRC32] = EdsLib_ErrorControlAlgorithm_ZERO, /* placeholder; not implemented yet */
+        [EdsLib_ErrorControlType_CRC32C] = EdsLib_ErrorControlAlgorithm_ZERO /* placeholder; not implemented yet */
 };
 
 
