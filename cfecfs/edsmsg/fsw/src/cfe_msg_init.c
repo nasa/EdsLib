@@ -25,6 +25,7 @@
  * Message initialization
  */
 #include "cfe_msg.h"
+#include "cfe_time.h"
 #include "cfe_missionlib_runtime.h"
 
 /*----------------------------------------------------------------
@@ -62,4 +63,29 @@ CFE_Status_t CFE_MSG_Init(CFE_MSG_Message_t *MsgPtr, CFE_SB_MsgId_t MsgId, CFE_M
     }
 
     return Status;
+}
+
+/*----------------------------------------------------------------
+ *
+ * Implemented per public API
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
+CFE_Status_t CFE_MSG_UpdateHeader(CFE_MSG_Message_t *MsgPtr, CFE_MSG_SequenceCount_t SeqCnt)
+{
+    if (MsgPtr == NULL)
+    {
+        return CFE_MSG_BAD_ARGUMENT;
+    }
+
+    /* Sequence count is in the basic CCSDS Primary Hdr, so all msgs have it */
+    CFE_MSG_SetSequenceCount(MsgPtr, SeqCnt);
+
+    /*
+     * TLM packets have a timestamp in the secondary header.
+     * This may fail if this is not a TLM packet (that is OK)
+     */
+    CFE_MSG_SetMsgTime(MsgPtr, CFE_TIME_GetTime());
+
+    return CFE_SUCCESS;
 }
