@@ -16,6 +16,7 @@
 # Module library
 add_library(${DEP} STATIC
     fsw/src/cfe_msg_init.c
+    fsw/src/cfe_msg_integrity.c
     fsw/src/cfe_msg_msgid.c
     fsw/src/cfe_msg_commonhdr.c
 
