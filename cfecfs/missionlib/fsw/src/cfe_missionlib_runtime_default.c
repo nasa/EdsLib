@@ -76,10 +76,10 @@
 /* When using only basic (v1) headers, the TopicID + Subsystem are squeezed into the historical 11-bit field */
 #if CFE_MISSIONLIB_SELECTED_HDRTYPE == CFE_MISSIONLIB_SpacePacketBasic_HEADERS
 
-#define CFE_MISSIONLIB_MSGID_APID_MASK    0x003F /**< Bit mask to get the APID from MsgId Value */
+#define CFE_MISSIONLIB_MSGID_APID_MASK    0x00FF /**< Bit mask to get the APID from MsgId Value */
 #define CFE_MISSIONLIB_MSGID_APID_SHIFT   0      /**< Bit shift to get the APID from MsgId Value */
-#define CFE_MISSIONLIB_MSGID_SUBSYS_MASK  0x001F /**< Bit mask to get the Subsystem ID from MsgId Value */
-#define CFE_MISSIONLIB_MSGID_SUBSYS_SHIFT 6      /**< Bit shift to get the Subsystem ID from MsgId Value */
+#define CFE_MISSIONLIB_MSGID_SUBSYS_MASK  0x0003 /**< Bit mask to get the Subsystem ID from MsgId Value */
+#define CFE_MISSIONLIB_MSGID_SUBSYS_SHIFT 8      /**< Bit shift to get the Subsystem ID from MsgId Value */
 #define CFE_MISSIONLIB_MSGID_SYS_MASK     0      /**< Bit mask to get the System ID from MsgId Value */
 #define CFE_MISSIONLIB_MSGID_SYS_SHIFT    0      /**< Bit shift to get the System ID from MsgId Value */
 
@@ -199,13 +199,14 @@ void CFE_MissionLib_MapListenerComponent(CFE_SB_SoftwareBus_PubSub_Interface_t *
 {
     memset(Output, 0, sizeof(*Output));
 
-    if (Input->Telecommand.InstanceNumber <= CFE_MISSIONLIB_MSGID_SUBSYS_MASK &&
+    if (Input->Telecommand.InstanceNumber > 0 &&
+        Input->Telecommand.InstanceNumber <= (1 + CFE_MISSIONLIB_MSGID_SUBSYS_MASK) &&
         Input->Telecommand.TopicId >= CFE_MISSION_TELECOMMAND_BASE_TOPICID &&
         Input->Telecommand.TopicId < CFE_MISSION_TELECOMMAND_MAX_TOPICID)
     {
         CFE_MissionLib_SetMsgIdInterfaceType(&Output->MsgId, CFE_MISSIONLIB_MSGID_TELECOMMAND_BITS);
         CFE_MissionLib_SetMsgIdApid(&Output->MsgId, Input->Telecommand.TopicId - CFE_MISSION_TELECOMMAND_BASE_TOPICID);
-        CFE_MissionLib_SetMsgIdSubsystem(&Output->MsgId, Input->Telecommand.InstanceNumber);
+        CFE_MissionLib_SetMsgIdSubsystem(&Output->MsgId, Input->Telecommand.InstanceNumber - 1);
     }
 }
 
@@ -217,7 +218,7 @@ void CFE_MissionLib_UnmapListenerComponent(CFE_SB_Listener_Component_t *        
     if (CFE_MissionLib_GetMsgIdInterfaceType(&Input->MsgId) == CFE_MISSIONLIB_MSGID_TELECOMMAND_BITS)
     {
         Output->Telecommand.TopicId = CFE_MissionLib_GetMsgIdApid(&Input->MsgId) + CFE_MISSION_TELECOMMAND_BASE_TOPICID;
-        Output->Telecommand.InstanceNumber = CFE_MissionLib_GetMsgIdSubsystem(&Input->MsgId);
+        Output->Telecommand.InstanceNumber = CFE_MissionLib_GetMsgIdSubsystem(&Input->MsgId) + 1;
     }
 }
 
@@ -231,13 +232,14 @@ void CFE_MissionLib_MapPublisherComponent(CFE_SB_SoftwareBus_PubSub_Interface_t 
 {
     memset(Output, 0, sizeof(*Output));
 
-    if (Input->Telemetry.InstanceNumber <= CFE_MISSIONLIB_MSGID_SUBSYS_MASK &&
+    if (Input->Telemetry.InstanceNumber > 0 &&
+        Input->Telemetry.InstanceNumber <= (1 + CFE_MISSIONLIB_MSGID_SUBSYS_MASK) &&
         Input->Telemetry.TopicId >= CFE_MISSION_TELEMETRY_BASE_TOPICID &&
         Input->Telemetry.TopicId < CFE_MISSION_TELEMETRY_MAX_TOPICID)
     {
         CFE_MissionLib_SetMsgIdInterfaceType(&Output->MsgId, CFE_MISSIONLIB_MSGID_TELEMETRY_BITS);
         CFE_MissionLib_SetMsgIdApid(&Output->MsgId, Input->Telemetry.TopicId - CFE_MISSION_TELEMETRY_BASE_TOPICID);
-        CFE_MissionLib_SetMsgIdSubsystem(&Output->MsgId, Input->Telemetry.InstanceNumber);
+        CFE_MissionLib_SetMsgIdSubsystem(&Output->MsgId, Input->Telemetry.InstanceNumber - 1);
     }
 }
 
@@ -249,7 +251,7 @@ void CFE_MissionLib_UnmapPublisherComponent(CFE_SB_Publisher_Component_t *      
     if (CFE_MissionLib_GetMsgIdInterfaceType(&Input->MsgId) == CFE_MISSIONLIB_MSGID_TELEMETRY_BITS)
     {
         Output->Telemetry.TopicId = CFE_MissionLib_GetMsgIdApid(&Input->MsgId) + CFE_MISSION_TELEMETRY_BASE_TOPICID;
-        Output->Telemetry.InstanceNumber = CFE_MissionLib_GetMsgIdSubsystem(&Input->MsgId);
+        Output->Telemetry.InstanceNumber = CFE_MissionLib_GetMsgIdSubsystem(&Input->MsgId) + 1;
     }
 }
 
