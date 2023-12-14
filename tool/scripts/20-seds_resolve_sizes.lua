@@ -168,7 +168,7 @@ local function get_integer_size(encnode,rangenode)
 
   if (encnode) then
     sizebits = encnode.sizeinbits
-    signed = (encnode.encoding ~= "unsigned")
+    signed = (encnode.entity_type == "INTEGER_DATA_ENCODING" and encnode.encoding ~= "unsigned")
     actualencoding = encnode.encoding
   end
 
@@ -195,8 +195,7 @@ local function get_integer_size(encnode,rangenode)
 
   sizecalc:flavor(signed)
   if (encnode) then
-    if ((signed and encnode.encoding == "twoscomplement") or
-        (not signed and encnode.encoding == "unsigned")) then
+    if (not signed or encnode.encoding == "twoscomplement") then
       if (encnode.byteorder == "bigendian") then
         packstyle = "BE"
       elseif (encnode.byteorder == "littleendian") then
@@ -556,7 +555,21 @@ end
 -- Boolean data type size resolver
 -- -------------------------------------------------------------------------
 local function resolve_boolean_datatype_size(node)
-  node.resolved_size = SEDS.new_size_object(1) -- tbd if anything >1 bit is ever possible for boolean?
+
+  local encnode = node:find_first("BOOLEAN_DATA_ENCODING")
+  local sizecalc
+
+  if (encnode) then
+    sizecalc = get_integer_size(encnode)
+  else
+    sizecalc = SEDS.new_size_object(1) -- tbd if anything >1 bit is ever possible for boolean?
+  end
+
+  if (not sizecalc) then
+    return false
+  end
+
+  node.resolved_size = sizecalc
   return true
 end
 
