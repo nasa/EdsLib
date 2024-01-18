@@ -424,6 +424,7 @@ static seds_boolean_t seds_verify_final_file(seds_output_file_t *pfile)
 
     if (fseek(pfile->outfp, pfile->content_start, SEEK_SET) < 0)
     {
+        fclose(refp);
         return false;
     }
 
@@ -476,6 +477,8 @@ static seds_boolean_t seds_verify_final_file(seds_output_file_t *pfile)
         ref_end = ftell(refp);
         result_match = ((ref_end - ref_start) == (pfile->content_end - pfile->content_start));
     }
+
+    fclose(refp);
 
     return result_match;
 }
@@ -999,4 +1002,3 @@ void seds_outputfile_register_globals(lua_State *lua)
     lua_pushcfunction(lua, seds_lua_output_file_close);
     lua_setfield(lua, -2, "output_close");
 }
-
