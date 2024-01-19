@@ -29,5 +29,6 @@ add_library(ut_edslib_stubs STATIC
 )
 
 target_link_libraries(ut_edslib_stubs
+  edslib_api
   ut_assert
 )

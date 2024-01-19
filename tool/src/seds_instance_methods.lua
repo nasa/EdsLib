@@ -50,6 +50,30 @@ end
 
 -- -----------------------------------------------------------------------
 ---
+-- find_param_of_type: drill down the bindings to locate a specific type of intf param
+--
+-- Searches the interface chain (provided/required pairings) to locate a
+-- specific type name
+--
+local function find_param_of_type(instance,typename)
+  local result
+  for i,binding in ipairs(instance.required_links) do
+    if (binding.reqintf.type:get_qualified_name() == typename) then
+      result = binding.reqinst.params
+    elseif (binding.provinst) then
+      result = find_param_of_type(binding.provinst,typename)
+    end
+
+    if (result) then
+      break
+    end
+  end
+
+  return result
+end
+
+-- -----------------------------------------------------------------------
+---
 -- debug_print: obtains the fully-qualified name of an instance object
 --
 -- Print the node properties on the console for debugging purposes
@@ -71,6 +95,6 @@ end
 -- Return a table of methods for instance objects
 return {
   get_qualified_name = get_qualified_name,
+  find_param_of_type = find_param_of_type,
   debug_print = debug_print
 }
-

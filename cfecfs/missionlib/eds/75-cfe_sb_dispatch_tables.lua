@@ -459,7 +459,7 @@ dbout:section_marker("Instance Name Table")
 dbout:write("#define DEFINE_TGTNAME(x)       #x,")
 dbout:write(string.format("static const char * const %s_INSTANCE_LIST[] =", global_sym_prefix))
 dbout:write("{")
-dbout:write(string.format("#include \"%s\"",SEDS.to_filename("tgtnames.inc")))
+dbout:write("#include \"cfe_mission_tgtnames.inc\"")
 dbout:write("    NULL")
 dbout:write("};")
 

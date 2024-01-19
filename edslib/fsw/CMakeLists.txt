@@ -97,8 +97,6 @@ option(EDSLIB_BUILD_MODULE
     "Build a general-purpose EdsLib module for dynamically-linked applications"
     OFF)
 
-include_directories(inc)
-
 set(EDSLIB_BASE_SOURCES
     src/edslib_datatypedb_lookup.c
     src/edslib_datatypedb_iterator.c
@@ -130,6 +128,9 @@ if (EDSLIB_HAVE_LONG_DOUBLE)
     add_definitions(-DEDSLIB_HAVE_LONG_DOUBLE)
 endif (EDSLIB_HAVE_LONG_DOUBLE)
 
+add_library(edslib_api INTERFACE)
+target_include_directories(edslib_api INTERFACE inc)
+
 #
 # The "edslib_minimal" static library target will always be defined.
 #
@@ -144,7 +145,7 @@ endif (EDSLIB_HAVE_LONG_DOUBLE)
 #
 add_library(edslib_minimal STATIC EXCLUDE_FROM_ALL
     ${EDSLIB_BASE_SOURCES})
-target_link_libraries(edslib_minimal m)
+target_link_libraries(edslib_minimal edslib_api m)
 
 #
 # The "edslib_runtime" static library target will always be defined.
@@ -158,8 +159,6 @@ add_library(edslib_runtime_static STATIC EXCLUDE_FROM_ALL
     ${EDSLIB_RUNTIME_SOURCES})
 target_link_libraries(edslib_runtime_static edslib_minimal)
 
-
-
 #
 # The "edslib_runtime" PIC library target will always be defined.
 #
@@ -172,6 +171,10 @@ add_library(edslib_runtime_pic OBJECT EXCLUDE_FROM_ALL
     ${EDSLIB_RUNTIME_SOURCES})
 set_target_properties(edslib_runtime_pic PROPERTIES
     POSITION_INDEPENDENT_CODE TRUE)
+target_include_directories(edslib_runtime_pic PUBLIC
+    $<TARGET_PROPERTY:edslib_api,INTERFACE_INCLUDE_DIRECTORIES>)
+
+
 
 if(EDSLIB_BUILD_MODULE)
 
@@ -189,37 +192,6 @@ if(EDSLIB_BUILD_MODULE)
     install(TARGETS edslib DESTINATION lib)
 
 endif(EDSLIB_BUILD_MODULE)
-
-
-if(IS_CFS_MISSION_BUILD)
-
-    # CFE component build
-    # Sanity check -- the variable MISSION_BINARY_DIR should be defined
-    # this indicates where to put all intermediate/output files
-    if (NOT DEFINED MISSION_BINARY_DIR)
-        message(FATAL_ERROR "MISSION_BINDARY_DIR must be defined when building within CFE")
-    endif()
-
-    # Create wrapper files around certain critical source files
-    # This is so they will be guaranteed available at specific locations without
-    # needing to pass the full path to each one
-    file(WRITE ${EDSLIB_FSW_BINARY_DIR}/edslib_database_types.h.tmp
-        "/* Generated wrapper based off the real source file location */\n"
-        "#include \"${EDSLIB_FSW_SOURCE_DIR}/inc/edslib_database_types.h\"\n"
-    )
-    # Update the output only if different - avoid unnecessary rebuilds
-    execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${EDSLIB_FSW_BINARY_DIR}/edslib_database_types.h.tmp
-        ${MISSION_BINARY_DIR}/src/edslib_database_types.h
-        RESULT_VARIABLE RES
-    )
-    file(REMOVE ${EDSLIB_FSW_BINARY_DIR}/edslib_database_types.h.tmp)
-
-    if (NOT RES EQUAL 0)
-        message(FATAL_ERROR "Unable to create wrapper file: code=${RES}")
-    endif()
-
-endif(IS_CFS_MISSION_BUILD)
 
 # UT stubs should only be necessary on a CFS target build
 if (ENABLE_UNIT_TESTS AND IS_CFS_ARCH_BUILD)

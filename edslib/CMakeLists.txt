@@ -46,11 +46,11 @@ function(find_edslib_dependency DEPNAME HEADER_FILE)
   # The preferred way to find the dependency is to use the pkg-config tool
   if (NOT CMAKE_CROSSCOMPILING)
     # pkg-config should be available and working on the dev host
-  elseif (CMAKE_FIND_ROOT_PATH)
-    # When cross compiling, point pkg-config at the CMAKE_FIND_ROOT_PATH
+  elseif (CMAKE_SYSROOT)
+    # The toolchain file specified a sysroot, so point pkg-config to that sysroot
     set(ENV{PKG_CONFIG_DIR} "")
-    set(ENV{PKG_CONFIG_LIBDIR} "${CMAKE_FIND_ROOT_PATH}/usr/lib/pkgconfig:${CMAKE_FIND_ROOT_PATH}/usr/share/pkgconfig")
-    set(ENV{PKG_CONFIG_SYSROOT_DIR} "${CMAKE_FIND_ROOT_PATH}")
+    set(ENV{PKG_CONFIG_LIBDIR} "${CMAKE_SYSROOT}/usr/lib/pkgconfig:${CMAKE_SYSROOT}/usr/share/pkgconfig")
+    set(ENV{PKG_CONFIG_SYSROOT_DIR} "${CMAKE_SYSROOT}")
   else()
     # Without a proper sysroot, this cannot locate the library
     # This is not a fatal error because the dependency might not be required
