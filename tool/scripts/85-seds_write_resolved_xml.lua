@@ -118,9 +118,9 @@ end
 -- -------------------------
 -- Just loop through each datasheet and call the "write_node" function,
 -- which recursively handles everything beneath it.
+SEDS.output_mkdir("export_eds");
 for ds in SEDS.root:iterate_children({"DATASHEET","PACKAGEFILE"}) do
-  local output = SEDS.output_open(ds.name .. ".xml", ds.xml_filename, "xml")
+  local output = SEDS.output_open("export_eds/" .. ds.name .. ".xml", ds.xml_filename, "xml")
   write_node(output,ds)
   SEDS.output_close(output)
 end
-

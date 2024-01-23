@@ -42,6 +42,7 @@ local function add_edges(output,inst)
   output:write(string.format("id%03d [label=\"%s\"]", inst.id, desc))
 end
 
+SEDS.output_mkdir("intf_dot");
 
 for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
   local comps = {}
@@ -53,7 +54,7 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
   end
 
   if (#comps > 0) then
-    local output = SEDS.output_open(SEDS.to_filename("interfaces.dot", ds.name));
+    local output = SEDS.output_open("intf_dot/" .. SEDS.to_filename("interfaces.dot", ds.name));
     output:start_group("digraph mission {")
     output:write("rankdir=\"LR\"")
     for _,instance in ipairs(comps) do
@@ -63,4 +64,3 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
     SEDS.output_close(output)
   end
 end
-

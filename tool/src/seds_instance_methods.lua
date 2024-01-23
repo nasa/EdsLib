@@ -55,14 +55,24 @@ end
 -- Print the node properties on the console for debugging purposes
 --
 local function debug_print(node)
+
+  local print_tbl
+
+  print_tbl = function(indent,propval)
+    for tk,tv in pairs(propval) do
+      print (indent .. "  [" .. tostring(tk) .. "] => " .. type(tv) .. ":" .. tostring(tv))
+      if (type(tv) == "table") then
+        print_tbl(indent .. "  ", tv)
+      end
+    end
+  end
+
   print ("-- BEGIN INSTANCE PROPERTIES --")
   for i,v in ipairs(node:get_properties()) do
     local propval = node[v]
     print (" [" .. tostring(v) .. "] =>" .. type(propval) .. ":" .. tostring(propval))
     if (type(propval) == "table") then
-      for tk,tv in pairs(propval) do
-        print ("    [" .. tostring(tk) .. "] => " .. type(tv) .. ":" .. tostring(tv))
-      end
+      print_tbl("  ", propval)
     end
   end
   print ("-- END INSTANCE PROPERTIES --")

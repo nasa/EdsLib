@@ -984,6 +984,29 @@ static int seds_lua_output_file_open(lua_State *lua)
     return 1;
 }
 
+/* ------------------------------------------------------------------- */
+/**
+ * Lua callable mkdir function
+ *
+ * Makes a directory
+ * The Lua OS library does not appear to have a mkdir() function
+ *
+ * Expected Input Stack:
+ *  1: string - directory name
+ *
+ */
+static int seds_lua_output_file_mkdir(lua_State *lua)
+{
+    const char *dirname = luaL_checkstring(lua, 1);
+
+    if (mkdir(dirname, 0775) != 0)
+    {
+        return luaL_error(lua, "mkdir(): %s", strerror(errno));
+    }
+
+    return 0;
+}
+
 /*******************************************************************************/
 /*                      Externally-Called Functions                            */
 /*      (referenced outside this unit and prototyped in a separate header)     */
@@ -998,5 +1021,7 @@ void seds_outputfile_register_globals(lua_State *lua)
     lua_setfield(lua, -2, "output_open");
     lua_pushcfunction(lua, seds_lua_output_file_close);
     lua_setfield(lua, -2, "output_close");
+    lua_pushcfunction(lua, seds_lua_output_file_mkdir);
+    lua_setfield(lua, -2, "output_mkdir");
 }
 
