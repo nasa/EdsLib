@@ -160,6 +160,8 @@ end
 -- MAIN ROUTINE
 -- -------------------------
 
+SEDS.output_mkdir("json")
+
 for _,instance in ipairs(SEDS.highlevel_interfaces) do
   local ds = instance.component:find_parent(SEDS.basenode_filter)
 
@@ -185,7 +187,7 @@ for _,instance in ipairs(SEDS.highlevel_interfaces) do
       end
 
       if (sb_params) then
-        local output = SEDS.output_open(SEDS.to_filename(reqintf.name .. "_interface.json", ds.name));
+        local output = SEDS.output_open("json/" .. SEDS.to_filename(reqintf.name .. "_interface.json", ds.name));
         local msgid
 
         -- For now, just make up a symbolic name according to typical CFE patterns
