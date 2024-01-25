@@ -34,14 +34,6 @@
 #define CFE_MSG_SHDR_TYPE_TLM_BIT     (CCSDS_SecHdrFlags_BareTlm & CCSDS_SecHdrFlags_Tlm)
 #define CFE_MSG_SHDR_TYPE_CMD_BIT     (CCSDS_SecHdrFlags_BareCmd & CCSDS_SecHdrFlags_Cmd)
 
-#ifdef jphfix
-CFE_MSG_Message_t *CFE_MSG_ConvertPtr(CFE_MSG_BaseMsg_t *BaseMsg)
-{
-    void *Msg = BaseMsg;
-    return Msg;
-}
-#endif
-
 /*----------------------------------------------------------------
  *
  * Function: CFE_MSG_GetHeaderVersion

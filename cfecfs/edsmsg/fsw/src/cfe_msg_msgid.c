@@ -96,7 +96,7 @@ CFE_Status_t CFE_MSG_SetMsgId(CFE_MSG_Message_t *MsgPtr, CFE_SB_MsgId_t MsgId)
      * not really a concept of a "highest" msg ID at all.  However, for historical/backward
      * compatibility reasons, this symbol is still defined in SB.
      */
-    if (MsgPtr == NULL || CFE_SB_MsgIdToValue(MsgId) > CFE_PLATFORM_SB_HIGHEST_VALID_MSGID)
+    if (MsgPtr == NULL || !CFE_SB_IsValidMsgId(MsgId))
     {
         return CFE_MSG_BAD_ARGUMENT;
     }
