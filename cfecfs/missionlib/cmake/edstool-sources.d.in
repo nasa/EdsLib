@@ -1,0 +1,5 @@
+
+# Capture the complete list of EDS files and scripts in use
+# Note that these will be cmake style semicolon-separated, not space-separated.
+MISSION_EDS_FILELIST   := ${MISSION_EDS_FILELIST}
+MISSION_EDS_SCRIPTLIST := ${MISSION_EDS_SCRIPTLIST}

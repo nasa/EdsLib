@@ -1,0 +1,57 @@
+# Template for build environment variables
+# See also: https://cmake.org/cmake/help/latest/manual/cmake-variables.7.html
+
+# Capture critical build flags and compiler command (CC)
+CMAKE   := ${CMAKE_COMMAND}
+CC      := ${CMAKE_C_COMPILER}
+CFLAGS  := ${CMAKE_C_FLAGS}
+AR      := ${CMAKE_AR}
+LD      := ${CMAKE_LINKER}
+
+# The link flags may be different (or empty) depending on
+# what type of target is being linked.
+EXE_LDFLAGS    := ${CMAKE_EXE_LINKER_FLAGS}
+EXE_SUFFIX     := ${CMAKE_EXECUTABLE_SUFFIX}
+SHARED_LDFLAGS := ${CMAKE_SHARED_LINKER_FLAGS}
+SHARED_SUFFIX  := ${CMAKE_SHARED_LIBRARY_SUFFIX}
+STATIC_LDFLAGS := ${CMAKE_STATIC_LINKER_FLAGS}
+STATIC_SUFFIX  := ${CMAKE_STATIC_LIBRARY_SUFFIX}
+
+# Capture other variables/locations
+MISSION_NAME       := ${MISSION_NAME}
+MISSION_BINARY_DIR := ${MISSION_BINARY_DIR}
+EDS_FILE_PREFIX    := ${EDS_FILE_PREFIX}
+EDS_SYMBOL_PREFIX  := ${EDS_SYMBOL_PREFIX}
+OBJDIR             ?= ${ARCH_BINARY_SUBDIR}/obj
+BUILD_TYPE         ?= ${CMAKE_BUILD_TYPE}
+EDSLIB_SOURCE_DIR  := ${EDSLIB_SOURCE_DIR}
+EDS_CFECFS_MISSIONLIB_SOURCE_DIR := ${EDS_CFECFS_MISSIONLIB_SOURCE_DIR}
+BUILD_CONFIG       := ${BUILD_CONFIG_${TARGETSYSTEM}}
+
+# In general most source files compiled via this method
+# will require access to the EdsLib API headers.  This assumes
+# a gnu-style compiler option (-I), but should with clang too.
+CFLAGS ?= -Wall -Werror -std=c99 -pedantic
+CFLAGS += -I$(EDSLIB_SOURCE_DIR)/fsw/inc
+
+# Export all defined variables
+export CMAKE
+export CC
+export CFLAGS
+export AR
+export LD
+export EXE_LDFLAGS
+export EXE_SUFFIX
+export SHARED_LDFLAGS
+export SHARED_SUFFIX
+export STATIC_LDFLAGS
+export STATIC_SUFFIX
+export MISSION_NAME
+export MISSION_BINARY_DIR
+export OBJDIR
+export BUILD_TYPE
+export BUILD_CONFIG
+export EDSLIB_SOURCE_DIR
+export EDS_CFECFS_MISSIONLIB_SOURCE_DIR
+export EDS_FILE_PREFIX
+export EDS_SYMBOL_PREFIX

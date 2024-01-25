@@ -72,6 +72,63 @@ seds_toplevel_t sedstool;
 /*                  (these are not referenced outside this unit)               */
 /*******************************************************************************/
 
+static const char *SEDS_REQUIRED_GLOBALS[] =
+{
+    "MISSION_BINARY_DIR",
+    "MISSION_NAME",
+    "CC",
+    "LD",
+    "AR",
+    "CFLAGS",
+    "LDFLAGS",
+
+};
+
+static void seds_export_environment(lua_State *lua)
+{
+    int i;
+
+    lua_rawgetp(lua, LUA_REGISTRYINDEX, &sedstool.GLOBAL_SYMBOL_TABLE_KEY);
+    for (i=0; i < (sizeof(SEDS_REQUIRED_GLOBALS) / sizeof(SEDS_REQUIRED_GLOBALS[0])); ++i)
+    {
+        lua_getfield(lua, -1, SEDS_REQUIRED_GLOBALS[i]);
+
+        if (lua_isstring(lua, -1))
+        {
+            setenv(SEDS_REQUIRED_GLOBALS[i], lua_tostring(lua, -1), 1);
+        }
+
+        lua_pop(lua, 1);
+    }
+
+    lua_rawsetp(lua, LUA_REGISTRYINDEX, &sedstool.GLOBAL_SYMBOL_TABLE_KEY);
+}
+
+static void seds_setup_base_environment(lua_State *lua)
+{
+    const char *env_value;
+    size_t i;
+
+    lua_newtable(lua);
+
+    for (i=0; i < (sizeof(SEDS_REQUIRED_GLOBALS) / sizeof(SEDS_REQUIRED_GLOBALS[0])); ++i)
+    {
+        env_value = getenv(SEDS_REQUIRED_GLOBALS[i]);
+
+        if (env_value)
+        {
+            lua_pushstring(lua, env_value);
+        }
+        else
+        {
+            lua_pushnil(lua);
+        }
+
+        lua_setfield(lua, -2, SEDS_REQUIRED_GLOBALS[i]);
+    }
+
+    lua_rawsetp(lua, LUA_REGISTRYINDEX, &sedstool.GLOBAL_SYMBOL_TABLE_KEY);
+}
 
 static void seds_parse_commandline_symbol(lua_State *lua, const char *sym)
 {
@@ -242,9 +299,6 @@ static void seds_gencdecl_initialize_post_processing(lua_State *lua)
 
     lua_newtable(lua);
     lua_rawsetp(lua, LUA_REGISTRYINDEX, &sedstool.POSTPROCCESING_SCRIPT_TABLE_KEY);
-
-    lua_newtable(lua);
-    lua_rawsetp(lua, LUA_REGISTRYINDEX, &sedstool.GLOBAL_SYMBOL_TABLE_KEY);
 }
 
 /**
@@ -378,6 +432,8 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    seds_setup_base_environment(lua);
+
     while ((arg = getopt (argc, argv, "vD:s:")) != -1)
     {
         switch (arg)
@@ -466,6 +522,8 @@ int main(int argc, char *argv[])
     seds_parse_commandline_files(lua, argc - optind, argv + optind);
 
     lua_pop(lua, 1);    /* SEDS global, not needed on stack anymore */
+
+    seds_export_environment(lua);
 
     if (seds_user_message_get_count(SEDS_USER_MESSAGE_ERROR) == 0)
     {

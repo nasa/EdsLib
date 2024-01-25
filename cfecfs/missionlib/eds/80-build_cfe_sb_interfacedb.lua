@@ -40,7 +40,8 @@ end
 -- This is currently only one file, the "interfacedb_impl"
 -- ------------------------------------------------
 local output = SEDS.output_open(makefilename)
-output:write(string.format("include %s $(wildcard $(O)/*.d)", SEDS.to_filename("patternrules.mk")))
+output:write("include edstool-buildenv.d $(wildcard $(O)/*.d)")
+output:write("include $(EDSLIB_SOURCE_DIR)/cmake/dbobj_patternrules.mk")
 output:add_whitespace(1)
 output:write("# Interface DB Object")
 output:write(string.format("%s: $(O)/%s",
@@ -53,17 +54,11 @@ SEDS.output_close(output)
 -- Execute the build tool (make) to actually build the
 -- interfacdb using the makefile generated above.
 -- ------------------------------------------------
-SEDS.execute_tool("BUILD_TOOL",
-  string.format("-j1 -C %s -f %s O=\"%s\" CC=\"%s\" LD=\"%s\" AR=\"%s\" CFLAGS=\"%s\" LDFLAGS=\"%s\" %s",
+SEDS.execute_tool("MAKE_PROGRAM",
+  string.format("-C \"%s\" -f \"%s\" O=\"%s\" %s",
     SEDS.get_define("MISSION_BINARY_DIR") or ".",
     makefilename,
     objdir,
-    SEDS.get_define("CC") or "cc",
-    SEDS.get_define("LD") or "ld",
-    SEDS.get_define("AR") or "ar",
-    SEDS.get_define("CFLAGS") or "-Wall -Werror -std=c99 -pedantic",
-    SEDS.get_define("LDFLAGS") or "",
     get_objnames(libname,objdir,libtypes)
   )
 )
-

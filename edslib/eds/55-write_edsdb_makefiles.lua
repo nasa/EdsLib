@@ -80,31 +80,6 @@ output:end_group("};")
 
 SEDS.output_close(output)
 
--- --------------------------------------------------------------------
--- Step 2: generate a make file for the generic build rules
--- This is a set of build commands to actually compile the generated source files,
--- written into a makefile as a set of pattern rules.
--- --------------------------------------------------------------------
-output = SEDS.output_open(SEDS.to_filename("patternrules.mk"), nil, "make")
-
-output:section_marker("Pattern rule to build a single database file")
-output:write("$(O)/%_impl.o: src/%_impl.c")
-output:write("\t$(CC) $(CFLAGS) -Iinc -D_EDSLIB_BUILD_ -MMD -c -o $@ $<")
-
-output:section_marker("Pattern rule to build a static archive file")
-output:write("$(O)/%.a:")
-output:write("\t-rm -f $(@)")
-output:write("\t$(AR) cr $@ $^")
-
-output:section_marker("Pattern rule to build a relocatable object file")
-output:write("$(O)/%.obj:")
-output:write("\t$(LD) $(LDFLAGS) -r -o $@ $^")
-
-output:section_marker("Pattern rule to build a dynamic shared object file")
-output:write("$(O)/%.so:")
-output:write("\t$(LD) $(LDFLAGS) -shared -o $@ $^")
-
-SEDS.output_close(output)
 
 -- --------------------------------------------------------------------
 -- Step 3: generate a makefile for the actual EDS database
@@ -114,7 +89,8 @@ SEDS.output_close(output)
 -- --------------------------------------------------------------------
 output = SEDS.output_open(makefilename)
 
-output:write(string.format("include %s $(wildcard $(O)/*.d)", SEDS.to_filename("patternrules.mk")))
+output:write("include edstool-buildenv.d $(wildcard $(O)/*.d)")
+output:write("include $(EDSLIB_SOURCE_DIR)/cmake/dbobj_patternrules.mk")
 output:add_whitespace(1)
 
 output:section_marker("Mission Summary Object")
@@ -134,4 +110,3 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
 end
 
 SEDS.output_close(output)
-

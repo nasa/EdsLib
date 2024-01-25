@@ -57,6 +57,7 @@
 /* compatibility shim to support compilation with Lua5.1 */
 #include "edslib_lua51_compatibility.h"
 
+#include "cfe_tbl_filedef.h"
 #include "cfe_mission_eds_parameters.h"
 #include "cfe_mission_eds_interface_parameters.h"
 #include "cfe_tbl_eds_typedefs.h"
