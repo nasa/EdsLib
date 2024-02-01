@@ -473,7 +473,6 @@ for dp in SEDS.root:iterate_subtree("DESIGN_PARAMETERS") do
 end
 
 for _,pkgname in ipairs(all_designparam_files) do
-  if (#all_designparam_defines[pkgname] > 0) then
     local dpfile = SEDS.to_filename("designparameters.h", pkgname)
     output = SEDS.output_open(dpfile)
     output:section_marker("Design Parameters")
@@ -481,7 +480,6 @@ for _,pkgname in ipairs(all_designparam_files) do
       write_c_define(output, def)
     end
     SEDS.output_close(output)
-  end
 end
 
 -- The final "designparameters.h" file simply summarizes all existing files

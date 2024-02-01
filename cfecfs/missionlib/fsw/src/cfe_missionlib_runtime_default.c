@@ -49,6 +49,17 @@
 #include "cfe_mission_eds_parameters.h"
 #include "cfe_missionlib_runtime.h"
 
+typedef struct
+{
+    uint16_t CheckBitsMask;
+    uint16_t CheckBitsValue;
+    uint16_t TopicBase;
+    uint16_t TopicMax;
+    uint16_t InstanceBase;
+    uint16_t InstanceMax;
+} CFE_MissionLib_TopicId_Limits_t;
+
+
 #define CFE_MISSIONLIB_GETSET_MSGID_BITS(hdr, action, ...) CFE_MissionLib_##hdr##_##action(__VA_ARGS__)
 
 #define CFE_MISSIONLIB_GET_MSGID_BITS(hdr, mid, pkt) CFE_MISSIONLIB_GETSET_MSGID_BITS(hdr, BitsToMsgId, mid, pkt)
@@ -68,10 +79,21 @@
 #define CFE_MISSIONLIB_MSGID_TYPE_MASK  0x3 /**< Bit mask to get the CMD/TLM type from MsgId Value */
 #define CFE_MISSIONLIB_MSGID_TYPE_SHIFT 11  /**< Bit shift to get the CMD/TLM type from MsgId Value */
 
-#define CFE_MISSIONLIB_MSGID_TELECOMMAND_BITS \
-    0x3 /**< Fixed value to set in MsgId for command packets (LSB-justified) */
-#define CFE_MISSIONLIB_MSGID_TELEMETRY_BITS \
-    0x1 /**< Fixed value to set in MsgId for telemetry packets (LSB-justified) */
+/** Fixed value to set in MsgId for command packets (LSB-justified) */
+#define CFE_MISSIONLIB_MSGID_TELECOMMAND_BITS 0x3
+
+/** Fixed value to set in MsgId for telemetry packets (LSB-justified) */
+#define CFE_MISSIONLIB_MSGID_TELEMETRY_BITS 0x1
+
+/** Bits that are set if the MsgId is telemetry type */
+#define CFE_MISSIONLIB_MSGID_TLM_BITS
+
+/** Bits that are set if the MsgId is telecommand type */
+#define CFE_MISSIONLIB_MSGID_CMD_BITS (CFE_MISSIONLIB_MSGID_TELECOMMAND_BITS << CFE_MISSIONLIB_MSGID_TYPE_SHIFT)
+
+/** Additional Bits that are set if the MsgId is global (as opposed to local) */
+#define CFE_MISSIONLIB_MSGID_GLOBAL_MASK 0x00F0
+#define CFE_MISSIONLIB_MSGID_GLOBAL_BITS 0x0060
 
 /* When using only basic (v1) headers, the TopicID + Subsystem are squeezed into the historical 11-bit field */
 #if CFE_MISSIONLIB_SELECTED_HDRTYPE == CFE_MISSIONLIB_SpacePacketBasic_HEADERS
@@ -100,6 +122,42 @@
 #error "No MsgId bitfield mappings defined for current header type"
 
 #endif
+
+static const CFE_MissionLib_TopicId_Limits_t CFE_MISSIONLIB_GLOBAL_TLM_LIMITS = {
+    .CheckBitsMask = (CFE_MISSIONLIB_MSGID_TYPE_MASK << CFE_MISSIONLIB_MSGID_TYPE_SHIFT) | CFE_MISSIONLIB_MSGID_GLOBAL_MASK,
+    .CheckBitsValue = (CFE_MISSIONLIB_MSGID_TELEMETRY_BITS << CFE_MISSIONLIB_MSGID_TYPE_SHIFT) | CFE_MISSIONLIB_MSGID_GLOBAL_BITS,
+    .TopicBase = CFE_MISSION_GLOBAL_TLM_BASE_TOPICID,
+    .TopicMax = CFE_MISSION_GLOBAL_TLM_MAX_TOPICID,
+    .InstanceBase = 0,
+    .InstanceMax = 1
+};
+
+static const CFE_MissionLib_TopicId_Limits_t CFE_MISSIONLIB_LOCAL_TLM_LIMITS = {
+    .CheckBitsMask = (CFE_MISSIONLIB_MSGID_TYPE_MASK << CFE_MISSIONLIB_MSGID_TYPE_SHIFT),
+    .CheckBitsValue = (CFE_MISSIONLIB_MSGID_TELEMETRY_BITS << CFE_MISSIONLIB_MSGID_TYPE_SHIFT),
+    .TopicBase = CFE_MISSION_TELEMETRY_BASE_TOPICID,
+    .TopicMax = CFE_MISSION_TELEMETRY_MAX_TOPICID,
+    .InstanceBase = 1,
+    .InstanceMax = 1 + CFE_MISSIONLIB_MSGID_SUBSYS_MASK
+};
+
+static const CFE_MissionLib_TopicId_Limits_t CFE_MISSIONLIB_GLOBAL_CMD_LIMITS = {
+    .CheckBitsMask = (CFE_MISSIONLIB_MSGID_TYPE_MASK << CFE_MISSIONLIB_MSGID_TYPE_SHIFT) | CFE_MISSIONLIB_MSGID_GLOBAL_MASK,
+    .CheckBitsValue = (CFE_MISSIONLIB_MSGID_TELECOMMAND_BITS << CFE_MISSIONLIB_MSGID_TYPE_SHIFT) | CFE_MISSIONLIB_MSGID_GLOBAL_BITS,
+    .TopicBase = CFE_MISSION_GLOBAL_CMD_BASE_TOPICID,
+    .TopicMax = CFE_MISSION_GLOBAL_CMD_MAX_TOPICID,
+    .InstanceBase = 0,
+    .InstanceMax = 1
+};
+
+static const CFE_MissionLib_TopicId_Limits_t CFE_MISSIONLIB_LOCAL_CMD_LIMITS = {
+    .CheckBitsMask = (CFE_MISSIONLIB_MSGID_TYPE_MASK << CFE_MISSIONLIB_MSGID_TYPE_SHIFT),
+    .CheckBitsValue = (CFE_MISSIONLIB_MSGID_TELECOMMAND_BITS << CFE_MISSIONLIB_MSGID_TYPE_SHIFT),
+    .TopicBase = CFE_MISSION_TELECOMMAND_BASE_TOPICID,
+    .TopicMax = CFE_MISSION_TELECOMMAND_MAX_TOPICID,
+    .InstanceBase = 1,
+    .InstanceMax = 1 + CFE_MISSIONLIB_MSGID_SUBSYS_MASK
+};
 
 static inline uint32_t CFE_MissionLib_GetMsgIdApid(const CFE_SB_MsgId_t *MsgId)
 {
@@ -194,19 +252,52 @@ static inline void CFE_MissionLib_SpacePacketApidQ_BitsFromMsgId(CCSDS_SpacePack
     Packet->ApidQ.SubsystemId     = CFE_MissionLib_GetMsgIdSubsystem(MsgId);
 }
 
+static bool CFE_MissionLib_TryMapping(CFE_SB_SoftwareBus_PubSub_Interface_t *Output, const CFE_MissionLib_TopicId_Limits_t *Limits, uint16_t InstanceIdx, uint16_t TopicIdx)
+{
+    InstanceIdx -= Limits->InstanceBase;
+    TopicIdx -= Limits->TopicBase;
+
+    if (InstanceIdx >= Limits->InstanceMax || TopicIdx >= Limits->TopicMax)
+    {
+        /* It is not within range to map to this type of msgid */
+        return false;
+    }
+
+    CFE_MissionLib_SetMsgIdApid(&Output->MsgId, TopicIdx);
+    CFE_MissionLib_SetMsgIdSubsystem(&Output->MsgId, InstanceIdx);
+
+    Output->MsgId.Value ^= Limits->CheckBitsValue;
+
+    return true;
+}
+
+static bool CFE_MissionLib_TryUnmapping(uint16_t *InstanceIdOut, uint16_t *TopicIdOut, const CFE_MissionLib_TopicId_Limits_t *Limits,  const CFE_SB_SoftwareBus_PubSub_Interface_t *Input)
+{
+    CFE_SB_MsgId_t TempMsgId;
+
+    if ((Input->MsgId.Value & Limits->CheckBitsMask) != Limits->CheckBitsValue)
+    {
+        /* It is not a MsgId of the proper type to unmap to this range */
+        return false;
+    }
+
+    TempMsgId = Input->MsgId;
+    TempMsgId.Value ^= Limits->CheckBitsValue;
+
+    *InstanceIdOut = CFE_MissionLib_GetMsgIdSubsystem(&TempMsgId) + Limits->InstanceBase;
+    *TopicIdOut = CFE_MissionLib_GetMsgIdApid(&TempMsgId) + Limits->TopicBase;
+
+    return true;
+}
+
 void CFE_MissionLib_MapListenerComponent(CFE_SB_SoftwareBus_PubSub_Interface_t *Output,
                                          const CFE_SB_Listener_Component_t *    Input)
 {
     memset(Output, 0, sizeof(*Output));
 
-    if (Input->Telecommand.InstanceNumber > 0 &&
-        Input->Telecommand.InstanceNumber <= (1 + CFE_MISSIONLIB_MSGID_SUBSYS_MASK) &&
-        Input->Telecommand.TopicId >= CFE_MISSION_TELECOMMAND_BASE_TOPICID &&
-        Input->Telecommand.TopicId < CFE_MISSION_TELECOMMAND_MAX_TOPICID)
+    if (!CFE_MissionLib_TryMapping (Output, &CFE_MISSIONLIB_LOCAL_CMD_LIMITS, Input->Telecommand.InstanceNumber, Input->Telecommand.TopicId))
     {
-        CFE_MissionLib_SetMsgIdInterfaceType(&Output->MsgId, CFE_MISSIONLIB_MSGID_TELECOMMAND_BITS);
-        CFE_MissionLib_SetMsgIdApid(&Output->MsgId, Input->Telecommand.TopicId - CFE_MISSION_TELECOMMAND_BASE_TOPICID);
-        CFE_MissionLib_SetMsgIdSubsystem(&Output->MsgId, Input->Telecommand.InstanceNumber - 1);
+        CFE_MissionLib_TryMapping (Output, &CFE_MISSIONLIB_GLOBAL_CMD_LIMITS, 0, Input->Telecommand.TopicId);
     }
 }
 
@@ -215,10 +306,9 @@ void CFE_MissionLib_UnmapListenerComponent(CFE_SB_Listener_Component_t *        
 {
     memset(Output, 0, sizeof(*Output));
 
-    if (CFE_MissionLib_GetMsgIdInterfaceType(&Input->MsgId) == CFE_MISSIONLIB_MSGID_TELECOMMAND_BITS)
+    if (!CFE_MissionLib_TryUnmapping (&Output->Telecommand.InstanceNumber, &Output->Telecommand.TopicId, &CFE_MISSIONLIB_GLOBAL_CMD_LIMITS, Input))
     {
-        Output->Telecommand.TopicId = CFE_MissionLib_GetMsgIdApid(&Input->MsgId) + CFE_MISSION_TELECOMMAND_BASE_TOPICID;
-        Output->Telecommand.InstanceNumber = CFE_MissionLib_GetMsgIdSubsystem(&Input->MsgId) + 1;
+        CFE_MissionLib_TryUnmapping (&Output->Telecommand.InstanceNumber, &Output->Telecommand.TopicId, &CFE_MISSIONLIB_LOCAL_CMD_LIMITS, Input);
     }
 }
 
@@ -232,14 +322,9 @@ void CFE_MissionLib_MapPublisherComponent(CFE_SB_SoftwareBus_PubSub_Interface_t 
 {
     memset(Output, 0, sizeof(*Output));
 
-    if (Input->Telemetry.InstanceNumber > 0 &&
-        Input->Telemetry.InstanceNumber <= (1 + CFE_MISSIONLIB_MSGID_SUBSYS_MASK) &&
-        Input->Telemetry.TopicId >= CFE_MISSION_TELEMETRY_BASE_TOPICID &&
-        Input->Telemetry.TopicId < CFE_MISSION_TELEMETRY_MAX_TOPICID)
+    if (!CFE_MissionLib_TryMapping (Output, &CFE_MISSIONLIB_LOCAL_TLM_LIMITS, Input->Telemetry.InstanceNumber, Input->Telemetry.TopicId))
     {
-        CFE_MissionLib_SetMsgIdInterfaceType(&Output->MsgId, CFE_MISSIONLIB_MSGID_TELEMETRY_BITS);
-        CFE_MissionLib_SetMsgIdApid(&Output->MsgId, Input->Telemetry.TopicId - CFE_MISSION_TELEMETRY_BASE_TOPICID);
-        CFE_MissionLib_SetMsgIdSubsystem(&Output->MsgId, Input->Telemetry.InstanceNumber - 1);
+        CFE_MissionLib_TryMapping (Output, &CFE_MISSIONLIB_GLOBAL_TLM_LIMITS, 0, Input->Telemetry.TopicId);
     }
 }
 
@@ -248,10 +333,9 @@ void CFE_MissionLib_UnmapPublisherComponent(CFE_SB_Publisher_Component_t *      
 {
     memset(Output, 0, sizeof(*Output));
 
-    if (CFE_MissionLib_GetMsgIdInterfaceType(&Input->MsgId) == CFE_MISSIONLIB_MSGID_TELEMETRY_BITS)
+    if (!CFE_MissionLib_TryUnmapping (&Output->Telemetry.InstanceNumber, &Output->Telemetry.TopicId, &CFE_MISSIONLIB_LOCAL_TLM_LIMITS, Input))
     {
-        Output->Telemetry.TopicId = CFE_MissionLib_GetMsgIdApid(&Input->MsgId) + CFE_MISSION_TELEMETRY_BASE_TOPICID;
-        Output->Telemetry.InstanceNumber = CFE_MissionLib_GetMsgIdSubsystem(&Input->MsgId) + 1;
+        CFE_MissionLib_TryUnmapping (&Output->Telemetry.InstanceNumber, &Output->Telemetry.TopicId, &CFE_MISSIONLIB_GLOBAL_TLM_LIMITS, Input);
     }
 }
 

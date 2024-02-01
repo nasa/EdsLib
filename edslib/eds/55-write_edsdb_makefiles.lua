@@ -89,7 +89,7 @@ SEDS.output_close(output)
 -- --------------------------------------------------------------------
 output = SEDS.output_open(makefilename)
 
-output:write("include edstool-buildenv.d $(wildcard $(O)/*.d)")
+output:write("include $(O)/edstool-buildenv.d $(wildcard $(O)/*.d)")
 output:write("include $(EDSLIB_SOURCE_DIR)/cmake/dbobj_patternrules.mk")
 output:add_whitespace(1)
 

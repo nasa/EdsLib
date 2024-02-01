@@ -1002,7 +1002,7 @@ static int seds_lua_output_file_mkdir(lua_State *lua)
 {
     const char *dirname = luaL_checkstring(lua, 1);
 
-    if (mkdir(dirname, 0775) != 0)
+    if (mkdir(dirname, 0775) != 0 && errno != EEXIST)
     {
         return luaL_error(lua, "mkdir(): %s", strerror(errno));
     }

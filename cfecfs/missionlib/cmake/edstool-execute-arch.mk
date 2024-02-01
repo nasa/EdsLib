@@ -1,4 +1,11 @@
-include edstool-buildenv.d
+# NOTE: This relies on ARCH_BINARY_DIR being passed in via command line
+# Specifically the edstool-buildenv.d file must be present in this dir, and
+# this specifies values for OBJDIR, BUILD_CONFIG, CC/AR/LD, and others.
+include $(wildcard $(ARCH_BINARY_DIR)/obj/*.d)
+
+ifeq ($(OBJDIR),)
+$(error OBJDIR is not set, confirm that edstool-buildenv.d exists under $(ARCH_BINARY_DIR)/obj)
+endif
 
 # The O variable in this context is localized; should not use O from the parent here.
 O := $(OBJDIR)

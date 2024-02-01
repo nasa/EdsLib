@@ -15,7 +15,7 @@
 
 add_custom_target(edstool-execute
     COMMAND "\$(MAKE)"
-        -I ${CMAKE_BINARY_DIR}/obj
+        ARCH_BINARY_DIR=${CMAKE_BINARY_DIR}
         -f ${missionlib_MISSION_DIR}/cmake/edstool-execute-arch.mk
         all
     WORKING_DIRECTORY

@@ -58,7 +58,7 @@
 #  This CMake recipe simply exposes the 2 library targets separately
 #  and it is up to the CFE build to decide which one to link to.  This
 #  determines which sets of EDS functions are available to cFS applications.
-#  (The external variable CFE_SYSTEM_EDSDB_DYNAMIC_LINK affects this)
+#  (The external variable CFE_EDS_LINK_MODE affects this)
 #
 #
 # 2) Shared library target: "edslib"
