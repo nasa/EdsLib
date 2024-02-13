@@ -60,9 +60,9 @@
 #include "cfe_tbl_filedef.h"
 #include "cfe_mission_eds_parameters.h"
 #include "cfe_mission_eds_interface_parameters.h"
-#include "cfe_tbl_eds_typedefs.h"
-#include "cfe_fs_eds_typedefs.h"
-#include "cfe_sb_eds_typedefs.h"
+#include "cfe_tbl_eds_datatypes.h"
+#include "cfe_fs_eds_datatypes.h"
+#include "cfe_sb_eds_datatypes.h"
 #include "edslib_lua_objects.h"
 #include "cfe_missionlib_lua_softwarebus.h"
 #include "cfe_missionlib_runtime.h"
@@ -88,10 +88,10 @@ EdsTableTool_Global_t EdsTableTool_Global;
  * This calls the same impl that CFE FSW uses
  *
  *-----------------------------------------------------------------*/
-CFE_SB_MsgIdValue_Atom_t CFE_SB_CmdTopicIdToMsgId(uint16_t TopicId, uint16_t InstanceNum)
+EdsDataType_CFE_SB_MsgIdValue_t CFE_SB_CmdTopicIdToMsgId(uint16_t TopicId, uint16_t InstanceNum)
 {
-    const CFE_SB_Listener_Component_t  Params = {{ .InstanceNumber = InstanceNum, .TopicId = TopicId }};
-    CFE_SB_SoftwareBus_PubSub_Interface_t Output;
+    const EdsComponent_CFE_SB_Listener_t  Params = {{ .InstanceNumber = InstanceNum, .TopicId = TopicId }};
+    EdsInterface_CFE_SB_SoftwareBus_PubSub_t Output;
 
     CFE_MissionLib_MapListenerComponent(&Output, &Params);
 
@@ -104,10 +104,10 @@ CFE_SB_MsgIdValue_Atom_t CFE_SB_CmdTopicIdToMsgId(uint16_t TopicId, uint16_t Ins
  * This calls the same impl that CFE FSW uses
  *
  *-----------------------------------------------------------------*/
-CFE_SB_MsgIdValue_Atom_t CFE_SB_TlmTopicIdToMsgId(uint16_t TopicId, uint16_t InstanceNum)
+EdsDataType_CFE_SB_MsgIdValue_t CFE_SB_TlmTopicIdToMsgId(uint16_t TopicId, uint16_t InstanceNum)
 {
-    const CFE_SB_Publisher_Component_t  Params = {{ .InstanceNumber = InstanceNum, .TopicId = TopicId }};
-    CFE_SB_SoftwareBus_PubSub_Interface_t Output;
+    const EdsComponent_CFE_SB_Publisher_t  Params = {{ .InstanceNumber = InstanceNum, .TopicId = TopicId }};
+    EdsInterface_CFE_SB_SoftwareBus_PubSub_t Output;
 
     CFE_MissionLib_MapPublisherComponent(&Output, &Params);
 
@@ -182,8 +182,8 @@ void LoadTemplateFile(lua_State *lua, const char *Filename)
     int obj_idx;
     size_t RuntimeAppNameLen;
     CFE_TBL_FileDef_t *CFE_TBL_FileDefPtr;
-    BASE_TYPES_ApiName_String_t RuntimeAppName;
-    BASE_TYPES_ApiName_String_t TableName;
+    EdsDataType_BASE_TYPES_ApiName_t RuntimeAppName;
+    EdsDataType_BASE_TYPES_ApiName_t TableName;
     const char *EdsAppName;
     size_t EdsAppNameLen;
     char EdsTypeName[64];
@@ -551,11 +551,11 @@ int Write_CFE_EnacapsulationFile(lua_State *lua)
 {
     union
     {
-        CFE_FS_Header_t FileHeader;
-        CFE_TBL_File_Hdr_t TblHeader;
+        EdsDataType_CFE_FS_Header_t FileHeader;
+        EdsDataType_CFE_TBL_File_Hdr_t TblHeader;
     } Buffer;
-    CFE_FS_Header_PackedBuffer_t PackedFileHeader;
-    CFE_TBL_File_Hdr_PackedBuffer_t PackedTblHeader;
+    EdsPackedBuffer_CFE_FS_Header_t PackedFileHeader;
+    EdsPackedBuffer_CFE_TBL_File_Hdr_t PackedTblHeader;
     uint32_t TblHeaderBlockSize;
     uint32_t FileHeaderBlockSize;
     EdsLib_Id_t PackedEdsId;

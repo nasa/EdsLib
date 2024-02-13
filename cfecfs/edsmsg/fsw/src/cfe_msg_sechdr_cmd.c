@@ -23,6 +23,9 @@
  */
 #include "cfe_msg.h"
 
+#include "ccsds_spacepacket_eds_datatypes.h"
+#include "cfe_hdr_eds_datatypes.h"
+
 /*----------------------------------------------------------------
  *
  * Function: CFE_MSG_GetFcnCode
@@ -33,15 +36,15 @@
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_GetFcnCode(const CFE_MSG_Message_t *MsgPtr, CFE_MSG_FcnCode_t *FcnCode)
 {
-    const CFE_HDR_CommandHeader_t *CmdPtr;
-    const CCSDS_CommonHdr_t *      CommonHdr;
+    const EdsDataType_CFE_HDR_CommandHeader_t *CmdPtr;
+    const EdsDataType_CCSDS_CommonHdr_t *      CommonHdr;
 
     if (MsgPtr == NULL || FcnCode == NULL)
     {
         return CFE_MSG_BAD_ARGUMENT;
     }
 
-    CommonHdr = (const CCSDS_CommonHdr_t *)MsgPtr;
+    CommonHdr = (const EdsDataType_CCSDS_CommonHdr_t *)MsgPtr;
 
     /* This confirms if it is OK to access the pointer as a "CommandHeader" type */
     if (CommonHdr->SecHdrFlags != CCSDS_SecHdrFlags_Cmd)
@@ -49,7 +52,7 @@ CFE_Status_t CFE_MSG_GetFcnCode(const CFE_MSG_Message_t *MsgPtr, CFE_MSG_FcnCode
         return CFE_MSG_WRONG_MSG_TYPE;
     }
 
-    CmdPtr = (const CFE_HDR_CommandHeader_t *)(const void *)MsgPtr;
+    CmdPtr = (const EdsDataType_CFE_HDR_CommandHeader_t *)(const void *)MsgPtr;
 
     *FcnCode = CmdPtr->Sec.FunctionCode;
 
@@ -66,15 +69,15 @@ CFE_Status_t CFE_MSG_GetFcnCode(const CFE_MSG_Message_t *MsgPtr, CFE_MSG_FcnCode
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_SetFcnCode(CFE_MSG_Message_t *MsgPtr, CFE_MSG_FcnCode_t FcnCode)
 {
-    CFE_HDR_CommandHeader_t *CmdPtr;
-    const CCSDS_CommonHdr_t *CommonHdr;
+    EdsDataType_CFE_HDR_CommandHeader_t *CmdPtr;
+    const EdsDataType_CCSDS_CommonHdr_t *CommonHdr;
 
     if (MsgPtr == NULL)
     {
         return CFE_MSG_BAD_ARGUMENT;
     }
 
-    CommonHdr = (const CCSDS_CommonHdr_t *)MsgPtr;
+    CommonHdr = (const EdsDataType_CCSDS_CommonHdr_t *)MsgPtr;
 
     /* This confirms if it is OK to access the pointer as a "CommandHeader" type */
     if (CommonHdr->SecHdrFlags != CCSDS_SecHdrFlags_Cmd)
@@ -82,7 +85,7 @@ CFE_Status_t CFE_MSG_SetFcnCode(CFE_MSG_Message_t *MsgPtr, CFE_MSG_FcnCode_t Fcn
         return CFE_MSG_WRONG_MSG_TYPE;
     }
 
-    CmdPtr = (CFE_HDR_CommandHeader_t *)(void *)MsgPtr;
+    CmdPtr = (EdsDataType_CFE_HDR_CommandHeader_t *)(void *)MsgPtr;
 
     CmdPtr->Sec.FunctionCode = FcnCode;
 

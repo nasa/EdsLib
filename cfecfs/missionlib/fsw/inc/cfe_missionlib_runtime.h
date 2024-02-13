@@ -34,8 +34,8 @@
 #define _CFE_MISSIONLIB_RUNTIME_H_
 
 #include "cfe_mission_eds_parameters.h"
-#include "cfe_sb_eds_typedefs.h"
-#include "cfe_hdr_eds_typedefs.h"
+#include "cfe_sb_eds_datatypes.h"
+#include "cfe_hdr_eds_datatypes.h"
 
 /*
  * This code is intended to support both versions of the header, but
@@ -69,22 +69,22 @@ extern "C"
 {
 #endif
 
-    void CFE_MissionLib_MapListenerComponent(CFE_SB_SoftwareBus_PubSub_Interface_t *Output,
-                                             const CFE_SB_Listener_Component_t *    Input);
-    void CFE_MissionLib_UnmapListenerComponent(CFE_SB_Listener_Component_t *                Output,
-                                               const CFE_SB_SoftwareBus_PubSub_Interface_t *Input);
-    void CFE_MissionLib_MapPublisherComponent(CFE_SB_SoftwareBus_PubSub_Interface_t *Output,
-                                              const CFE_SB_Publisher_Component_t *   Input);
-    void CFE_MissionLib_UnmapPublisherComponent(CFE_SB_Publisher_Component_t *               Output,
-                                                const CFE_SB_SoftwareBus_PubSub_Interface_t *Input);
+    void CFE_MissionLib_MapListenerComponent(EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Output,
+                                             const EdsComponent_CFE_SB_Listener_t *    Input);
+    void CFE_MissionLib_UnmapListenerComponent(EdsComponent_CFE_SB_Listener_t *                Output,
+                                               const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Input);
+    void CFE_MissionLib_MapPublisherComponent(EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Output,
+                                              const EdsComponent_CFE_SB_Publisher_t *   Input);
+    void CFE_MissionLib_UnmapPublisherComponent(EdsComponent_CFE_SB_Publisher_t *               Output,
+                                                const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Input);
 
-    bool CFE_MissionLib_PubSub_IsListenerComponent(const CFE_SB_SoftwareBus_PubSub_Interface_t *Params);
-    bool CFE_MissionLib_PubSub_IsPublisherComponent(const CFE_SB_SoftwareBus_PubSub_Interface_t *Params);
+    bool CFE_MissionLib_PubSub_IsListenerComponent(const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Params);
+    bool CFE_MissionLib_PubSub_IsPublisherComponent(const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Params);
 
-    void CFE_MissionLib_Get_PubSub_Parameters(CFE_SB_SoftwareBus_PubSub_Interface_t *Params,
-                                              const CFE_HDR_Message_t *              Packet);
-    void CFE_MissionLib_Set_PubSub_Parameters(CFE_HDR_Message_t *                          Packet,
-                                              const CFE_SB_SoftwareBus_PubSub_Interface_t *Params);
+    void CFE_MissionLib_Get_PubSub_Parameters(EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Params,
+                                              const EdsDataType_CFE_HDR_Message_t *     Packet);
+    void CFE_MissionLib_Set_PubSub_Parameters(EdsDataType_CFE_HDR_Message_t *                 Packet,
+                                              const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Params);
 
 #ifdef __cplusplus
 } /* extern "C" */

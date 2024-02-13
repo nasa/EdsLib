@@ -136,6 +136,79 @@ SEDS.to_macro_name = function(ident)
   return result
 end
 
+local CTYPEDEF_JPHFIX_TABLE = {
+  CONTAINER_DATATYPE = "Struct",
+FLOAT_DATATYPE = "Atom",
+INTEGER_DATATYPE = "Atom",
+BOOLEAN_DATATYPE = "Atom",
+ENUMERATION_DATATYPE = "Enum",
+STRING_DATATYPE = "String",
+ARRAY_DATATYPE = "Array"
+}
+
+local CTYPEDEF_QUALIFIER_TABLE = {
+  GENERIC_TYPE = "Generic_",
+  PARAMETER = "Parameter_",
+  COMMAND = "Command_",
+  ARGUMENT = "Argument_",
+  COMPONENT = "Component_",
+  VARIABLE = "Variable_",
+  DECLARED_INTERFACE = "Interface_",
+  PROVIDED_INTERFACE = "Interface_",
+  REQUIRED_INTERFACE = "Interface_"
+}
+
+-- -------------------------------------------------
+-- Helper function to write an integer typedef
+-- -------------------------------------------------
+SEDS.to_ctype_typedef = function(ref,containment_style)
+
+  local prefix
+  local refstr
+
+  -- this assumes if it is a userdata, then it must be a seds_tree_node object.
+  -- in theory this could accept anything as long as it implements a "get_qualified_name" method.
+  if (type(ref) == "userdata" and ref.entity_type) then
+    if (not containment_style) then
+      prefix = CTYPEDEF_QUALIFIER_TABLE[ref.entity_type]
+    end
+    refstr = ref:get_ctype_basename(containment_style)
+  else
+    refstr = SEDS.to_safe_identifier(ref)
+  end
+
+  if (not prefix) then
+    -- if containment_style was set, then the qualifier should already be embedded within refstr
+    if (containment_style) then
+      prefix = ""
+    else
+      prefix = "DataType_"
+    end
+  end
+
+  return "Eds" .. prefix .. refstr .. "_t"
+end
+
+SEDS.count_results = function(iterator)
+
+  local count = 0
+  for _ in iterator do
+    count = 1 + count
+  end
+
+  return count
+end
+
+SEDS.debug_print_table = function(indent,propval)
+    for tk,tv in pairs(propval) do
+    print (indent .. "  [" .. tostring(tk) .. "] => " .. type(tv) .. ":" .. tostring(tv))
+    if (type(tv) == "table") then
+      SEDS.debug_print_table(indent .. "  ", tv)
+    end
+  end
+end
+
+
 -- -----------------------------------------------------------------------
 -- GLOBAL NODE FILTER FUNCTIONS
 -- In many cases it is necessary to grep through the SEDS node tree

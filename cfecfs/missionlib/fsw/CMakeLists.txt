@@ -109,20 +109,6 @@ add_custom_target(missionlib-runtime-install
         EDS_${MISSION_NAME}_runtime_shared
 )
 
-# Put the components together into a regular library
-# This adds an API interface intended for use with the CFE software bus application
-file(WRITE ${MISSION_BINARY_DIR}/inc/cfe_mission_eds_interface_parameters.h.tmp
-    "/* Generated wrapper based off the real source file location */\n"
-    "#include \"${EDS_FILE_PREFIX}_interfacedb.h\"\n"
-    "#define CFE_SOFTWAREBUS_INTERFACE  ${EDS_SYMBOL_PREFIX}_SOFTWAREBUS_INTERFACE\n"
-)
-# Update the output only if different - avoid unnecessary rebuilds
-execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${MISSION_BINARY_DIR}/inc/cfe_mission_eds_interface_parameters.h.tmp
-    ${MISSION_BINARY_DIR}/inc/cfe_mission_eds_interface_parameters.h
-)
-file(REMOVE ${MISSION_BINARY_DIR}/inc/cfe_mission_eds_interface_parameters.h.tmp)
-
 add_library(cfe_missionlib STATIC
     src/cfe_missionlib_api.c
 )

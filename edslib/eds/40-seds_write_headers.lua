@@ -39,6 +39,24 @@
 -- -------------------------------------------------------------------------
 SEDS.info ("SEDS write headers START")
 
+local CTYPEDEF_SUFFIX_TABLE = {
+  FLOAT_DATATYPE = "_Atom",
+  INTEGER_DATATYPE = "_Atom",
+  BOOLEAN_DATATYPE = "_Atom",
+  ENUMERATION_DATATYPE = "_Enum",
+  STRING_DATATYPE = "_String",
+  ARRAY_DATATYPE = "_Array",
+  GENERIC_TYPE = "_Generic",
+  PARAMETER = "_Parameter",
+  COMMAND = "_Command",
+  ARGUMENT = "_Argument",
+  COMPONENT = "_Component",
+  VARIABLE = "Variable",
+  DECLARED_INTERFACE = "_Interface",
+  PROVIDED_INTERFACE = "_Interface",
+  REQUIRED_INTERFACE = "_Interface"
+}
+
 
 -- -------------------------------------------------
 -- Helper function to write an integer typedef
@@ -86,22 +104,22 @@ local function write_c_struct_typedef(output,node)
       for _,deriv in ipairs(derivmap.derivatives) do
         local entry = deriv.decode_sequence[1]
         if (entry.type) then
-          output:write(string.format("%-30s %s;", entry.type:get_flattened_name() .. "_t", SEDS.to_safe_identifier(entry.name)))
+          output:write(string.format("%-30s %s;", SEDS.to_ctype_typedef(entry.type), SEDS.to_safe_identifier(entry.name)))
         end
       end
     else
       for idx,ref in ipairs(node.decode_sequence) do
-        local c_name = ref.type:get_flattened_name()
         -- If the entry refers to a base type, then use a buffer instead of a direct instance here,
         -- but only if the derivatives actually do extend the type (i.e. add fields).
+        local is_containment
         if (ref.name and ref.type.max_size and (ref.type.max_size.bits > ref.type.resolved_size.bits) and not ref.type.is_union) then
-          c_name = c_name .. "_Buffer"
+          is_containment = true
         end
         if (ref.entry) then
           output:add_documentation(ref.entry.attributes.shortdescription, ref.entry.longdescription)
         end
         output:write(string.format("%-50s %-30s /* %-3d bits/%-3d bytes */",
-          c_name .. "_t",
+          SEDS.to_ctype_typedef(ref.type, is_containment),
           (ref.name or ref.type.name) .. ";",
           ref.type.resolved_size.bits,
           ref.type.resolved_size.bytes))
@@ -120,11 +138,12 @@ end
 -- Helper function to write an array typedef
 -- -------------------------------------------------
 local function write_c_array_typedef(output,node)
-  local basetype_name = node.datatyperef:get_flattened_name()
   local basetype_modifier = ""
+  local is_containment
 
+  -- This is considered a "containment" if the array refers to a basetype
   if (node.datatyperef.max_size and not node.datatyperef.is_union) then
-    basetype_name = basetype_name .. "_Buffer"
+    is_containment = true
   end
 
   for dim in node:iterate_subtree("DIMENSION") do
@@ -137,7 +156,7 @@ local function write_c_array_typedef(output,node)
     basetype_modifier = string.format("[%d]",node.total_elements)
   end
 
-  return { ctype = basetype_name .. "_t" , typedef_modifier = basetype_modifier }
+  return { ctype = SEDS.to_ctype_typedef(node.datatyperef, is_containment), typedef_modifier = basetype_modifier }
 end
 
 -- -------------------------------------------------
@@ -187,7 +206,7 @@ end
 -- -------------------------------------------------
 local function write_c_subrange_typedef(output,node)
   -- C does not do subranges, so just use the basetype
-  return { ctype = node.basetype:get_flattened_name() .. "_t" }
+  return { ctype = SEDS.to_ctype_typedef(node.basetype) }
 end
 
 -- -------------------------------------------------
@@ -195,9 +214,10 @@ end
 -- -------------------------------------------------
 local function write_c_enum_typedef(output,node)
   local list = node:find_first("ENUMERATION_LIST")
-  local enum_name = string.format("enum %s", SEDS.to_safe_identifier(node:get_qualified_name()))
-  local enum_typedef = node:get_flattened_name() .. "_t"
+  local enum_name = node:get_ctype_basename()
+  local enum_typedef = SEDS.to_ctype_typedef(enum_name)
   local enum_min, enum_max
+  enum_name = "enum " .. enum_name
   if (list) then
     output:add_documentation(string.format("Label definitions associated with %s", enum_typedef))
     output:write(enum_name)
@@ -245,7 +265,7 @@ end
 -- Helper function to write an integer typedef
 -- -------------------------------------------------
 local function write_c_alias_typedef(output,node)
-  return { ctype = node.type:get_flattened_name() .. "_t" }
+  return { ctype = SEDS.to_ctype_typedef(node.type) }
 end
 
 -- -----------------------------------------------------------------------------------------
@@ -281,10 +301,10 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
   ds.edslib_refobj_global_index = SEDS.to_safe_identifier(string.format("%s_INDEX_%s", global_sym_prefix, SEDS.to_macro_name(ds.name)))
 
   -- -----------------------------------------------------
-  -- DATASHEET OUTPUT FILE 1: The "typedefs.h" file
+  -- DATASHEET OUTPUT FILE 1: The "datatypes.h" file
   -- -----------------------------------------------------
   -- This contains the all basic typedefs for the EDS data types
-  output = SEDS.output_open(SEDS.to_filename("typedefs.h", ds.name),ds.xml_filename)
+  output = SEDS.output_open(SEDS.to_filename("datatypes.h", ds.name),ds.xml_filename)
 
   -- defined types will be based on the C99 standard fixed-width types
   output:write("#include <stdint.h>")
@@ -296,10 +316,10 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
   output.checksum_table = {}
   output.datasheet_name = ds:get_flattened_name()
   for _,dep in ipairs(ds:get_references("datatype")) do
-    output:write(string.format("#include \"%s\"", SEDS.to_filename("typedefs.h", dep.name)))
+    output:write(string.format("#include \"%s\"", SEDS.to_filename("datatypes.h", dep.name)))
   end
 
-  output:section_marker("Typedefs")
+  output:section_marker("Type Definitions")
   for node in ds:iterate_subtree() do
     if (node.implicit_basetype) then
       node.header_data = {}
@@ -310,12 +330,11 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
       end
     end
     if (node.header_data) then
-      local c_name = node:get_flattened_name() .. (node.header_data.typedef_extrasuffix or "")
       if (node.resolved_size) then
-        node.edslib_refobj_local_index = c_name .. "_DATADICTIONARY"
+        node.edslib_refobj_local_index = node:get_flattened_name("DATADICTIONARY")
         node.edslib_refobj_initializer = string.format("{ %s, %s }", ds.edslib_refobj_global_index, node.edslib_refobj_local_index)
       end
-      node.header_data.typedef_name = c_name .. "_t"
+      node.header_data.typedef_name = SEDS.to_ctype_typedef(node)
 
       if (node.implicit_basetype) then
         output:add_documentation("Implicitly created wrapper for " .. tostring(node.implict_basetype))
@@ -332,9 +351,9 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
 
       if (node.resolved_size) then
         local packedsize = 0
-        local buffname = node:get_flattened_name()
+        local unpacked_buffname = node:get_ctype_basename("native")
         if (node.max_size and not node.is_union) then
-          output:write(string.format("union %s_Buffer", buffname))
+          output:write("union " .. unpacked_buffname)
           output:start_group("{")
           -- The base object may be empty in EDS, so do not make a C ref to an empty object
           if (#node.decode_sequence > 0) then
@@ -344,7 +363,7 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
           local aligntype = (node.max_size.alignment <= 64) and tostring(node.max_size.alignment) or "max"
           output:write(string.format("%-50s Align%d;", "uint" .. aligntype .. "_t", node.max_size.alignment))
           output:end_group("};")
-          output:write(string.format("typedef %-50s %s_Buffer_t;", "union " .. buffname .. "_Buffer", buffname))
+          output:write(string.format("typedef %-50s %s;", "union " .. unpacked_buffname, SEDS.to_ctype_typedef(unpacked_buffname, true)))
           packedsize = node.max_size.bits
         else
           packedsize = node.resolved_size.bits
@@ -354,7 +373,7 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
         else
           packedsize = math.floor((packedsize + 7) / 8)
         end
-        output:write(string.format("typedef %-50s %s_PackedBuffer_t[%d];", "uint8_t", buffname, packedsize))
+        output:write(string.format("typedef %-50s %s[%d];", "uint8_t", SEDS.to_ctype_typedef(node, "packed"), packedsize))
         output:add_whitespace(1)
       end
     end
@@ -364,11 +383,10 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
   for comp in ds:iterate_subtree("COMPONENT") do
     comp.header_data = write_c_struct_typedef(output,comp)
     if (comp.resolved_size and comp.header_data) then
-      local c_name = comp:get_flattened_name()
-      comp.edslib_refobj_local_index = c_name .. "_DATADICTIONARY"
+      comp.edslib_refobj_local_index = comp:get_flattened_name("DATADICTIONARY")
       comp.edslib_refobj_initializer = string.format("{ %s, %s }", ds.edslib_refobj_global_index,
         comp.edslib_refobj_local_index)
-      comp.header_data.typedef_name = c_name .. "_t"
+      comp.header_data.typedef_name = SEDS.to_ctype_typedef(comp)
       output:add_documentation(comp.attributes.shortdescription, comp.longdescription)
       output:write(string.format("typedef %-50s %s;", comp.header_data.ctype, comp.header_data.typedef_name))
       output:write(string.format("  /* %s */", tostring(comp.resolved_size)))
@@ -378,6 +396,25 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
 
   SEDS.output_close(output)
 
+  -- -----------------------------------------------------
+  -- DATASHEET OUTPUT FILE 1a: The "typemap.h" file
+  -- -----------------------------------------------------
+  -- This contains the all basic typedefs for the EDS data types
+  output = SEDS.output_open(SEDS.to_filename("typedefs.h", ds.name),ds.xml_filename)
+
+  output:write(string.format("#include \"%s\"", SEDS.to_filename("datatypes.h", ds.name)))
+  output:add_whitespace(1)
+
+  output:section_marker("CFE-compatible type mappings")
+  for node in ds:iterate_subtree() do
+    if (node.header_data and node.header_data.typedef_name) then
+      local typename = node:get_ctype_basename()
+      local typesuffix = CTYPEDEF_SUFFIX_TABLE[node.entity_type] or ""
+      output:write(string.format("typedef %-50s %s%s_t;", node.header_data.typedef_name, typename, typesuffix))
+    end
+  end
+
+  SEDS.output_close(output)
 
   -- -----------------------------------------------------
   -- DATASHEET OUTPUT FILE 2: The "defines.h" file

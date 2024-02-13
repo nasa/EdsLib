@@ -63,7 +63,7 @@ typedef int socklen_t;
 #include "edslib_displaydb.h"
 #include "cfe_missionlib_api.h"
 #include "cfe_missionlib_runtime.h"
-#include "cfe_hdr_eds_typedefs.h"
+#include "cfe_hdr_eds_datatypes.h"
 
 const char DEFAULT_COMPONENT[] = "Application";
 
@@ -177,9 +177,9 @@ typedef struct {
 
     EdsLib_Id_t IntfArg;
     EdsLib_Id_t ActualArg;
-    CFE_SB_Listener_Component_t Params;
+    EdsComponent_CFE_SB_Listener_t Params;
     CFE_MissionLib_InterfaceInfo_t IntfInfo;
-    CFE_SB_SoftwareBus_PubSub_Interface_t PubSub;
+    EdsInterface_CFE_SB_SoftwareBus_PubSub_t PubSub;
     uint16_t CommandCodeConstrIdx;
     EdsLib_DataTypeDB_EntityInfo_t CommandCodeInfo;
     EdsLib_DataTypeDB_TypeInfo_t EdsHeaderInfo;
@@ -189,8 +189,8 @@ typedef struct {
 } CommandData_t;
 
 
-CFE_HDR_CommandHeader_Buffer_t CommandBuffer;
-static CFE_HDR_CommandHeader_PackedBuffer_t PackedCommand;
+EdsNativeBuffer_CFE_HDR_CommandHeader_t CommandBuffer;
+static EdsPackedBuffer_CFE_HDR_CommandHeader_t PackedCommand;
 
 /*
 ** Declare the global command data
@@ -453,7 +453,7 @@ int main(int argc, char *argv[]) {
         strcpy(CommandData.CmdName, Separator + 1);
     }
 
-    EdsRc = CFE_MissionLib_FindTopicByName(&CFE_SOFTWAREBUS_INTERFACE, CFE_SB_Telecommand_Interface_ID,
+    EdsRc = CFE_MissionLib_FindTopicByName(&CFE_SOFTWAREBUS_INTERFACE, EDS_INTERFACE_ID(CFE_SB_Telecommand),
             CommandData.DestIntf, &CommandData.Params.Telecommand.TopicId);
     if (EdsRc != CFE_MISSIONLIB_SUCCESS)
     {
@@ -470,7 +470,7 @@ int main(int argc, char *argv[]) {
             memmove(Separator + sizeof(DEFAULT_COMPONENT), Separator, 1 + FullLen - (Separator - CommandData.DestIntf));
             memcpy(Separator+1, DEFAULT_COMPONENT, sizeof(DEFAULT_COMPONENT) - 1);
             Separator[0] = '/';
-            EdsRc = CFE_MissionLib_FindTopicByName(&CFE_SOFTWAREBUS_INTERFACE, CFE_SB_Telecommand_Interface_ID,
+            EdsRc = CFE_MissionLib_FindTopicByName(&CFE_SOFTWAREBUS_INTERFACE, EDS_INTERFACE_ID(CFE_SB_Telecommand),
                     CommandData.DestIntf, &CommandData.Params.Telecommand.TopicId);
         }
     }
@@ -483,13 +483,13 @@ int main(int argc, char *argv[]) {
         if (CommandData.GotUsageReq)
         {
             printf("EDS-defined Telecommand Interfaces:\n");
-            CFE_MissionLib_EnumerateTopics(&CFE_SOFTWAREBUS_INTERFACE, CFE_SB_Telecommand_Interface_ID, Enumerate_Topics_Usage_Callback, NULL);
+            CFE_MissionLib_EnumerateTopics(&CFE_SOFTWAREBUS_INTERFACE, EDS_INTERFACE_ID(CFE_SB_Telecommand), Enumerate_Topics_Usage_Callback, NULL);
             printf("\n");
         }
         return EXIT_FAILURE;
     }
 
-    EdsRc = CFE_MissionLib_GetInterfaceInfo(&CFE_SOFTWAREBUS_INTERFACE, CFE_SB_Telecommand_Interface_ID, &CommandData.IntfInfo);
+    EdsRc = CFE_MissionLib_GetInterfaceInfo(&CFE_SOFTWAREBUS_INTERFACE, EDS_INTERFACE_ID(CFE_SB_Telecommand), &CommandData.IntfInfo);
     if (EdsRc != CFE_MISSIONLIB_SUCCESS)
     {
         fprintf(stderr,"Cannot lookup interface info for: '%s'\n", CommandData.DestIntf);
@@ -506,7 +506,7 @@ int main(int argc, char *argv[]) {
 
     CFE_MissionLib_Set_PubSub_Parameters(&CommandBuffer.BaseObject.Message, &CommandData.PubSub);
 
-    EdsRc = CFE_MissionLib_GetArgumentType(&CFE_SOFTWAREBUS_INTERFACE, CFE_SB_Telecommand_Interface_ID,
+    EdsRc = CFE_MissionLib_GetArgumentType(&CFE_SOFTWAREBUS_INTERFACE, EDS_INTERFACE_ID(CFE_SB_Telecommand),
             CommandData.Params.Telecommand.TopicId, 1, 1, &CommandData.IntfArg);
     if (EdsRc != CFE_MISSIONLIB_SUCCESS)
     {

@@ -37,7 +37,7 @@
 #include "cfe_msg_api_typedefs.h"
 
 /* In this build the structure definitions come from EDS */
-#include "cfe_hdr_eds_typedefs.h"
+#include "cfe_hdr_eds_datatypes.h"
 
 /*
  * Macro Definitions
@@ -54,7 +54,7 @@
  *       Implemented as a macro, so it should work with both Command and Telemetry headers.
  *
  *       In the EDS version it goes through a "void*" type, so as to not trigger alias warnings, however
- *       all MSG-related structs must all begin with an actual instance of CFE_HDR_Message_t for
+ *       all MSG-related structs must all begin with an actual instance of CFE_MSG_Message_t for
  *       this to be valid/safe.  All EDS-generated message structures meet this requirement because
  *       they all (eventually) derive from this base type, but any hand-written struct could be incorrect,
  *       and unfortunately will not trigger an error when using void* cast.
@@ -83,6 +83,20 @@
  * Type Definitions
  */
 
+/*
+ * The header size should be aligned to the largest possible type on the system.
+ * This is so conventional struct definitions will not add extra padding between
+ * the header and the payload.  Specifically, there is still padding, but it will
+ * be reflected in sizeof(CFE_MSG_CommandHeader) as opposed simply existing as
+ * a gap between the header and payload.
+ */
+union CFE_EDSMSG_Align
+{
+    uintmax_t AlignInt; /**< alignment for largest native integer */
+    void *    AlignPtr; /**< alignment for pointers */
+    double    AlignDbl; /**< alignment for double-precision float */
+};
+
 /**********************************************************************
  * Structure definitions for full header
  *
@@ -95,17 +109,28 @@
  *
  * This provides the definition of CFE_MSG_Message_t
  */
-union CFE_MSG_Message
+struct CFE_MSG_Message
 {
     /**
      * EDS-defined base message structure
      */
-    CFE_HDR_Message_t BaseMsg;
+    EdsDataType_CFE_HDR_Message_t BaseMsg;
+};
 
+/**
+ * \brief Aligned command header
+ *
+ * Df
+ */
+union CFE_EDSMSG_CommandHeader_Aligned
+{
     /**
-     * \brief Byte level access
+     * EDS-defined command header structure
      */
-    uint8 Byte[sizeof(CFE_HDR_Message_t)];
+    EdsDataType_CFE_HDR_CommandHeader_t HeaderData;
+
+    /* Member for alignment (unused in code) */
+    union CFE_EDSMSG_Align Align;
 };
 
 /**
@@ -115,10 +140,23 @@ union CFE_MSG_Message
  */
 struct CFE_MSG_CommandHeader
 {
+    union CFE_EDSMSG_CommandHeader_Aligned Content;
+};
+
+/**
+ * \brief cFS telemetry header
+ *
+ * This provides the definition of CFE_MSG_TelemetryHeader_t
+ */
+union CFE_EDSMSG_TelemetryHeader_Aligned
+{
     /**
-     * EDS-defined command header structure
+     * EDS-defined telemetry header structure
      */
-    CFE_HDR_CommandHeader_t HeaderData;
+    EdsDataType_CFE_HDR_TelemetryHeader_t HeaderData;
+
+    /* Member for alignment (unused in code) */
+    union CFE_EDSMSG_Align Align;
 };
 
 /**
@@ -131,9 +169,10 @@ struct CFE_MSG_TelemetryHeader
     /**
      * EDS-defined telemetry header structure
      */
-    CFE_HDR_TelemetryHeader_t HeaderData;
+    union CFE_EDSMSG_TelemetryHeader_Aligned Content;
 };
 
+#ifdef jphfix
 /**
  * Helper function to cast an arbitrary base pointer to a CFE_MSG_Message_t* for use with SB APIs
  */
@@ -142,9 +181,10 @@ static inline CFE_MSG_Message_t *CFE_MSG_CastBaseMsg(void *BaseMsg)
     /*
      * In a pedantic sense, this is "promoting" the base message pointer to the
      * union type.  This should not be an actual violation though, as the union
-     * contains a CFE_HDR_Message_t member.
+     * contains a CFE_MSG_Message_t member.
      */
     return ((CFE_MSG_Message_t *)BaseMsg);
 }
+#endif
 
 #endif /* CFE_MSG_HDR_EDS_H */

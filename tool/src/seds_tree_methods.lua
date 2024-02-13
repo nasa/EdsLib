@@ -33,24 +33,6 @@ SEDS.info "loading SEDS tree methods"
 -- these are used locally but are not exposed outside of this source file
 -- -------------------------------------------------------------------------
 
--- Suffix table for use with the "get_flattened_name" function below.
-local FLAT_SUFFIX_TABLE = {
-  FLOAT_DATATYPE ="Atom",
-  INTEGER_DATATYPE = "Atom",
-  GENERIC_TYPE = "Generic",
-  ENUMERATION_DATATYPE = "Enum",
-  STRING_DATATYPE = "String",
-  ARRAY_DATATYPE = "Array",
-  PARAMETER = "Parameter",
-  COMMAND = "Command",
-  ARGUMENT = "Argument",
-  COMPONENT = "Component",
-  VARIABLE = "Variable",
-  DECLARED_INTERFACE = "Interface",
-  PROVIDED_INTERFACE = "Interface",
-  REQUIRED_INTERFACE = "Interface"
-}
-
 -- Values for the decoder table used by iterate_members below
 local PROVINTF_FILTER = SEDS.create_nodetype_filter("PROVIDED_INTERFACE")
 local PARAMETER_FILTER = SEDS.create_nodetype_filter("PARAMETER")
@@ -218,7 +200,6 @@ local function get_flattened_name(node,suffix)
   -- Note that LUA treats "nil" table values as unassigned
   -- So if any of the inputs are nil it will simply be omitted
   output[1 + #output] = get_qualified_name(node)
-  output[1 + #output] = FLAT_SUFFIX_TABLE[node.entity_type]
   output[1 + #output] = suffix
 
   local str = output[1]
@@ -228,6 +209,50 @@ local function get_flattened_name(node,suffix)
   return SEDS.to_safe_identifier(str)
 end
 
+-- Name qualifier table for use with seds_tree_node objects
+local CTYPE_QUALIFIER_TABLE = {
+  ["packed"] = "PackedBuffer_",
+  ["native"] = "NativeBuffer_",
+  [true] = "NativeBuffer_"
+}
+
+local CTYPE_JPHFIX_TABLE = {
+  CONTAINER_DATATYPE = "Struct",
+  FLOAT_DATATYPE = "Atom",
+  INTEGER_DATATYPE = "Atom",
+  BOOLEAN_DATATYPE = "Atom",
+  GENERIC_TYPE = "Generic",
+  ENUMERATION_DATATYPE = "Enum",
+  STRING_DATATYPE = "String",
+  ARRAY_DATATYPE = "Array",
+  PARAMETER = "Parameter",
+  COMMAND = "Command",
+  ARGUMENT = "Argument",
+  COMPONENT = "Component",
+  VARIABLE = "Variable",
+  DECLARED_INTERFACE = "Interface",
+  PROVIDED_INTERFACE = "Interface",
+  REQUIRED_INTERFACE = "Interface"
+}
+
+-- -------------------------------------------------
+-- Helper function to write an integer typedef
+-- -------------------------------------------------
+local function get_ctype_basename(node, containment_style)
+
+  -- If the "containment_style" argument is nil/false, then it means this is just a normal reference to the type
+  -- Otherwise, it means its looking for a complete instance of the type, which could be larger.  This is a "buffer".
+  -- If the buffer is "packed" then this is just the raw encoded bytes (i.e. an array of uint8_t sized for the worst-case).
+  -- If the buffer is "native" then this generally means a union of all the possible concrete instance types
+  local prefix = CTYPE_QUALIFIER_TABLE[containment_style]
+
+  if (not prefix and type(containment_style) == "string" and containment_style ~= "") then
+    prefix = containment_style .. "_"
+  end
+
+  return (prefix or "") .. SEDS.to_safe_identifier(node:get_qualified_name())
+  --return SEDS.to_safe_identifier(node:get_qualified_name())
+end
 
 -- -------------------------------------------------------------------------
 -- FIND FUNCTIONS
@@ -689,24 +714,13 @@ end
 --
 local function debug_print(node)
 
-  local print_tbl
-
-  print_tbl = function(indent,propval)
-      for tk,tv in pairs(propval) do
-      print (indent .. "  [" .. tostring(tk) .. "] => " .. type(tv) .. ":" .. tostring(tv))
-      if (type(tv) == "table") then
-        print_tbl(indent .. "  ", tv)
-      end
-    end
-  end
-
   print ("-- BEGIN NODE PROPERTIES --")
   print ("entity_type => " .. node.entity_type)
   for i,v in ipairs(node:get_properties()) do
     local propval = node[v]
     print (" [" .. tostring(v) .. "] =>" .. type(propval) .. ":" .. tostring(propval))
     if (type(propval) == "table") then
-      print_tbl("  ", propval)
+      SEDS.debug_print_table("  ", propval)
     end
   end
   print ("-- END NODE PROPERTIES --")
@@ -716,6 +730,7 @@ end
 return {
   get_qualified_name = get_qualified_name,
   get_flattened_name = get_flattened_name,
+  get_ctype_basename = get_ctype_basename,
   find_first = find_first,
   find_parent = find_parent,
   find_reference = find_reference,

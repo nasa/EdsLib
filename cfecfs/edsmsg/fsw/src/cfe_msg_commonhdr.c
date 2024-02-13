@@ -24,10 +24,12 @@
 #include "cfe_msg.h"
 #include "cfe_error.h"
 
-#include "ccsds_spacepacket_eds_typedefs.h"
-#include "cfe_sb_eds_typedefs.h"
+#include "cfe_sb_eds_datatypes.h"
 #include "cfe_mission_eds_parameters.h"
 #include "cfe_missionlib_runtime.h"
+
+#include "ccsds_spacepacket_eds_datatypes.h"
+#include "cfe_hdr_eds_datatypes.h"
 
 #define CFE_MSG_SHDR_PRESENT_MASK_BIT (CCSDS_SecHdrFlags_Tlm & CCSDS_SecHdrFlags_Cmd)
 #define CFE_MSG_SHDR_TYPE_MASK_BIT    (CCSDS_SecHdrFlags_Tlm ^ CCSDS_SecHdrFlags_Cmd)
@@ -44,14 +46,14 @@
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_GetHeaderVersion(const CFE_MSG_Message_t *MsgPtr, CFE_MSG_HeaderVersion_t *Version)
 {
-    const CCSDS_CommonHdr_t *Hdr;
+    const EdsDataType_CCSDS_CommonHdr_t *Hdr;
 
     if (MsgPtr == NULL || Version == NULL)
     {
         return CFE_MSG_BAD_ARGUMENT;
     }
 
-    Hdr = (const CCSDS_CommonHdr_t *)MsgPtr;
+    Hdr = (const EdsDataType_CCSDS_CommonHdr_t *)MsgPtr;
 
     *Version = Hdr->VersionId;
 
@@ -68,14 +70,14 @@ CFE_Status_t CFE_MSG_GetHeaderVersion(const CFE_MSG_Message_t *MsgPtr, CFE_MSG_H
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_SetHeaderVersion(CFE_MSG_Message_t *MsgPtr, CFE_MSG_HeaderVersion_t Version)
 {
-    CCSDS_CommonHdr_t *Hdr;
+    EdsDataType_CCSDS_CommonHdr_t *Hdr;
 
     if (MsgPtr == NULL || Version > 7)
     {
         return CFE_MSG_BAD_ARGUMENT;
     }
 
-    Hdr = (CCSDS_CommonHdr_t *)MsgPtr;
+    Hdr = (EdsDataType_CCSDS_CommonHdr_t *)MsgPtr;
 
     Hdr->VersionId = Version;
 
@@ -92,14 +94,14 @@ CFE_Status_t CFE_MSG_SetHeaderVersion(CFE_MSG_Message_t *MsgPtr, CFE_MSG_HeaderV
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_GetType(const CFE_MSG_Message_t *MsgPtr, CFE_MSG_Type_t *Type)
 {
-    const CCSDS_CommonHdr_t *Hdr;
+    const EdsDataType_CCSDS_CommonHdr_t *Hdr;
 
     if (MsgPtr == NULL || Type == NULL)
     {
         return CFE_MSG_BAD_ARGUMENT;
     }
 
-    Hdr = (const CCSDS_CommonHdr_t *)MsgPtr;
+    Hdr = (const EdsDataType_CCSDS_CommonHdr_t *)MsgPtr;
 
     switch (Hdr->SecHdrFlags)
     {
@@ -129,15 +131,15 @@ CFE_Status_t CFE_MSG_GetType(const CFE_MSG_Message_t *MsgPtr, CFE_MSG_Type_t *Ty
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_SetType(CFE_MSG_Message_t *MsgPtr, CFE_MSG_Type_t Type)
 {
-    CCSDS_CommonHdr_t *      Hdr;
-    CCSDS_SecHdrFlags_Enum_t SetVal;
+    EdsDataType_CCSDS_CommonHdr_t * Hdr;
+    EdsDataType_CCSDS_SecHdrFlags_t SetVal;
 
     if (MsgPtr == NULL)
     {
         return CFE_MSG_BAD_ARGUMENT;
     }
 
-    Hdr    = (CCSDS_CommonHdr_t *)MsgPtr;
+    Hdr    = (EdsDataType_CCSDS_CommonHdr_t *)MsgPtr;
     SetVal = 0;
 
     if (Type == CFE_MSG_Type_Tlm)
@@ -169,14 +171,14 @@ CFE_Status_t CFE_MSG_SetType(CFE_MSG_Message_t *MsgPtr, CFE_MSG_Type_t Type)
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_GetHasSecondaryHeader(const CFE_MSG_Message_t *MsgPtr, bool *HasSecondary)
 {
-    const CCSDS_CommonHdr_t *Hdr;
+    const EdsDataType_CCSDS_CommonHdr_t *Hdr;
 
     if (MsgPtr == NULL || HasSecondary == NULL)
     {
         return CFE_MSG_BAD_ARGUMENT;
     }
 
-    Hdr = (const CCSDS_CommonHdr_t *)MsgPtr;
+    Hdr = (const EdsDataType_CCSDS_CommonHdr_t *)MsgPtr;
 
     *HasSecondary = (Hdr->SecHdrFlags & CFE_MSG_SHDR_PRESENT_MASK_BIT) != 0;
 
@@ -193,15 +195,15 @@ CFE_Status_t CFE_MSG_GetHasSecondaryHeader(const CFE_MSG_Message_t *MsgPtr, bool
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_SetHasSecondaryHeader(CFE_MSG_Message_t *MsgPtr, bool HasSecondary)
 {
-    CCSDS_CommonHdr_t *      Hdr;
-    CCSDS_SecHdrFlags_Enum_t SetVal;
+    EdsDataType_CCSDS_SecHdrFlags_t SetVal;
+    EdsDataType_CCSDS_CommonHdr_t * Hdr;
 
     if (MsgPtr == NULL)
     {
         return CFE_MSG_BAD_ARGUMENT;
     }
 
-    Hdr = (CCSDS_CommonHdr_t *)MsgPtr;
+    Hdr = (EdsDataType_CCSDS_CommonHdr_t *)MsgPtr;
 
     if (HasSecondary)
     {
@@ -228,14 +230,14 @@ CFE_Status_t CFE_MSG_SetHasSecondaryHeader(CFE_MSG_Message_t *MsgPtr, bool HasSe
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_GetApId(const CFE_MSG_Message_t *MsgPtr, CFE_MSG_ApId_t *ApId)
 {
-    const CCSDS_CommonHdr_t *Hdr;
+    const EdsDataType_CCSDS_CommonHdr_t *Hdr;
 
     if (MsgPtr == NULL || ApId == NULL)
     {
         return CFE_MSG_BAD_ARGUMENT;
     }
 
-    Hdr = (const CCSDS_CommonHdr_t *)MsgPtr;
+    Hdr = (const EdsDataType_CCSDS_CommonHdr_t *)MsgPtr;
 
     *ApId = Hdr->AppId;
 
@@ -252,14 +254,14 @@ CFE_Status_t CFE_MSG_GetApId(const CFE_MSG_Message_t *MsgPtr, CFE_MSG_ApId_t *Ap
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_SetApId(CFE_MSG_Message_t *MsgPtr, CFE_MSG_ApId_t ApId)
 {
-    CCSDS_CommonHdr_t *Hdr;
+    EdsDataType_CCSDS_CommonHdr_t *Hdr;
 
     if (MsgPtr == NULL || ApId > 0x3FF)
     {
         return CFE_MSG_BAD_ARGUMENT;
     }
 
-    Hdr = (CCSDS_CommonHdr_t *)MsgPtr;
+    Hdr = (EdsDataType_CCSDS_CommonHdr_t *)MsgPtr;
 
     Hdr->AppId = ApId;
 
@@ -276,14 +278,14 @@ CFE_Status_t CFE_MSG_SetApId(CFE_MSG_Message_t *MsgPtr, CFE_MSG_ApId_t ApId)
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_GetSegmentationFlag(const CFE_MSG_Message_t *MsgPtr, CFE_MSG_SegmentationFlag_t *SegFlag)
 {
-    const CCSDS_CommonHdr_t *Hdr;
+    const EdsDataType_CCSDS_CommonHdr_t *Hdr;
 
     if (MsgPtr == NULL || SegFlag == NULL)
     {
         return CFE_MSG_BAD_ARGUMENT;
     }
 
-    Hdr = (const CCSDS_CommonHdr_t *)MsgPtr;
+    Hdr = (const EdsDataType_CCSDS_CommonHdr_t *)MsgPtr;
 
     /* JPHFIX: should be EDS enum? */
     switch (Hdr->SeqFlag)
@@ -318,14 +320,14 @@ CFE_Status_t CFE_MSG_GetSegmentationFlag(const CFE_MSG_Message_t *MsgPtr, CFE_MS
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_SetSegmentationFlag(CFE_MSG_Message_t *MsgPtr, CFE_MSG_SegmentationFlag_t SegFlag)
 {
-    CCSDS_CommonHdr_t *Hdr;
+    EdsDataType_CCSDS_CommonHdr_t *Hdr;
 
     if (MsgPtr == NULL)
     {
         return CFE_MSG_BAD_ARGUMENT;
     }
 
-    Hdr = (CCSDS_CommonHdr_t *)MsgPtr;
+    Hdr = (EdsDataType_CCSDS_CommonHdr_t *)MsgPtr;
 
     /* JPHFIX: should be EDS enum? */
     switch (SegFlag)
@@ -359,14 +361,14 @@ CFE_Status_t CFE_MSG_SetSegmentationFlag(CFE_MSG_Message_t *MsgPtr, CFE_MSG_Segm
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_GetSequenceCount(const CFE_MSG_Message_t *MsgPtr, CFE_MSG_SequenceCount_t *SeqCnt)
 {
-    const CCSDS_CommonHdr_t *Hdr;
+    const EdsDataType_CCSDS_CommonHdr_t *Hdr;
 
     if (MsgPtr == NULL || SeqCnt == NULL)
     {
         return CFE_MSG_BAD_ARGUMENT;
     }
 
-    Hdr = (const CCSDS_CommonHdr_t *)MsgPtr;
+    Hdr = (const EdsDataType_CCSDS_CommonHdr_t *)MsgPtr;
 
     *SeqCnt = Hdr->Sequence;
 
@@ -383,14 +385,14 @@ CFE_Status_t CFE_MSG_GetSequenceCount(const CFE_MSG_Message_t *MsgPtr, CFE_MSG_S
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_SetSequenceCount(CFE_MSG_Message_t *MsgPtr, CFE_MSG_SequenceCount_t SeqCnt)
 {
-    CCSDS_CommonHdr_t *Hdr;
+    EdsDataType_CCSDS_CommonHdr_t *Hdr;
 
     if (MsgPtr == NULL || SeqCnt > 0x3FFF)
     {
         return CFE_MSG_BAD_ARGUMENT;
     }
 
-    Hdr = (CCSDS_CommonHdr_t *)MsgPtr;
+    Hdr = (EdsDataType_CCSDS_CommonHdr_t *)MsgPtr;
 
     Hdr->Sequence = SeqCnt;
 
@@ -420,14 +422,14 @@ CFE_MSG_SequenceCount_t CFE_MSG_GetNextSequenceCount(CFE_MSG_SequenceCount_t Seq
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_GetSize(const CFE_MSG_Message_t *MsgPtr, CFE_MSG_Size_t *Size)
 {
-    const CCSDS_CommonHdr_t *Hdr;
+    const EdsDataType_CCSDS_CommonHdr_t *Hdr;
 
     if (MsgPtr == NULL || Size == NULL)
     {
         return CFE_MSG_BAD_ARGUMENT;
     }
 
-    Hdr = (const CCSDS_CommonHdr_t *)MsgPtr;
+    Hdr = (const EdsDataType_CCSDS_CommonHdr_t *)MsgPtr;
 
     /* note that EDS pack/unpack reapplies the CCSDS length calibration */
     *Size = Hdr->Length + 7;
@@ -445,7 +447,7 @@ CFE_Status_t CFE_MSG_GetSize(const CFE_MSG_Message_t *MsgPtr, CFE_MSG_Size_t *Si
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_SetSize(CFE_MSG_Message_t *MsgPtr, CFE_MSG_Size_t Size)
 {
-    CCSDS_CommonHdr_t *Hdr;
+    EdsDataType_CCSDS_CommonHdr_t *Hdr;
 
     /*
      * note that EDS pack/unpack reapplies the traditional CCSDS length calibration (+/- 7)
@@ -457,7 +459,7 @@ CFE_Status_t CFE_MSG_SetSize(CFE_MSG_Message_t *MsgPtr, CFE_MSG_Size_t Size)
         return CFE_MSG_BAD_ARGUMENT;
     }
 
-    Hdr = (CCSDS_CommonHdr_t *)MsgPtr;
+    Hdr = (EdsDataType_CCSDS_CommonHdr_t *)MsgPtr;
 
     Hdr->Length = Size - 7;
 

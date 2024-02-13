@@ -53,21 +53,21 @@
 
 static const char CFE_MISSIONLIB_INTFDB_KEY;
 
-void CFE_MissionLib_Lua_MapPubSubParams(CFE_SB_SoftwareBus_PubSub_Interface_t *PubSub, const CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj)
+void CFE_MissionLib_Lua_MapPubSubParams(EdsInterface_CFE_SB_SoftwareBus_PubSub_t *PubSub, const CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj)
 {
     switch (IntfObj->IntfId)
     {
-    case CFE_SB_Telecommand_Interface_ID:
+    case EDS_INTERFACE_ID(CFE_SB_Telecommand):
     {
-        CFE_SB_Listener_Component_t Params;
+        EdsComponent_CFE_SB_Listener_t Params;
         Params.Telecommand.InstanceNumber = IntfObj->InstanceNumber;
         Params.Telecommand.TopicId = IntfObj->TopicId;
         CFE_MissionLib_MapListenerComponent(PubSub, &Params);
         break;
     }
-    case CFE_SB_Telemetry_Interface_ID:
+    case EDS_INTERFACE_ID(CFE_SB_Telemetry):
     {
-        CFE_SB_Publisher_Component_t Params;
+        EdsComponent_CFE_SB_Publisher_t Params;
         Params.Telemetry.InstanceNumber = IntfObj->InstanceNumber;
         Params.Telemetry.TopicId = IntfObj->TopicId;
         CFE_MissionLib_MapPublisherComponent(PubSub, &Params);
@@ -81,21 +81,21 @@ void CFE_MissionLib_Lua_MapPubSubParams(CFE_SB_SoftwareBus_PubSub_Interface_t *P
     }
 }
 
-void CFE_MissionLib_Lua_UnmapPubSubParams(CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj, const CFE_SB_SoftwareBus_PubSub_Interface_t *PubSub)
+void CFE_MissionLib_Lua_UnmapPubSubParams(CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj, const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *PubSub)
 {
     switch(IntfObj->IntfId)
     {
-    case CFE_SB_Telecommand_Interface_ID:
+    case EDS_INTERFACE_ID(CFE_SB_Telecommand):
     {
-        CFE_SB_Listener_Component_t Result;
+        EdsComponent_CFE_SB_Listener_t Result;
         CFE_MissionLib_UnmapListenerComponent(&Result, PubSub);
         IntfObj->TopicId = Result.Telecommand.TopicId;
         IntfObj->InstanceNumber = Result.Telecommand.InstanceNumber;
         break;
     }
-    case CFE_SB_Telemetry_Interface_ID:
+    case EDS_INTERFACE_ID(CFE_SB_Telemetry):
     {
-        CFE_SB_Publisher_Component_t Result;
+        EdsComponent_CFE_SB_Publisher_t Result;
         CFE_MissionLib_UnmapPublisherComponent(&Result, PubSub);
         IntfObj->TopicId = Result.Telemetry.TopicId;
         IntfObj->InstanceNumber = Result.Telemetry.InstanceNumber;
@@ -274,7 +274,7 @@ static int CFE_MissionLib_Lua_InterfaceObjectGetProperty(lua_State *lua)
         }
         else if (strcmp(PropName, "MsgId") == 0)
         {
-            CFE_SB_SoftwareBus_PubSub_Interface_t PubSub;
+            EdsInterface_CFE_SB_SoftwareBus_PubSub_t PubSub;
             CFE_MissionLib_Lua_MapPubSubParams(&PubSub, IntfObj);
             lua_pushinteger(lua, PubSub.MsgId.Value);
             retval = 1;
@@ -376,7 +376,7 @@ static int CFE_MissionLib_Lua_NewMessage(lua_State *lua)
     const char *CommandName = luaL_optstring(lua, 2, NULL);
     EdsLib_DataTypeDB_DerivedTypeInfo_t DerivInfo;
     EdsLib_LuaBinding_DescriptorObject_t *ObjectUserData;
-    CFE_SB_SoftwareBus_PubSub_Interface_t PubSub;
+    EdsInterface_CFE_SB_SoftwareBus_PubSub_t PubSub;
     EdsLib_Id_t PossibleId;
     uint16_t DerivIdx;
     int32_t Status;
@@ -435,7 +435,7 @@ static int CFE_MissionLib_Lua_IdentifyMessage(lua_State *lua)
     const char *IndicationName = luaL_optstring(lua, 2, "indication");
     EdsLib_Binding_DescriptorObject_t *ObjectUserData;
     CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj;
-    CFE_SB_SoftwareBus_PubSub_Interface_t PubSub;
+    EdsInterface_CFE_SB_SoftwareBus_PubSub_t PubSub;
     EdsLib_DataTypeDB_DerivedTypeInfo_t DerivInfo;
     CFE_MissionLib_InterfaceInfo_t IntfInfo;
     EdsLib_Id_t EdsId;

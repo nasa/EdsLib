@@ -99,6 +99,6 @@ const CFE_MissionLib_SoftwareBus_Interface_t *CFE_MissionLib_Python_Database_Get
  *
  * This is a convenience wrapper that performs type checking and conversions
  */
-//PyTypeObject *CFE_MissionLib_Python_TopicEntry_GetFromMsgId(PyObject *dbobj, const CFE_SB_SoftwareBus_PubSub_Interface_t Params);
+//PyTypeObject *CFE_MissionLib_Python_TopicEntry_GetFromMsgId(PyObject *dbobj, const EdsInterface_CFE_SB_SoftwareBus_PubSub_t Params);
 
 #endif /* TOOLS_EDS_CFECFS_MISSIONLIB_PYTHON_INC_CFE_MISSIONLIB_PYTHON_H_ */

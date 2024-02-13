@@ -51,7 +51,7 @@
 #include "cfe_missionlib_lua_softwarebus.h"
 
 #include "testexec.h"
-#include "to_lab_eds_typedefs.h"
+#include "to_lab_eds_datatypes.h"
 
 #define TO_LAB_BASE_PORT        1235
 #define CI_LAB_BASE_PORT        1234
@@ -61,7 +61,7 @@
 
 typedef struct
 {
-    CFE_SB_SoftwareBus_PubSub_Interface_t TargetApp;
+    EdsInterface_CFE_SB_SoftwareBus_PubSub_t TargetApp;
     struct sockaddr_in LocalAddr;
     struct sockaddr_in TargetAddr;
     struct timespec InterPacketDelay;

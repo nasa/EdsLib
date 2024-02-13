@@ -487,7 +487,7 @@ end
 -- -----------------------------------------------------------------------
 -- Generate fields for the derivative list of a container or interface
 -- -----------------------------------------------------------------------
-local function write_c_derivative_descriptor(output,basename,node)
+local function write_c_derivative_descriptor(output,node)
   local derivmap = node.derivative_decisiontree_map
   local descriptor_fields = {}
   local derivset = {}   -- unordered set of all derivatives (keys=node, value=position in other lists)
@@ -497,17 +497,18 @@ local function write_c_derivative_descriptor(output,basename,node)
   local entitylist = {}
   local valuemap = {}
   local valuelist = {}
+  local basename = SEDS.to_safe_identifier(node:get_qualified_name())
+  local is_containment
 
-  if (node.max_size and node.max_size.bits > node.resolved_size.bits) then
+  is_containment = (node.max_size and node.max_size.bits > node.resolved_size.bits)
+  if (is_containment) then
     maxbits = node.max_size.bits
-    bufobj = "_Buffer_t"
   else
     maxbits = node.resolved_size.bits
-    bufobj = "_t"
   end
 
   descriptor_fields["MaxSize"] = string.format("{ .Bits = %d, .Bytes = sizeof(%s) }",
-    maxbits, basename .. bufobj)
+    maxbits, SEDS.to_ctype_typedef(node, is_containment))
 
   -- Collect the "Identification Sequence" list which is a state machine
   -- indicating operations to perform on the base type in order to identify a
@@ -761,15 +762,14 @@ local function write_c_container_detail_object(output,node)
   local objname
   local detailfields
   local maxbits, bufobj
-  local basename = node:get_flattened_name()
 
   detailfields = do_get_fields(write_c_derivative_descriptor,
-    detailfields, output, basename, node)
+    detailfields, output, node)
 
   detailfields = do_get_fields(write_c_decode_sequence,
     detailfields, output, node)
 
-  local detail_name = string.format("%s_CONTAINER_DETAIL", basename)
+  local detail_name = string.format("%s_CONTAINER_DETAIL", node:get_flattened_name())
   output:write(string.format("static const EdsLib_ContainerDescriptor_t %s =", detail_name))
   output:start_group("{")
 
@@ -878,7 +878,7 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
   -- references to other objects are based on the master index generated earlier
   output:write(string.format("#include \"edslib_database_types.h\""))
   output:write(string.format("#include \"%s\"", SEDS.to_filename("master_index.h")))
-  output:write(string.format("#include \"%s\"", SEDS.to_filename("typedefs.h", ds.name)))
+  output:write(string.format("#include \"%s\"", SEDS.to_filename("datatypes.h", ds.name)))
   output.checksum_table = {}
   output.datasheet_name = ds:get_flattened_name()
 

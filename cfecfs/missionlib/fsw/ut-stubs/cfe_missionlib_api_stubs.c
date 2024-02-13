@@ -27,19 +27,19 @@
 #include "cfe_missionlib_api.h"
 #include "utgenstub.h"
 
-extern void UT_DefaultHandler_CFE_MissionLib_FindCommandByName(void *, UT_EntryKey_t, const UT_StubContext_t *);
-extern void UT_DefaultHandler_CFE_MissionLib_FindInterfaceByName(void *, UT_EntryKey_t, const UT_StubContext_t *);
-extern void UT_DefaultHandler_CFE_MissionLib_FindTopicByName(void *, UT_EntryKey_t, const UT_StubContext_t *);
-extern void UT_DefaultHandler_CFE_MissionLib_GetArgumentType(void *, UT_EntryKey_t, const UT_StubContext_t *);
-extern void UT_DefaultHandler_CFE_MissionLib_GetCommandName(void *, UT_EntryKey_t, const UT_StubContext_t *);
-extern void UT_DefaultHandler_CFE_MissionLib_GetIndicationInfo(void *, UT_EntryKey_t, const UT_StubContext_t *);
-extern void UT_DefaultHandler_CFE_MissionLib_GetInstanceName(void *, UT_EntryKey_t, const UT_StubContext_t *);
-extern void UT_DefaultHandler_CFE_MissionLib_GetInstanceNumber(void *, UT_EntryKey_t, const UT_StubContext_t *);
-extern void UT_DefaultHandler_CFE_MissionLib_GetInterfaceInfo(void *, UT_EntryKey_t, const UT_StubContext_t *);
-extern void UT_DefaultHandler_CFE_MissionLib_GetInterfaceName(void *, UT_EntryKey_t, const UT_StubContext_t *);
-extern void UT_DefaultHandler_CFE_MissionLib_GetSubcommandOffset(void *, UT_EntryKey_t, const UT_StubContext_t *);
-extern void UT_DefaultHandler_CFE_MissionLib_GetTopicInfo(void *, UT_EntryKey_t, const UT_StubContext_t *);
-extern void UT_DefaultHandler_CFE_MissionLib_GetTopicName(void *, UT_EntryKey_t, const UT_StubContext_t *);
+void UT_DefaultHandler_CFE_MissionLib_FindCommandByName(void *, UT_EntryKey_t, const UT_StubContext_t *);
+void UT_DefaultHandler_CFE_MissionLib_FindInterfaceByName(void *, UT_EntryKey_t, const UT_StubContext_t *);
+void UT_DefaultHandler_CFE_MissionLib_FindTopicByName(void *, UT_EntryKey_t, const UT_StubContext_t *);
+void UT_DefaultHandler_CFE_MissionLib_GetArgumentType(void *, UT_EntryKey_t, const UT_StubContext_t *);
+void UT_DefaultHandler_CFE_MissionLib_GetCommandName(void *, UT_EntryKey_t, const UT_StubContext_t *);
+void UT_DefaultHandler_CFE_MissionLib_GetIndicationInfo(void *, UT_EntryKey_t, const UT_StubContext_t *);
+void UT_DefaultHandler_CFE_MissionLib_GetInstanceName(void *, UT_EntryKey_t, const UT_StubContext_t *);
+void UT_DefaultHandler_CFE_MissionLib_GetInstanceNumber(void *, UT_EntryKey_t, const UT_StubContext_t *);
+void UT_DefaultHandler_CFE_MissionLib_GetInterfaceInfo(void *, UT_EntryKey_t, const UT_StubContext_t *);
+void UT_DefaultHandler_CFE_MissionLib_GetInterfaceName(void *, UT_EntryKey_t, const UT_StubContext_t *);
+void UT_DefaultHandler_CFE_MissionLib_GetSubcommandOffset(void *, UT_EntryKey_t, const UT_StubContext_t *);
+void UT_DefaultHandler_CFE_MissionLib_GetTopicInfo(void *, UT_EntryKey_t, const UT_StubContext_t *);
+void UT_DefaultHandler_CFE_MissionLib_GetTopicName(void *, UT_EntryKey_t, const UT_StubContext_t *);
 
 /*
  * ----------------------------------------------------

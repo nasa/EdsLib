@@ -71,8 +71,8 @@ void UT_DefaultHandler_CFE_MissionLib_MapListenerComponent(void *UserObj, UT_Ent
                                                            const UT_StubContext_t *Context)
 {
     CFE_MissionLib_Stub_DefaultZeroOutput(
-        FuncKey, Context, UT_Hook_GetArgValueByName(Context, "Output", CFE_SB_SoftwareBus_PubSub_Interface_t *),
-        sizeof(CFE_SB_SoftwareBus_PubSub_Interface_t));
+        FuncKey, Context, UT_Hook_GetArgValueByName(Context, "Output", EdsInterface_CFE_SB_SoftwareBus_PubSub_t *),
+        sizeof(EdsInterface_CFE_SB_SoftwareBus_PubSub_t));
 }
 
 /*------------------------------------------------------------
@@ -83,9 +83,9 @@ void UT_DefaultHandler_CFE_MissionLib_MapListenerComponent(void *UserObj, UT_Ent
 void UT_DefaultHandler_CFE_MissionLib_UnmapListenerComponent(void *UserObj, UT_EntryKey_t FuncKey,
                                                              const UT_StubContext_t *Context)
 {
-    CFE_MissionLib_Stub_DefaultZeroOutput(FuncKey, Context,
-                                          UT_Hook_GetArgValueByName(Context, "Output", CFE_SB_Listener_Component_t *),
-                                          sizeof(CFE_SB_Listener_Component_t));
+    CFE_MissionLib_Stub_DefaultZeroOutput(
+        FuncKey, Context, UT_Hook_GetArgValueByName(Context, "Output", EdsComponent_CFE_SB_Listener_t *),
+        sizeof(EdsComponent_CFE_SB_Listener_t));
 }
 
 /*------------------------------------------------------------
@@ -97,8 +97,8 @@ void UT_DefaultHandler_CFE_MissionLib_MapPublisherComponent(void *UserObj, UT_En
                                                             const UT_StubContext_t *Context)
 {
     CFE_MissionLib_Stub_DefaultZeroOutput(
-        FuncKey, Context, UT_Hook_GetArgValueByName(Context, "Output", CFE_SB_SoftwareBus_PubSub_Interface_t *),
-        sizeof(CFE_SB_SoftwareBus_PubSub_Interface_t));
+        FuncKey, Context, UT_Hook_GetArgValueByName(Context, "Output", EdsInterface_CFE_SB_SoftwareBus_PubSub_t *),
+        sizeof(EdsInterface_CFE_SB_SoftwareBus_PubSub_t));
 }
 
 /*------------------------------------------------------------
@@ -109,9 +109,9 @@ void UT_DefaultHandler_CFE_MissionLib_MapPublisherComponent(void *UserObj, UT_En
 void UT_DefaultHandler_CFE_MissionLib_UnmapPublisherComponent(void *UserObj, UT_EntryKey_t FuncKey,
                                                               const UT_StubContext_t *Context)
 {
-    CFE_MissionLib_Stub_DefaultZeroOutput(FuncKey, Context,
-                                          UT_Hook_GetArgValueByName(Context, "Output", CFE_SB_Publisher_Component_t *),
-                                          sizeof(CFE_SB_Publisher_Component_t));
+    CFE_MissionLib_Stub_DefaultZeroOutput(
+        FuncKey, Context, UT_Hook_GetArgValueByName(Context, "Output", EdsComponent_CFE_SB_Publisher_t *),
+        sizeof(EdsComponent_CFE_SB_Publisher_t));
 }
 
 /*------------------------------------------------------------
@@ -123,8 +123,8 @@ void UT_DefaultHandler_CFE_MissionLib_Get_PubSub_Parameters(void *UserObj, UT_En
                                                             const UT_StubContext_t *Context)
 {
     CFE_MissionLib_Stub_DefaultZeroOutput(
-        FuncKey, Context, UT_Hook_GetArgValueByName(Context, "Params", CFE_SB_SoftwareBus_PubSub_Interface_t *),
-        sizeof(CFE_SB_SoftwareBus_PubSub_Interface_t));
+        FuncKey, Context, UT_Hook_GetArgValueByName(Context, "Params", EdsInterface_CFE_SB_SoftwareBus_PubSub_t *),
+        sizeof(EdsInterface_CFE_SB_SoftwareBus_PubSub_t));
 }
 
 /*------------------------------------------------------------
@@ -135,6 +135,7 @@ void UT_DefaultHandler_CFE_MissionLib_Get_PubSub_Parameters(void *UserObj, UT_En
 void UT_DefaultHandler_CFE_MissionLib_Set_PubSub_Parameters(void *UserObj, UT_EntryKey_t FuncKey,
                                                             const UT_StubContext_t *Context)
 {
-    CFE_MissionLib_Stub_DefaultZeroOutput(
-        FuncKey, Context, UT_Hook_GetArgValueByName(Context, "Packet", CFE_HDR_Message_t *), sizeof(CFE_HDR_Message_t));
+    CFE_MissionLib_Stub_DefaultZeroOutput(FuncKey, Context,
+                                          UT_Hook_GetArgValueByName(Context, "Packet", EdsDataType_CFE_HDR_Message_t *),
+                                          sizeof(EdsDataType_CFE_HDR_Message_t));
 }

@@ -1,0 +1,12 @@
+/* Generated wrapper based off the real source file location */
+#include "@EDS_FILE_PREFIX@_designparameters.h"
+#include "@EDS_FILE_PREFIX@_interfacedb.h"
+
+#define CFE_SOFTWAREBUS_INTERFACE  @EDS_SYMBOL_PREFIX@_SOFTWAREBUS_INTERFACE
+
+#define EDS_DISPATCH_TABLE_ID(x)  @EDS_SYMBOL_PREFIX@_DispatchTableId_ ## x
+#define EDS_DISPATCH_TABLE_ID_MAX @EDS_SYMBOL_PREFIX@_DispatchTableId_MAX
+#define EDS_INTERFACE_ID(x)       @EDS_SYMBOL_PREFIX@_InterfaceId_ ## x
+#define EDS_INTERFACE_ID_MAX      @EDS_SYMBOL_PREFIX@_InterfaceId_MAX
+#define EDS_INDICATION_ID(x)      @EDS_SYMBOL_PREFIX@_IndicationId_ ## x ## _VALUE
+#define EDS_INDICATION_ID_MAX     @EDS_SYMBOL_PREFIX@_IndicationId_MAX

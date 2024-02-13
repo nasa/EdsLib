@@ -21,6 +21,9 @@
 #include "cfe_msg.h"
 #include "cfe_error.h"
 
+#include "ccsds_spacepacket_eds_datatypes.h"
+#include "cfe_hdr_eds_datatypes.h"
+
 /*----------------------------------------------------------------
  *
  * Function: CFE_MSG_SetMsgTime
@@ -31,15 +34,15 @@
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_SetMsgTime(CFE_MSG_Message_t *MsgPtr, CFE_TIME_SysTime_t NewTime)
 {
-    CFE_HDR_TelemetryHeader_t *TlmPtr;
-    const CCSDS_CommonHdr_t *  CommonHdr;
+    EdsDataType_CFE_HDR_TelemetryHeader_t *TlmPtr;
+    const EdsDataType_CCSDS_CommonHdr_t *  CommonHdr;
 
     if (MsgPtr == NULL)
     {
         return CFE_MSG_BAD_ARGUMENT;
     }
 
-    CommonHdr = (const CCSDS_CommonHdr_t *)MsgPtr;
+    CommonHdr = (const EdsDataType_CCSDS_CommonHdr_t *)MsgPtr;
 
     /* This confirms if it is OK to access the pointer as a "TelemetryHeader" type */
     if (CommonHdr->SecHdrFlags != CCSDS_SecHdrFlags_Tlm)
@@ -47,7 +50,7 @@ CFE_Status_t CFE_MSG_SetMsgTime(CFE_MSG_Message_t *MsgPtr, CFE_TIME_SysTime_t Ne
         return CFE_MSG_WRONG_MSG_TYPE;
     }
 
-    TlmPtr = (CFE_HDR_TelemetryHeader_t *)(void *)MsgPtr;
+    TlmPtr = (EdsDataType_CFE_HDR_TelemetryHeader_t *)(void *)MsgPtr;
 
     TlmPtr->Sec.Seconds = NewTime.Seconds;
 
@@ -74,15 +77,15 @@ CFE_Status_t CFE_MSG_SetMsgTime(CFE_MSG_Message_t *MsgPtr, CFE_TIME_SysTime_t Ne
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_GetMsgTime(const CFE_MSG_Message_t *MsgPtr, CFE_TIME_SysTime_t *Time)
 {
-    const CFE_HDR_TelemetryHeader_t *TlmPtr;
-    const CCSDS_CommonHdr_t *        CommonHdr;
+    const EdsDataType_CFE_HDR_TelemetryHeader_t *TlmPtr;
+    const EdsDataType_CCSDS_CommonHdr_t *        CommonHdr;
 
     if (MsgPtr == NULL || Time == NULL)
     {
         return CFE_MSG_BAD_ARGUMENT;
     }
 
-    CommonHdr = (const CCSDS_CommonHdr_t *)MsgPtr;
+    CommonHdr = (const EdsDataType_CCSDS_CommonHdr_t *)MsgPtr;
 
     /* This confirms if it is OK to access the pointer as a "TelemetryHeader" type */
     if (CommonHdr->SecHdrFlags != CCSDS_SecHdrFlags_Tlm)
@@ -90,7 +93,7 @@ CFE_Status_t CFE_MSG_GetMsgTime(const CFE_MSG_Message_t *MsgPtr, CFE_TIME_SysTim
         return CFE_MSG_WRONG_MSG_TYPE;
     }
 
-    TlmPtr = (const CFE_HDR_TelemetryHeader_t *)(const void *)MsgPtr;
+    TlmPtr = (const EdsDataType_CFE_HDR_TelemetryHeader_t *)(const void *)MsgPtr;
 
     Time->Seconds = TlmPtr->Sec.Seconds;
 
