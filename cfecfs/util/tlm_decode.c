@@ -39,8 +39,8 @@
 #include <string.h> /* memset() */
 
 #include <cfe_mission_cfg.h>
-#include "cfe_sb_eds_typedefs.h"
-#include "cfe_hdr_eds_typedefs.h"
+#include "cfe_sb_eds_datatypes.h"
+#include "cfe_hdr_eds_datatypes.h"
 #include "cfe_mission_eds_parameters.h"
 #include "cfe_mission_eds_interface_parameters.h"
 #include "edslib_displaydb.h"
@@ -50,8 +50,8 @@
 
 #define BASE_SERVER_PORT 1235
 
-CFE_HDR_TelemetryHeader_Buffer_t       LocalBuffer;
-CFE_HDR_TelemetryHeader_PackedBuffer_t NetworkBuffer;
+EdsNativeBuffer_CFE_HDR_TelemetryHeader_t       LocalBuffer;
+EdsPackedBuffer_CFE_HDR_TelemetryHeader_t NetworkBuffer;
 
 static const char *optString = "c:?";
 
@@ -87,8 +87,8 @@ int main(int argc, char *argv[])
   unsigned short      Port;
   EdsLib_Id_t      EdsId;
   EdsLib_DataTypeDB_TypeInfo_t TypeInfo;
-  CFE_SB_SoftwareBus_PubSub_Interface_t PubSubParams;
-  CFE_SB_Publisher_Component_t PublisherParams;
+  EdsInterface_CFE_SB_SoftwareBus_PubSub_t PubSubParams;
+  EdsComponent_CFE_SB_Publisher_t PublisherParams;
   char TempBuffer[64];
   int32_t Status;
 
@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
     CFE_MissionLib_Get_PubSub_Parameters(&PubSubParams, &LocalBuffer.BaseObject.Message);
     CFE_MissionLib_UnmapPublisherComponent(&PublisherParams, &PubSubParams);
 
-    Status = CFE_MissionLib_GetArgumentType(&CFE_SOFTWAREBUS_INTERFACE, CFE_SB_Telemetry_Interface_ID,
+    Status = CFE_MissionLib_GetArgumentType(&CFE_SOFTWAREBUS_INTERFACE, EDS_INTERFACE_ID(CFE_SB_Telemetry),
             PublisherParams.Telemetry.TopicId, 1, 1, &EdsId);
     if (Status != CFE_MISSIONLIB_SUCCESS)
     {

@@ -85,7 +85,7 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
     for _,sc in ipairs(ds_all_subcmds) do
       hdrout:section_marker(string.format("Command Codes for \'%s\' Interface",sc.intf.name))
       for _,cc in ipairs(sc.cmd.cc_list) do
-        hdrout:add_documentation(string.format("Command code associated with %s_t", cc.argtype:get_flattened_name()))
+        hdrout:add_documentation(string.format("Command code associated with %s", SEDS.to_ctype_typedef(cc.argtype)))
         hdrout:write(string.format("#define %-60s %s",  cc.macroname, cc.value))
       end
       hdrout:add_whitespace(1)

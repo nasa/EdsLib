@@ -163,7 +163,7 @@ static int SCRIPTENGINE_WaitFor(lua_State *lua)
     CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj = luaL_checkudata(lua, 1, "CFE_MissionLib_Lua_Interface");
     CFE_SB_PipeId_t *PipeObj = luaL_checkudata(lua, 2, "CFE_SB_PipeId");
     lua_Integer timeout = luaL_optinteger(lua, 3, 1000);
-    CFE_SB_SoftwareBus_PubSub_Interface_t PubSub;
+    EdsInterface_CFE_SB_SoftwareBus_PubSub_t PubSub;
     CFE_SB_Buffer_t *BufPtr;
     CFE_MSG_Size_t MsgSize;
     EdsLib_Binding_DescriptorObject_t *ObjectUserData;

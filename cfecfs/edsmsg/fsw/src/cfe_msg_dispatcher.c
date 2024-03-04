@@ -39,16 +39,16 @@
 CFE_Status_t CFE_MSG_EdsDispatch(uint16 InterfaceID, uint16 IndicationIndex, uint16 DispatchTableID,
                                  const CFE_SB_Buffer_t *Buffer, const void *DispatchTable)
 {
-    const EdsLib_DatabaseObject_t *       GD;
-    CFE_MissionLib_TopicInfo_t            TopicInfo;
-    CFE_MissionLib_IndicationInfo_t       IndicationInfo;
-    EdsLib_DataTypeDB_TypeInfo_t          TypeInfo;
-    CFE_SB_SoftwareBus_PubSub_Interface_t PubSubParams;
-    EdsLib_Id_t                           ArgumentType;
-    int32_t                               Status;
-    uint16_t                              TopicId;
-    uint16_t                              DispatchOffset;
-    CFE_MSG_Size_t                        BufferSize;
+    const EdsLib_DatabaseObject_t *          GD;
+    CFE_MissionLib_TopicInfo_t               TopicInfo;
+    CFE_MissionLib_IndicationInfo_t          IndicationInfo;
+    EdsLib_DataTypeDB_TypeInfo_t             TypeInfo;
+    EdsInterface_CFE_SB_SoftwareBus_PubSub_t PubSubParams;
+    EdsLib_Id_t                              ArgumentType;
+    int32_t                                  Status;
+    uint16_t                                 TopicId;
+    uint16_t                                 DispatchOffset;
+    CFE_MSG_Size_t                           BufferSize;
     union
     {
         cpuaddr     MemAddr;
@@ -66,16 +66,16 @@ CFE_Status_t CFE_MSG_EdsDispatch(uint16 InterfaceID, uint16 IndicationIndex, uin
 
     switch (InterfaceID)
     {
-        case CFE_SB_Telemetry_Interface_ID:
+        case EDS_INTERFACE_ID(CFE_SB_Telemetry):
         {
-            CFE_SB_Publisher_Component_t PublisherParams;
+            EdsComponent_CFE_SB_Publisher_t PublisherParams;
             CFE_MissionLib_UnmapPublisherComponent(&PublisherParams, &PubSubParams);
             TopicId = PublisherParams.Telemetry.TopicId;
             break;
         }
-        case CFE_SB_Telecommand_Interface_ID:
+        case EDS_INTERFACE_ID(CFE_SB_Telecommand):
         {
-            CFE_SB_Listener_Component_t ListenerParams;
+            EdsComponent_CFE_SB_Listener_t ListenerParams;
             CFE_MissionLib_UnmapListenerComponent(&ListenerParams, &PubSubParams);
             TopicId = ListenerParams.Telecommand.TopicId;
             break;
@@ -120,7 +120,7 @@ CFE_Status_t CFE_MSG_EdsDispatch(uint16 InterfaceID, uint16 IndicationIndex, uin
          * The actual type of the argument must be determined to figure out which one to invoke. */
         EdsLib_DataTypeDB_DerivativeObjectInfo_t DerivObjInfo;
 
-        Status = EdsLib_DataTypeDB_IdentifyBuffer(GD, ArgumentType, Buffer->Msg.Byte, &DerivObjInfo);
+        Status = EdsLib_DataTypeDB_IdentifyBuffer(GD, ArgumentType, Buffer, &DerivObjInfo);
         if (Status != EDSLIB_SUCCESS)
         {
             return CFE_STATUS_UNKNOWN_MSG_ID;

@@ -40,7 +40,7 @@
 #include "cfe_missionlib_runtime.h"
 #include "cfe_missionlib_api.h"
 #include "cfe_missionlib_lua_softwarebus.h"
-#include "ccsds_spacepacket_eds_typedefs.h"
+#include "ccsds_spacepacket_eds_datatypes.h"
 
 
 /*
@@ -318,5 +318,3 @@ int main(int argc, char *argv[])
 
     return EXIT_SUCCESS;
 }
-
-

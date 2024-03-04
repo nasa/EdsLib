@@ -26,8 +26,8 @@
 #include "cfe_sb.h"
 #include "cfe_error.h"
 
-#include "ccsds_spacepacket_eds_typedefs.h"
-#include "cfe_sb_eds_typedefs.h"
+#include "ccsds_spacepacket_eds_datatypes.h"
+#include "cfe_sb_eds_datatypes.h"
 #include "cfe_mission_eds_parameters.h"
 #include "cfe_missionlib_runtime.h"
 
@@ -41,8 +41,8 @@
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_GetTypeFromMsgId(CFE_SB_MsgId_t MsgId, CFE_MSG_Type_t *Type)
 {
-    CFE_Status_t                          Status;
-    CFE_SB_SoftwareBus_PubSub_Interface_t Params;
+    CFE_Status_t                             Status;
+    EdsInterface_CFE_SB_SoftwareBus_PubSub_t Params;
 
     if (Type == NULL)
     {
@@ -73,7 +73,7 @@ CFE_Status_t CFE_MSG_GetTypeFromMsgId(CFE_SB_MsgId_t MsgId, CFE_MSG_Type_t *Type
 
 CFE_Status_t CFE_MSG_GetMsgId(const CFE_MSG_Message_t *MsgPtr, CFE_SB_MsgId_t *MsgId)
 {
-    CFE_SB_SoftwareBus_PubSub_Interface_t Params;
+    EdsInterface_CFE_SB_SoftwareBus_PubSub_t Params;
 
     if (MsgPtr == NULL || MsgId == NULL)
     {
@@ -89,7 +89,7 @@ CFE_Status_t CFE_MSG_GetMsgId(const CFE_MSG_Message_t *MsgPtr, CFE_SB_MsgId_t *M
 
 CFE_Status_t CFE_MSG_SetMsgId(CFE_MSG_Message_t *MsgPtr, CFE_SB_MsgId_t MsgId)
 {
-    CFE_SB_SoftwareBus_PubSub_Interface_t Params;
+    EdsInterface_CFE_SB_SoftwareBus_PubSub_t Params;
 
     /*
      * NOTE: in reality the EDS may map any bits of the MsgId to the message, there is

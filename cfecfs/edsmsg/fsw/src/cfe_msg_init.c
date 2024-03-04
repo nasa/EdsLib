@@ -28,6 +28,9 @@
 #include "cfe_time.h"
 #include "cfe_missionlib_runtime.h"
 
+#include "ccsds_spacepacket_eds_datatypes.h"
+#include "cfe_hdr_eds_datatypes.h"
+
 /*----------------------------------------------------------------
  *
  * Function: CFE_MSG_Init
@@ -38,10 +41,10 @@
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_Init(CFE_MSG_Message_t *MsgPtr, CFE_SB_MsgId_t MsgId, CFE_MSG_Size_t Size)
 {
-    CCSDS_CommonHdr_t *CommonHdr;
-    CFE_Status_t       Status;
+    EdsDataType_CCSDS_CommonHdr_t *CommonHdr;
+    CFE_Status_t                   Status;
 
-    if (MsgPtr == NULL || Size < sizeof(CCSDS_CommonHdr_t))
+    if (MsgPtr == NULL || Size < sizeof(EdsDataType_CCSDS_CommonHdr_t))
     {
         return CFE_MSG_BAD_ARGUMENT;
     }
@@ -53,7 +56,7 @@ CFE_Status_t CFE_MSG_Init(CFE_MSG_Message_t *MsgPtr, CFE_SB_MsgId_t MsgId, CFE_M
     Status = CFE_MSG_SetMsgId(MsgPtr, MsgId);
     if (Status == CFE_SUCCESS)
     {
-        CommonHdr = (CCSDS_CommonHdr_t *)MsgPtr;
+        CommonHdr = (EdsDataType_CCSDS_CommonHdr_t *)MsgPtr;
 
         /* Default to complete packets */
         CommonHdr->SeqFlag = 3; /* jphfix: enum? */
