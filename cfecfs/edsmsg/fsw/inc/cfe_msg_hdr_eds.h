@@ -172,19 +172,4 @@ struct CFE_MSG_TelemetryHeader
     union CFE_EDSMSG_TelemetryHeader_Aligned Content;
 };
 
-#ifdef jphfix
-/**
- * Helper function to cast an arbitrary base pointer to a CFE_MSG_Message_t* for use with SB APIs
- */
-static inline CFE_MSG_Message_t *CFE_MSG_CastBaseMsg(void *BaseMsg)
-{
-    /*
-     * In a pedantic sense, this is "promoting" the base message pointer to the
-     * union type.  This should not be an actual violation though, as the union
-     * contains a CFE_MSG_Message_t member.
-     */
-    return ((CFE_MSG_Message_t *)BaseMsg);
-}
-#endif
-
 #endif /* CFE_MSG_HDR_EDS_H */
