@@ -27,8 +27,10 @@ local endianness
 
 if (SEDS.get_define("DATA_BYTE_ORDER") == "littleEndian") then
   endianness = "LITTLE"
+  ccsds_append = " BIG_ENDIAN" -- The CCSDS header elements are always big-endian
 else
   endianness = "BIG"
+  ccsds_append = "" -- This must _not_ put a redundant BIG_ENDIAN flag on the ccsds header, it confuses cosmos
 end
 
 
@@ -74,7 +76,7 @@ write_cosmos_cmd_lineitem = function(output,attribs)
 
     -- String lineitem
     output:write(string.format("APPEND_PARAMETER %s %d STRING \"%s\" \"%s\"",
-      attribs.name, attribs.bitsize, attribs.defaultval or "", descr))
+      attribs.name, attribs.bitsize, attribs.defaultval or "", attribs.descr or ""))
 
   elseif (attribs.ctype) then
 
@@ -85,14 +87,18 @@ write_cosmos_cmd_lineitem = function(output,attribs)
 
     if (min == nil) then
       min = "MIN_" .. attribs.ctype .. tostring(attribs.bitsize)
+    else
+      min = math.ceil(min)
     end
 
     if (max == nil) then
       max = "MAX_" .. attribs.ctype .. tostring(attribs.bitsize)
+    else
+      max = math.floor(max)
     end
 
     output:write(string.format("APPEND_PARAMETER %s %d %s %s %s %d \"%s\"",
-      attribs.name, attribs.bitsize, attribs.ctype, min, max, attribs.defaultval or 0, attribs.descr))
+      attribs.name, attribs.bitsize, attribs.ctype, min, max, attribs.defaultval or 0, attribs.descr or ""))
 
   end
 
@@ -241,9 +247,9 @@ local write_tlm_intf_items = function (output,ds,reqintf,msgid,argtype)
   -- appears to be done in existing/old cosmos DB files.  This mimics that for now.  There
   -- should be a better/more correct way to do this.  But for now, this just duplicates the
   -- simplified (3x 16-bit UINT) view of the CCSDS v1 header.  These should always be big-endian.
-  output:write(string.format("APPEND_ID_ITEM CCSDS_STREAMID 16 UINT 0x%04X \"CCSDS Packet Identification\" BIG_ENDIAN", msgid.Value()))
-  output:write(string.format("APPEND_ITEM CCSDS_SEQUENCE 16 UINT \"CCSDS Packet Sequence Control\" BIG_ENDIAN"))
-  output:write(string.format("APPEND_ITEM CCSDS_LENGTH 16 UINT \"CCSDS Packet Data Length\" BIG_ENDIAN"))
+  output:write(string.format("APPEND_ID_ITEM CCSDS_STREAMID 16 UINT 0x%04X \"CCSDS Packet Identification\" FORMAT_STRING \"0x%%04X\"%s", msgid.Value(), ccsds_append))
+  output:write(string.format("APPEND_ITEM CCSDS_SEQUENCE 16 UINT \"CCSDS Packet Sequence Control\" FORMAT_STRING \"0x%%04X\"%s", ccsds_append))
+  output:write(string.format("APPEND_ITEM CCSDS_LENGTH 16 UINT \"CCSDS Packet Data Length\"%s", ccsds_append))
 
   -- Write the definition of the payload
   -- Do not output the basetype, only direct members (Payload)
@@ -280,11 +286,11 @@ local write_cmd_intf_params = function (output,ds,reqintf,msgid,cc)
   -- appears to be done in existing/old cosmos DB files.  This mimics that for now.  There
   -- should be a better/more correct way to do this.  But for now, this just duplicates the
   -- simplified (3x 16-bit UINT) view of the CCSDS v1 header.  These should always be big-endian.
-  output:write(string.format("APPEND_ID_PARAMETER CCSDS_STREAMID 16 UINT MIN_UINT16 MAX_UINT16 0x%04X \"CCSDS Packet Identification\" BIG_ENDIAN", msgid.Value()))
-  output:write(string.format("APPEND_PARAMETER CCSDS_SEQUENCE 16 UINT MIN_UINT16 MAX_UINT16 0xC000 \"CCSDS Packet Sequence Control\" BIG_ENDIAN"))
-  output:write(string.format("APPEND_PARAMETER CCSDS_LENGTH 16 UINT UINT MIN_UINT16 MAX_UINT16 %d \"CCSDS Packet Data Length\" BIG_ENDIAN", math.ceil(argtype.resolved_size.bits / 8) - 7))
-  output:write(string.format("APPEND_PARAMETER CCSDS_FC 8 UINT MIN_UINT8 MAX_UINT8 %d \"CCSDS Command Function Code\"", cc.value))
-  output:write(string.format("APPEND_PARAMETER CCSDS_CHECKSUM 8 UINT MIN_UINT8 MIN_UINT8 0 \"Checksum\""))
+  output:write(string.format("APPEND_ID_PARAMETER CCSDS_STREAMID 16 UINT MIN MAX 0x%04X \"CCSDS Packet Identification\" FORMAT_STRING \"0x%%04X\"%s", msgid.Value(), ccsds_append))
+  output:write(string.format("APPEND_PARAMETER CCSDS_SEQUENCE 16 UINT MIN MAX 0xC000 \"CCSDS Packet Sequence Control\" FORMAT_STRING \"0x%%04X\"%s", ccsds_append))
+  output:write(string.format("APPEND_PARAMETER CCSDS_LENGTH 16 UINT MIN MAX %d \"CCSDS Packet Data Length\"%s", math.ceil(argtype.resolved_size.bits / 8) - 7, ccsds_append))
+  output:write(string.format("APPEND_PARAMETER CCSDS_FC 8 UINT MIN MAX %d \"CCSDS Command Function Code\"", cc.value))
+  output:write(string.format("APPEND_PARAMETER CCSDS_CHECKSUM 8 UINT MIN MIN 0 \"Checksum\""))
 
   -- Write the definition of the payload
   -- Do not output the basetype, only direct members (Payload)
