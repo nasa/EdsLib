@@ -603,6 +603,7 @@ int32_t EdsLib_DataTypeDB_InitializeNativeObject(const EdsLib_DatabaseObject_t *
 
     memset(&CtlBlock, 0, sizeof(CtlBlock));
     CtlBlock.NativePtr = UnpackedObj;
+    CtlBlock.RecomputeFields = EDSLIB_DATATYPEDB_RECOMPUTE_FIXEDVALUE | EDSLIB_DATATYPEDB_RECOMPUTE_LENGTH;
 
     EDSLIB_RESET_ITERATOR_FROM_EDSID(IteratorState, EdsId);
     Status = EdsLib_DataTypeIterator_Impl(GD, &IteratorState.Cb);
@@ -701,5 +702,3 @@ int32_t EdsLib_DataTypeDB_IdentifyBuffer(const EdsLib_DatabaseObject_t *GD, EdsL
 
     return Status;
 }
-
-
