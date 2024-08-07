@@ -33,6 +33,7 @@ else
   ccsds_append = "" -- This must _not_ put a redundant BIG_ENDIAN flag on the ccsds header, it confuses cosmos
 end
 
+local global_fsw_title = SEDS.to_macro_name(SEDS.get_define("MISSION_NAME") or "fsw")
 
 -- -------------------------------------------------------------------------
 -- Helper function: assemble the combined element name
@@ -236,7 +237,7 @@ local write_tlm_intf_items = function (output,ds,reqintf,msgid,argtype)
     tlmname = string.sub(tlmname, 1, -5)
   end
 
-  output:write(string.format("TELEMETRY %s %s_ENDIAN \"%s\"", tlmname,
+  output:write(string.format("TELEMETRY %s %s %s_ENDIAN \"%s\"", global_fsw_title, tlmname,
     endianness, reqintf.attributes.shortdescription or "Telemetry Message"))
 
   output:start_group("")
@@ -250,6 +251,8 @@ local write_tlm_intf_items = function (output,ds,reqintf,msgid,argtype)
   output:write(string.format("APPEND_ID_ITEM CCSDS_STREAMID 16 UINT 0x%04X \"CCSDS Packet Identification\" FORMAT_STRING \"0x%%04X\"%s", msgid.Value(), ccsds_append))
   output:write(string.format("APPEND_ITEM CCSDS_SEQUENCE 16 UINT \"CCSDS Packet Sequence Control\" FORMAT_STRING \"0x%%04X\"%s", ccsds_append))
   output:write(string.format("APPEND_ITEM CCSDS_LENGTH 16 UINT \"CCSDS Packet Data Length\"%s", ccsds_append))
+  output:write(string.format("APPEND_ITEM SECONDS 32 UINT \"Whole number of Seconds since CFS Epoch\"%s", ccsds_append))
+  output:write(string.format("APPEND_ITEM SUBSECS 16 UINT  \"Fractional portion of Seconds since CFS Epoch\"%s", ccsds_append))
 
   -- Write the definition of the payload
   -- Do not output the basetype, only direct members (Payload)
@@ -276,7 +279,7 @@ local write_cmd_intf_params = function (output,ds,reqintf,msgid,cc)
     cmdname = string.sub(cmdname, 1, -5)
   end
 
-  output:write(string.format("COMMAND %s %s_ENDIAN \"%s\"",  cmdname,
+  output:write(string.format("COMMAND %s %s %s_ENDIAN \"%s\"", global_fsw_title, cmdname,
       endianness, argtype.attributes.shortdescription or "Telecommand Message"))
 
   output:start_group("")
