@@ -113,7 +113,16 @@ write_cosmos_lineitem = function(output,line_writer,entry,qual_prefix,descr)
   local attribs = {}
 
   attribs.name = qual_prefix and SEDS.to_macro_name(qual_prefix)
-  attribs.bitsize = entry.resolved_size and entry.resolved_size.bits or 0
+  -- Note that "resolved_size" only exists within nodes that the tool has calculated a size
+  -- If the size was specified directly in the XML as a "sizeinbits" attribute, then it appears
+  -- at the top leve.
+  if (entry.resolved_size) then
+    attribs.bitsize = entry.resolved_size.bits
+  elseif (entry.sizeinbits) then
+    attribs.bitsize = entry.sizeinbits
+  else
+    attribs.bitsize = 0
+  end
 
   if (not descr) then
     descr = entry.attributes.shortdescription or "Value"
@@ -124,7 +133,23 @@ write_cosmos_lineitem = function(output,line_writer,entry,qual_prefix,descr)
   descr = descr:gsub("\"", "\'")
   attribs.descr = descr
 
-  if (entry.entity_type == "STRING_DATATYPE" or entry.entity_type == "BINARY_DATATYPE") then
+  if (entry.entity_type == "CONTAINER_PADDING_ENTRY") then
+    -- For container padding entries, this can be put into the COSMOS file as a series
+    -- of 8 bit integers.  However this needs to come up with a unique name for each one.
+    local basename = attribs.name
+    local bits_remainder = attribs.bitsize
+    attribs.ctype = "UINT"
+    attribs.bitsize = 8
+    while (true) do
+      attribs.name = basename .. "_B" .. bits_remainder
+      if (bits_remainder <= attribs.bitsize) then
+        break
+      end
+      line_writer(output,attribs)
+      bits_remainder = bits_remainder - attribs.bitsize
+    end
+    attribs.bitsize = bits_remainder
+  elseif (entry.entity_type == "STRING_DATATYPE" or entry.entity_type == "BINARY_DATATYPE") then
     attribs.ctype = "STRING"
   elseif (SEDS.index_datatype_filter(entry)) then
     attribs.ctype = (entry.is_signed and "INT") or "UINT"
@@ -216,10 +241,16 @@ end
 -- -------------------------------------------------------------------------
 write_cosmos_container_members = function(output,line_writer,cont,qual_prefix)
 
+  local num_spares = 0
   for _,ntype,refnode in cont:iterate_members() do
     -- By checking refnode this includes only direct entries, not basetypes
     if (ntype) then
       write_cosmos_block(output,line_writer,ntype, append_qual_prefix(qual_prefix, refnode and refnode.name), refnode and refnode.attributes.shortdescription)
+    elseif (refnode and refnode.entity_type == "CONTAINER_PADDING_ENTRY") then
+      -- Padding entries do not have a type, but need to be put into the COSMOS DB
+      -- nonetheless, and they also need a unqique name.
+      num_spares = 1 + num_spares
+      write_cosmos_lineitem(output,line_writer,refnode,append_qual_prefix(qual_prefix, "spare" .. num_spares),"Spare bits for padding")
     end
   end
 
@@ -351,4 +382,3 @@ for _,instance in ipairs(SEDS.highlevel_interfaces) do
   end
 end
 
--- SEDS.error("stop")
