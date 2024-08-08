@@ -132,13 +132,17 @@ write_cosmos_lineitem = function(output,line_writer,entry,qual_prefix,descr)
 
     -- This only handles integers
     if (entry.resolved_range) then
-      attribs.min = entry.resolved_range.min.value
-      if (not entry.resolved_range.min.inclusive) then
-        attribs.min = attribs.min + 1
+      if (entry.resolved_range.min) then
+        attribs.min = entry.resolved_range.min.value
+        if (not entry.resolved_range.min.inclusive) then
+          attribs.min = attribs.min + 1
+        end
       end
-      attribs.max = entry.resolved_range.max.value
-      if (not entry.resolved_range.max.inclusive) then
-        attribs.max = attribs.max - 1
+      if (entry.resolved_range.max) then
+        attribs.max = entry.resolved_range.max.value
+        if (not entry.resolved_range.max.inclusive) then
+          attribs.max = attribs.max - 1
+        end
       end
     end
   end
