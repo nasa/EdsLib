@@ -187,15 +187,11 @@ static PyObject *EdsLib_Python_PackedObjectType_new(PyTypeObject *objtype, PyObj
 
     if (contentdata_src != NULL)
     {
-        result = (PyBytesObject*)objtype->tp_alloc(objtype, contentdata_size);
+        result = (PyBytesObject*)PyBytes_FromStringAndSize(contentdata_src, contentdata_size);
         if (result != NULL)
         {
-            char *contentdata_dst = PyBytes_AS_STRING(result);
-            Py_MEMCPY(contentdata_dst,
-                    contentdata_src,
-                    contentdata_size);
-            contentdata_dst[contentdata_size] = 0;
-            result->ob_shash = -1;
+            /* This identifies it as an instance of the EdsLib.PackedObject type, as opposed to a vanilla bytes object */
+            Py_SET_TYPE(result, objtype);
         }
     }
 
