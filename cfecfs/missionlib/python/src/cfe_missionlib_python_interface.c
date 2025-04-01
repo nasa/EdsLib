@@ -372,15 +372,15 @@ PyObject *CFE_MissionLib_Python_Interface_GetFromIntfName(CFE_MissionLib_Python_
     int32_t status;
     uint16_t InterfaceId;
 
-    status = CFE_MissionLib_FindInterfaceByName(dbobj->IntfDb, PyBytes_AsString(IntfName), &InterfaceId);
+    status = CFE_MissionLib_FindInterfaceByName(obj->IntfDb, PyBytes_AsString(InterfaceName), &InterfaceId);
 
     if (status != CFE_MISSIONLIB_SUCCESS)
     {
-        PyErr_Format(PyExc_RuntimeError, "Interface %s undefined", PyBytes_AsString(IntfName));
+        PyErr_Format(PyExc_RuntimeError, "Interface %s undefined", PyBytes_AsString(InterfaceName));
         return NULL;
     }
 
-    return (PyObject*)CFE_MissionLib_Python_Interface_GetFromInterfaceId_Impl(&CFE_MissionLib_Python_InterfaceType, (PyObject *)dbobj, InterfaceId);
+    return (PyObject*)CFE_MissionLib_Python_Interface_GetFromInterfaceId_Impl(&CFE_MissionLib_Python_InterfaceType, (PyObject *)obj, InterfaceId);
 }
 
 static PyObject *  CFE_MissionLib_Python_Interface_iter(PyObject *obj)
