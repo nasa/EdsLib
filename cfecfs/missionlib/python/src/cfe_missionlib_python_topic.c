@@ -416,7 +416,7 @@ PyObject *CFE_MissionLib_Python_Topic_GetFromTopicName(CFE_MissionLib_Python_Int
         }
     }
 
-    status = CFE_MissionLib_FindTopicByName(intfobj->DbObj->IntfDb, intfobj->InterfaceId, PyBytes_AsString(TopicName), &TopicId);
+    status = CFE_MissionLib_FindTopicByName(obj->DbObj->IntfDb, obj->InterfaceId, PyBytes_AsString(TopicName), &TopicId);
 
     if (status != CFE_MISSIONLIB_SUCCESS)
     {
@@ -424,7 +424,7 @@ PyObject *CFE_MissionLib_Python_Topic_GetFromTopicName(CFE_MissionLib_Python_Int
         return NULL;
     }
 
-    return (PyObject*)CFE_MissionLib_Python_Topic_GetFromTopicId_Impl(&CFE_MissionLib_Python_TopicType, (PyObject *)intfobj, TopicId);
+    return (PyObject*)CFE_MissionLib_Python_Topic_GetFromTopicId_Impl(&CFE_MissionLib_Python_TopicType, (PyObject *)obj, TopicId);
 }
 
 static PyObject *  CFE_MissionLib_Python_Topic_iter(PyObject *obj)
