@@ -18,16 +18,15 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_python_database.c
  * \ingroup  python
  * \author   joseph.p.hickey@nasa.gov
  *
-**   Implement python type which represents an EDS database
-**
-**   Allows python code to dynamically load a database object and retrieve
-**   entries from it.
+ **   Implement python type which represents an EDS database
+ **
+ **   Allows python code to dynamically load a database object and retrieve
+ **   entries from it.
  */
 
 #include "edslib_python_internal.h"
@@ -98,7 +97,7 @@ static int EdsLib_Python_Database_clear(PyObject *obj)
     return 0;
 }
 
-static void EdsLib_Python_Database_dealloc(PyObject * obj)
+static void EdsLib_Python_Database_dealloc(PyObject *obj)
 {
     EdsLib_Python_Database_t *self = (EdsLib_Python_Database_t *)obj;
 
@@ -120,75 +119,143 @@ static void EdsLib_Python_Database_dealloc(PyObject * obj)
     EdsLib_Python_DatabaseType.tp_base->tp_dealloc(obj);
 }
 
-static EdsLib_Python_Database_t *EdsLib_Python_Database_CreateImpl(PyTypeObject *obj, PyObject *Name, const EdsLib_DatabaseObject_t *GD)
+PyObject *EdsLib_Python_GetFromCache(PyObject *cachedict, PyObject *idxval, PyTypeObject *reqtype)
 {
-    EdsLib_Python_Database_t *self;
     PyObject *weakref;
+    PyObject *obj;
 
-    self = (EdsLib_Python_Database_t*)obj->tp_alloc(obj, 0);
-    if (self == NULL)
+    obj = NULL;
+
+    /* note: PyDict_GetItem returns borrowed reference */
+    weakref = PyDict_GetItem(cachedict, idxval);
+    if (weakref != NULL)
     {
-        return NULL;
+        /* In python >= 3.13, PyWeakref_GetObject() is replaced with PyWeakRef_GetRef()
+         * The new API differentiates between expired refs and other errors, it also
+         * returns a new ref rather than a borrowed ref (so no increment) */
+#if (PY_MAJOR_VERSION >= 3) && (PY_MINOR_VERSION >= 13)
+        if (PyWeakref_GetRef(weakref, &obj) < 0)
+        {
+            /* it raised an error */
+            return NULL;
+        }
+#else
+        obj = PyWeakref_GetObject(weakref);
+        Py_XINCREF(obj);
+#endif
     }
 
-    self->TypeCache = PyDict_New();
-    if (self->TypeCache == NULL)
+    if (obj != NULL && reqtype != NULL)
     {
-        Py_DECREF(self);
-        return NULL;
+        /*
+         * Confirm that the type is the expected type -
+         * In cases where the weak ref expired then the previous call may
+         * return Py_None rather than the object we were looking for
+         */
+        if (Py_TYPE(obj) != reqtype)
+        {
+            Py_DECREF(obj);
+            obj = NULL;
+        }
     }
 
-    self->GD = GD;
-    Py_INCREF(Name);
-    self->DbName = Name;
+    return obj;
+}
+
+int EdsLib_Python_SaveToCache(PyObject *cachedict, PyObject *idxval, PyObject *obj)
+{
+    PyObject *weakref;
 
     /* Create a weak reference to store in the local cache in case this
      * database is constructed again. */
-    weakref = PyWeakref_NewRef((PyObject*)self, NULL);
+    weakref = PyWeakref_NewRef(obj, NULL);
     if (weakref == NULL)
     {
-        Py_DECREF(self);
-        return NULL;
+        return -1;
     }
 
-    PyDict_SetItem(EdsLib_Python_DatabaseCache, Name, weakref);
+    PyDict_SetItem(cachedict, idxval, weakref);
     Py_DECREF(weakref);
+
+    return 0;
+}
+
+static EdsLib_Python_Database_t *EdsLib_Python_Database_CreateImpl(PyTypeObject *obj, PyObject *Name,
+                                                                   const EdsLib_DatabaseObject_t *GD)
+{
+    EdsLib_Python_Database_t *self;
+    bool IsSuccess;
+
+    IsSuccess = false;
+
+    do
+    {
+        self = (EdsLib_Python_Database_t *)obj->tp_alloc(obj, 0);
+        if (self == NULL)
+        {
+            break;
+        }
+
+        self->TypeCache = PyDict_New();
+        if (self->TypeCache == NULL)
+        {
+            break;
+        }
+
+        self->GD = GD;
+        Py_INCREF(Name);
+        self->DbName = Name;
+
+        /* Create a weak reference to store in the local cache in case this
+        * database is constructed again. */
+        if (EdsLib_Python_SaveToCache(EdsLib_Python_DatabaseCache, Name, (PyObject *)self) < 0)
+        {
+            /* if something went wrong this raises an error and must return NULL */
+            break;
+        }
+
+        IsSuccess = true;
+    }
+    while (false);
+
+    if (!IsSuccess && self != NULL)
+    {
+        Py_CLEAR(self->TypeCache);
+        Py_CLEAR(self->DbName);
+        Py_DECREF(self);
+        self = NULL;
+    }
 
     return self;
 }
 
 PyObject *EdsLib_Python_Database_CreateFromStaticDB(const char *Name, const EdsLib_DatabaseObject_t *GD)
 {
-    PyObject *pyname = PyUnicode_FromString(Name);
+    PyObject                 *pyname = PyUnicode_FromString(Name);
     EdsLib_Python_Database_t *self;
-    PyObject *weakref;
 
     if (pyname == NULL)
     {
         return NULL;
     }
 
-    weakref = PyDict_GetItem(EdsLib_Python_DatabaseCache, pyname);
-    if (weakref != NULL)
+    self = (EdsLib_Python_Database_t *)EdsLib_Python_GetFromCache(EdsLib_Python_DatabaseCache, pyname,
+                                                                  &EdsLib_Python_DatabaseType);
+    if (self != NULL)
     {
-        self = (EdsLib_Python_Database_t *)PyWeakref_GetObject(weakref);
-        if (Py_TYPE(self) == &EdsLib_Python_DatabaseType)
+        if (self->GD != GD)
         {
-            if (self->GD != GD)
-            {
-                PyErr_SetString(PyExc_RuntimeError, "Database name conflict");
-                self = NULL;
-            }
-            else
-            {
-                Py_INCREF(self);
-            }
-            return (PyObject*)self;
+            PyErr_SetString(PyExc_RuntimeError, "Database name conflict");
+            Py_DECREF(self);
+            self = NULL;
         }
     }
+    else
+    {
+        self = EdsLib_Python_Database_CreateImpl(&EdsLib_Python_DatabaseType, pyname, GD);
+    }
 
-
-    return (PyObject*)EdsLib_Python_Database_CreateImpl(&EdsLib_Python_DatabaseType, pyname, GD);
+    return (PyObject *)self;
 }
 
 const EdsLib_DatabaseObject_t *EdsLib_Python_Database_GetDB(PyObject *obj)
@@ -199,7 +266,7 @@ const EdsLib_DatabaseObject_t *EdsLib_Python_Database_GetDB(PyObject *obj)
     }
     if (!PyObject_TypeCheck(obj, &EdsLib_Python_DatabaseType))
     {
-    	PyErr_SetObject(PyExc_TypeError, obj);
+        PyErr_SetObject(PyExc_TypeError, obj);
         return NULL;
     }
 
@@ -210,89 +277,126 @@ static PyObject *EdsLib_Python_Database_new(PyTypeObject *obj, PyObject *args, P
 {
     const char *dbstr;
     PyObject *nameobj;
+    PyObject *argobj;
     char *p;
     char tempstring[512];
     void *handle;
     void *symbol;
     const char *errstr;
     EdsLib_Python_Database_t *self;
-    PyObject *weakref;
+    bool IsSuccess;
 
-    if (!PyArg_ParseTuple(args, "s:Database_new", &dbstr))
+    /* note: the object returned here is a borrowed ref */
+    if (!PyArg_ParseTuple(args, "O:Database_new", &argobj))
     {
         return NULL;
     }
 
-    /*
-     * To avoid wasting resources, do not create the same database multiple times.
-     * First check if the db cache object already contains an instance for this name
-     * note: PyDict_GetItem returns borrowed reference
-     */
-    weakref = PyDict_GetItemString(EdsLib_Python_DatabaseCache, (char*)dbstr);
-    if (weakref != NULL)
+    handle    = NULL;
+    symbol    = NULL;
+    errstr    = NULL;
+    nameobj   = NULL;
+    self      = NULL;
+    IsSuccess = false;
+
+    do
     {
-        self = (EdsLib_Python_Database_t *)PyWeakref_GetObject(weakref);
-        if (Py_TYPE(self) == &EdsLib_Python_DatabaseType)
+        /* The database name used for EdsLib should be a plain ASCII string, not unicode */
+        if (PyUnicode_Check(argobj))
         {
-            Py_INCREF(self);
-            return (PyObject*)self;
+            /* this gets a ref to a Bytes object from the borrowed ref */
+            nameobj = PyUnicode_AsASCIIString(argobj);
         }
-    }
+        else
+        {
+            /* must be representable as a string */
+            nameobj = PyObject_ASCII(argobj);
+        }
 
-    snprintf(tempstring,sizeof(tempstring),"%s_eds_db.so", dbstr);
+        /* if something went wrong with the conversion, an error should already be raised */
+        if (nameobj == NULL)
+        {
+            break;
+        }
 
-    /* Clear any pending dlerror value */
-    dlerror();
-    handle = dlopen(tempstring, RTLD_LOCAL|RTLD_NOW);
-    errstr = dlerror();
+        /*
+         * To avoid wasting resources, do not create the same database multiple times.
+         * First check if the db cache object already contains an instance for this name
+         */
+        self = (EdsLib_Python_Database_t *)EdsLib_Python_GetFromCache(EdsLib_Python_DatabaseCache, nameobj,
+                                                                      &EdsLib_Python_DatabaseType);
+        if (self != NULL)
+        {
+            IsSuccess = true;
+            break;
+        }
 
-    if (handle == NULL && errstr == NULL)
-    {
-        errstr = "Unspecified Error - NULL handle";
-    }
+        dbstr = PyBytes_AsString(nameobj);
+        if (dbstr == NULL)
+        {
+            break;
+        }
 
-    if (errstr != NULL)
+        snprintf(tempstring, sizeof(tempstring), "%s_eds_db.so", dbstr);
+
+        /* Clear any pending dlerror value */
+        dlerror();
+        handle = dlopen(tempstring, RTLD_LOCAL | RTLD_NOW);
+        errstr = dlerror();
+
+        if (handle == NULL && errstr == NULL)
+        {
+            errstr = "Unspecified Error - NULL handle";
+        }
+
+        if (errstr != NULL)
+        {
+            PyErr_Format(PyExc_RuntimeError, "dlopen: %s", errstr);
+            break;
+        }
+
+        snprintf(tempstring, sizeof(tempstring), "%s_DATABASE", dbstr);
+        p = tempstring;
+        while (*p != 0)
+        {
+            *p = toupper(*p);
+            ++p;
+        }
+
+        symbol = dlsym(handle, tempstring);
+        if (symbol == NULL)
+        {
+            PyErr_Format(PyExc_RuntimeError, "Symbol %s undefined", tempstring);
+            break;
+        }
+
+        self = EdsLib_Python_Database_CreateImpl(&EdsLib_Python_DatabaseType, nameobj, symbol);
+        if (self == NULL)
+        {
+            break;
+        }
+
+        self->dl  = handle;
+        IsSuccess = true;
+
+    } while (false);
+
+    Py_XDECREF(nameobj);
+    if (!IsSuccess)
     {
         if (handle != NULL)
         {
             dlclose(handle);
+            handle = NULL;
         }
-        PyErr_SetString(PyExc_RuntimeError, errstr);
-        return NULL;
+        if (self != NULL)
+        {
+            Py_CLEAR(self->DbName);
+            Py_CLEAR(self->TypeCache);
+            Py_DECREF(self);
+            self = NULL;
+        }
     }
-
-    snprintf(tempstring,sizeof(tempstring),"%s_DATABASE", dbstr);
-    p = tempstring;
-    while (*p != 0)
-    {
-        *p = toupper(*p);
-        ++p;
-    }
-
-    symbol = dlsym(handle, tempstring);
-    if (symbol == NULL)
-    {
-        dlclose(handle);
-        PyErr_Format(PyExc_RuntimeError, "Symbol %s undefined", tempstring);
-        return NULL;
-    }
-
-    nameobj = PyUnicode_FromString(dbstr);
-    if (nameobj == NULL)
-    {
-        dlclose(handle);
-        return NULL;
-    }
-
-    self = EdsLib_Python_Database_CreateImpl(&EdsLib_Python_DatabaseType, nameobj, symbol);
-    Py_DECREF(nameobj);
-    if (self == NULL)
-    {
-        dlclose(handle);
-        return NULL;
-    }
-
-    self->dl = handle;
 
     return (PyObject*)self;
 }
@@ -301,34 +405,22 @@ PyObject *   EdsLib_Python_Database_repr(PyObject *obj)
 {
     EdsLib_Python_Database_t *self = (EdsLib_Python_Database_t *)obj;
 
-    return PyUnicode_FromFormat("%s(\'%U\')", obj->ob_type->tp_name, self->DbName);
+    return PyUnicode_FromFormat("%s(%R)", obj->ob_type->tp_name, self->DbName);
 }
 
 static PyObject *EdsLib_Python_Database_getentry(PyObject *obj, PyObject *key)
 {
     EdsLib_Python_Database_t *dbobj = (EdsLib_Python_Database_t *)obj;
-    PyObject *keybytes = NULL;
     PyObject *result = NULL;
+    EdsLib_Id_t EdsId;
 
-    if (PyUnicode_Check(key))
+    EdsId = EdsLib_Python_ConvertArgToEdsId(dbobj->GD, key);
+
+    /* if not valid this should have raised an exception */
+    if (EdsLib_Is_Valid(EdsId))
     {
-        keybytes = PyUnicode_AsUTF8String(key);
+        result = (PyObject*)EdsLib_Python_DatabaseEntry_GetFromEdsId_Impl(dbobj, EdsId);
     }
-    else
-    {
-        /* this should work for python2 style strings */
-        keybytes = PyObject_Bytes(key);
-    }
-
-    if (keybytes == NULL)
-    {
-        return NULL;
-    }
-
-    result = (PyObject*)EdsLib_Python_DatabaseEntry_GetFromEdsId_Impl(dbobj,
-            EdsLib_DisplayDB_LookupTypeName(dbobj->GD, PyBytes_AsString(keybytes)));
-
-    Py_DECREF(keybytes);
 
     return result;
 }

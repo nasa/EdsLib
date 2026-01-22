@@ -30,8 +30,8 @@
 ******************************************************************************/
 
 
-#ifndef _CFE_MISSIONLIB_PYTHON_INTERNAL_H_
-#define _CFE_MISSIONLIB_PYTHON_INTERNAL_H_
+#ifndef CFE_MISSIONLIB_PYTHON_INTERNAL_H
+#define CFE_MISSIONLIB_PYTHON_INTERNAL_H
 
 #include <stdio.h>
 #include <string.h>
@@ -43,7 +43,7 @@
 #include <errno.h>
 
 #include "cfe_missionlib_python.h"
-#include "cfe_missionlib_database_types.h"
+#include "edslib_intfdb.h"
 #include "edslib_binding_objects.h"
 #include "edslib_python_internal.h"
 
@@ -52,29 +52,21 @@ typedef struct
     PyObject_HEAD
     void *dl;
     const CFE_MissionLib_SoftwareBus_Interface_t *IntfDb;
-    EdsLib_Python_Database_t *EdsDbObj;
     PyObject *DbName;
-    /* TypeCache contains weak references to Databases, such that they
-     * will not be re-created each time they are required.  This also gives persistence,
-     * i.e. repeated calls to lookup the same type give the same object, instead of a
-     * separate-but-equal object. */
-    PyObject *TypeCache;
+    PyObject *IntfCache;
     PyObject *WeakRefList;
 } CFE_MissionLib_Python_Database_t;
 
+/* An "Interface" here is analogous to a declared intf in EDS.  In the software bus realm there
+ * are two - Telecommand and Telemetry, differing only in the direction of data flow */
 typedef struct
 {
     PyObject_HEAD
     CFE_MissionLib_Python_Database_t *DbObj;
     PyObject *IntfName;
-    uint16_t InterfaceId;
-    CFE_MissionLib_InterfaceInfo_t IntfInfo;
-
-    /* TypeCache contains weak references to Interfaces in the db, such that they
-     * will not be re-created each time they are required.  This also gives persistence,
-     * i.e. repeated calls to lookup the same type give the same object, instead of a
-     * separate-but-equal object. */
-    PyObject *TypeCache;
+    EdsLib_Id_t DeclEdsId;
+    EdsLib_Id_t CmdEdsId;
+    PyObject *TopicCache;
     PyObject *WeakRefList;
 } CFE_MissionLib_Python_Interface_t;
 
@@ -84,14 +76,10 @@ typedef struct
     CFE_MissionLib_Python_Interface_t *IntfObj;
     PyObject *TopicName;
     uint16_t TopicId;
-    EdsLib_Id_t EdsId;
-    CFE_MissionLib_IndicationInfo_t IndInfo;
 
-    /* TypeCache contains weak references to Topics in the db, such that they
-     * will not be re-created each time they are required.  This also gives persistence,
-     * i.e. repeated calls to lookup the same type give the same object, instead of a
-     * separate-but-equal object. */
-    PyObject *TypeCache;
+    CFE_MissionLib_TopicInfo_t TopicInfo;
+
+    EdsLib_Id_t DataEdsId; /* The actual data type for messages on this topic */
     PyObject *WeakRefList;
 } CFE_MissionLib_Python_Topic_t;
 
@@ -105,7 +93,7 @@ typedef struct
 typedef struct
 {
 	PyObject_HEAD
-	uint16_t Index;
+	uint16_t TopicId;
 	PyObject* refobj;
 } CFE_MissionLib_Python_InterfaceIterator_t;
 
@@ -116,18 +104,17 @@ typedef struct
 	PyObject* refobj;
 } CFE_MissionLib_Python_TopicIterator_t;
 
-const CFE_MissionLib_SoftwareBus_Interface_t *CFE_MissionLib_Python_Database_GetDB(PyObject *obj);
-//const CFE_MissionLib_InterfaceId_Entry_t *CFE_MissionLib_Python_Interface_GetEntry(PyObject *obj);
-//const CFE_MissionLib_TopicId_Entry_t *CFE_MissionLib_Python_Topic_GetEntry(PyObject *obj);
+typedef int32_t (*EdsLib_NameLookupFunc_t)(const EdsLib_DatabaseObject_t *, const char *, EdsLib_Id_t *);
+
+EdsLib_Id_t CFE_MissionLib_Python_ConvertArgToEdsId(EdsLib_NameLookupFunc_t Func, const EdsLib_DatabaseObject_t *GD, PyObject* arg);
+
+PyObject *CFE_MissionLib_Python_GetFromCache(PyObject *cachedict, PyObject *idxval, PyTypeObject *reqtype);
+int CFE_MissionLib_Python_SaveToCache(PyObject *cachedict, PyObject *idxval, PyObject *obj);
 
 PyObject *CFE_MissionLib_Python_Interface_GetFromIntfName(CFE_MissionLib_Python_Database_t *obj, PyObject *InterfaceName);
 PyObject *CFE_MissionLib_Python_Topic_GetFromTopicName(CFE_MissionLib_Python_Interface_t *obj, PyObject *TopicName);
 
-PyObject *CFE_MissionLib_Python_Database_CreateFromStaticDB(const char *Name, const CFE_MissionLib_SoftwareBus_Interface_t *IntfDb);
-
 extern PyObject *CFE_MissionLib_Python_DatabaseCache;
-extern PyObject *CFE_MissionLib_Python_InterfaceCache;
-extern PyObject *CFE_MissionLib_Python_TopicCache;
 
 extern PyTypeObject CFE_MissionLib_Python_DatabaseType;
 extern PyTypeObject CFE_MissionLib_Python_InterfaceType;

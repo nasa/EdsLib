@@ -19,12 +19,13 @@
 --
 
 -- -------------------------------------------------------------------------
--- Lua script to build the generated interfacedb C objects
+-- Lua script to build the generated sb_dispatchdb C objects
 -- -------------------------------------------------------------------------
 
 local objdir = SEDS.get_define("OBJDIR") or "obj"
-local libname = SEDS.to_filename("interfacedb")
-local makefilename = SEDS.to_filename("interfacedb_objects.mk")
+local srcdir = SEDS.get_define("SRCDIR") or "src"
+local libname = SEDS.to_filename("sb_dispatchdb")
+local makefilename = SEDS.to_filename("sb_dispatchdb_objects.mk")
 local libtypes = { ".a", ".so", ".obj" }
 
 local function get_objnames(n,prefix,suffix)
@@ -36,17 +37,18 @@ local function get_objnames(n,prefix,suffix)
 end
 
 -- ------------------------------------------------
--- Generate a makefile for the interfacedb library
--- This is currently only one file, the "interfacedb_impl"
+-- Generate a makefile for the sb_dispatchdb library
 -- ------------------------------------------------
 local output = SEDS.output_open(makefilename)
-output:write("include $(O)/edstool-buildenv.d $(wildcard $(O)/*.d)")
-output:write("include $(EDSLIB_SOURCE_DIR)/cmake/dbobj_patternrules.mk")
+output:write("include edstool-namespace-$(EDSTOOL_PROJECT_NAME).mk")
+output:write("include $(O)/edstool-buildenv.mk $(wildcard $(O)/*.d)")
+output:write("include $(EDS_REPO_SOURCE_DIR)/cfecfs/missionlib/cmake/dbobj_patternrules.mk")
 output:add_whitespace(1)
 output:write("# Interface DB Object")
-output:write(string.format("%s: $(O)/%s",
+output:write(string.format("%s: $(O)/%s $(O)/%s",
   get_objnames(libname,"$(O)",libtypes),
-  SEDS.to_filename("interfacedb_impl.o")))
+  SEDS.to_filename("sb_topicdb_impl.o"),
+  SEDS.to_filename("sb_global_impl.o")))
 output:add_whitespace(1)
 SEDS.output_close(output)
 
@@ -55,10 +57,11 @@ SEDS.output_close(output)
 -- interfacdb using the makefile generated above.
 -- ------------------------------------------------
 SEDS.execute_tool("MAKE_PROGRAM",
-  string.format("-C \"%s\" -f \"%s\" O=\"%s\" %s",
-    SEDS.get_define("MISSION_BINARY_DIR") or ".",
+  string.format("-C \"%s\" -f \"%s\" O=\"%s\" S=\"%s\" %s",
+    SEDS.get_define("EDSTOOL_OUTPUT_DIR") or ".",
     makefilename,
     objdir,
+    srcdir,
     get_objnames(libname,objdir,libtypes)
   )
 )

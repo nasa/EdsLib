@@ -31,7 +31,7 @@ set(UTIL_LINK_LIBS
     cfe_missionlib
     cfe_missionlib_runtime_static
     cfe_edsdb_static
-    cfe_missionlib_interfacedb_static
+    cfe_missionlib_sb_dispatchdb_static
 )
 
 # CMake snippet for building cmdUtil

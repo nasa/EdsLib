@@ -30,7 +30,7 @@
 # tools are linked into the final executables, but there is no dependency
 # on expat in the final binaries.
 #
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(EDSTOOL C)
 
 add_definitions(-Wall -Werror -std=c99 -pedantic)
@@ -64,6 +64,7 @@ add_executable(sedstool
     src/seds_tree_node.c
     src/seds_instance_node.c
     src/seds_memreq.c
+    src/seds_range.c
     src/seds_outputfile.c
     src/seds_plugin.c
     src/seds_user_message.c

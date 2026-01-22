@@ -44,6 +44,9 @@
 #include "cfe_sb_eds_datatypes.h"
 #include "edslib_binding_objects.h"
 
+static const EdsLib_Id_t CFE_SB_TELECOMMAND_ID = EDSLIB_INTF_ID(EDS_INDEX(CFE_SB), EdsCommand_CFE_SB_Telecommand_indication_DECLARATION);
+static const EdsLib_Id_t CFE_SB_TELEMETRY_ID = EDSLIB_INTF_ID(EDS_INDEX(CFE_SB), EdsCommand_CFE_SB_Telemetry_indication_DECLARATION);
+
 PyObject *CFE_MissionLib_Python_DatabaseCache = NULL;
 
 static void         CFE_MissionLib_Python_Database_dealloc(PyObject * obj);
@@ -114,8 +117,7 @@ static int CFE_MissionLib_Python_Database_traverse(PyObject *obj, visitproc visi
 {
     CFE_MissionLib_Python_Database_t *self = (CFE_MissionLib_Python_Database_t *)obj;
     Py_VISIT(self->DbName);
-    Py_VISIT(self->EdsDbObj);
-    Py_VISIT(self->TypeCache);
+    Py_VISIT(self->IntfCache);
     return 0;
 }
 
@@ -123,8 +125,7 @@ static int CFE_MissionLib_Python_Database_clear(PyObject *obj)
 {
     CFE_MissionLib_Python_Database_t *self = (CFE_MissionLib_Python_Database_t *)obj;
     Py_CLEAR(self->DbName);
-    Py_CLEAR(self->EdsDbObj);
-    Py_CLEAR(self->TypeCache);
+    Py_CLEAR(self->IntfCache);
     return 0;
 }
 
@@ -133,8 +134,7 @@ static void CFE_MissionLib_Python_Database_dealloc(PyObject * obj)
     CFE_MissionLib_Python_Database_t *self = (CFE_MissionLib_Python_Database_t *)obj;
 
     Py_CLEAR(self->DbName);
-    Py_CLEAR(self->EdsDbObj);
-    Py_CLEAR(self->TypeCache);
+    Py_CLEAR(self->IntfCache);
 
     if (self->WeakRefList != NULL)
     {
@@ -151,80 +151,66 @@ static void CFE_MissionLib_Python_Database_dealloc(PyObject * obj)
     CFE_MissionLib_Python_DatabaseType.tp_base->tp_dealloc(obj);
 }
 
-static CFE_MissionLib_Python_Database_t *CFE_MissionLib_Python_Database_CreateImpl(PyTypeObject *obj, PyObject *Name, const CFE_MissionLib_SoftwareBus_Interface_t *IntfDb, PyObject *EdsDb)
+PyObject *CFE_MissionLib_Python_GetFromCache(PyObject *cachedict, PyObject *idxval, PyTypeObject *reqtype)
 {
-    CFE_MissionLib_Python_Database_t *self;
     PyObject *weakref;
+    PyObject *obj;
 
-    self = (CFE_MissionLib_Python_Database_t*)obj->tp_alloc(obj, 0);
-    if (self == NULL)
+    obj = NULL;
+
+    /* note: PyDict_GetItem returns borrowed reference */
+    weakref = PyDict_GetItem(cachedict, idxval);
+    if (weakref != NULL)
     {
-        return NULL;
+        /* In python >= 3.13, PyWeakref_GetObject() is replaced with PyWeakRef_GetRef()
+         * The new API differentiates between expired refs and other errors, it also
+         * returns a new ref rather than a borrowed ref (so no increment) */
+#if (PY_MAJOR_VERSION >= 3) && (PY_MINOR_VERSION >= 13)
+        if (PyWeakref_GetRef(weakref, &obj) < 0)
+        {
+            /* it raised an error */
+            return NULL;
+        }
+#else
+        obj = PyWeakref_GetObject(weakref);
+        Py_XINCREF(obj);
+#endif
     }
 
-    self->TypeCache = PyDict_New();
-    if (self->TypeCache == NULL)
+    if (obj != NULL && reqtype != NULL)
     {
-        Py_DECREF(self);
-        return NULL;
+        /*
+         * Confirm that the type is the expected type -
+         * In cases where the weak ref expired then the previous call may
+         * return Py_None rather than the object we were looking for
+         */
+        if (Py_TYPE(obj) != reqtype)
+        {
+            Py_DECREF(obj);
+            obj = NULL;
+        }
     }
 
-  	self->IntfDb = IntfDb;
-   	Py_INCREF(EdsDb);
-    self->EdsDbObj = (EdsLib_Python_Database_t *)EdsDb;
-    Py_INCREF(Name);
-    self->DbName = Name;
-    //self->NumInterfaces = IntfDb->NumInterfaces;
+    return obj;
+}
+
+int CFE_MissionLib_Python_SaveToCache(PyObject *cachedict, PyObject *idxval, PyObject *obj)
+{
+    PyObject *weakref;
 
     /* Create a weak reference to store in the local cache in case this
      * database is constructed again. */
-    weakref = PyWeakref_NewRef((PyObject*)self, NULL);
+    weakref = PyWeakref_NewRef(obj, NULL);
     if (weakref == NULL)
     {
-        Py_DECREF(self);
-        return NULL;
+        return -1;
     }
 
-    PyDict_SetItem(CFE_MissionLib_Python_DatabaseCache, Name, weakref);
+    PyDict_SetItem(cachedict, idxval, weakref);
     Py_DECREF(weakref);
 
-    return self;
+    return 0;
 }
-
-//PyObject *CFE_MissionLib_Python_Database_CreateFromStaticDB(const char *Name, const CFE_MissionLib_SoftwareBus_Interface_t *IntfDb)
-//{
-//    PyObject *pyname = PyUnicode_FromString(Name);
-//    CFE_MissionLib_Python_Database_t *self;
-//    PyObject *weakref;
-//
-//    if (pyname == NULL)
-//    {
-//        return NULL;
-//    }
-//
-//    weakref = PyDict_GetItem(CFE_MissionLib_Python_DatabaseCache, pyname);
-//    if (weakref != NULL)
-//    {
-//        self = (CFE_MissionLib_Python_Database_t *)PyWeakref_GetObject(weakref);
-//        if (Py_TYPE(self) == &CFE_MissionLib_Python_DatabaseType)
-//        {
-//            if (self->IntfDb != IntfDb)
-//            {
-//                PyErr_SetString(PyExc_RuntimeError, "Database name conflict");
-//                self = NULL;
-//            }
-//            else
-//            {
-//                Py_INCREF(self);
-//            }
-//            Py_DECREF(pyname);
-//            return (PyObject*)self;
-//        }
-//    }
-//
-//    Py_DECREF(pyname);
-//    return (PyObject*)CFE_MissionLib_Python_Database_CreateImpl(&CFE_MissionLib_Python_DatabaseType, pyname, IntfDb, NULL);
-//}
 
 const CFE_MissionLib_SoftwareBus_Interface_t *CFE_MissionLib_Python_Database_GetDB(PyObject *obj)
 {
@@ -245,17 +231,15 @@ static PyObject *CFE_MissionLib_Python_Database_new(PyTypeObject *obj, PyObject 
 {
     PyObject *arg1;
     PyObject *arg2;
-
-    PyObject *tempargs;
+    PyObject *dbname;
     const char *dbstr;
-    PyObject *nameobj;
     char *p;
     char tempstring[512];
     void *handle;
     void *symbol;
     const char *errstr;
+    bool IsSuccess;
     CFE_MissionLib_Python_Database_t *self;
-    PyObject *weakref;
 
     if (!PyArg_UnpackTuple(args, "Database_new", 1, 2, &arg1, &arg2))
     {
@@ -263,91 +247,127 @@ static PyObject *CFE_MissionLib_Python_Database_new(PyTypeObject *obj, PyObject 
     	return NULL;
     }
 
-    if (PyUnicode_Check(arg1))
-    {
-        tempargs = PyUnicode_AsUTF8String(arg1);
-    }
-    else
-    {
-        tempargs = PyObject_Bytes(arg1);
-    }
-    dbstr = PyBytes_AsString(tempargs);
+    dbname = NULL;
+    handle = NULL;
+    symbol = NULL;
+    errstr = NULL;
+    self = NULL;
+    IsSuccess = false;
 
-    /*
-     * To avoid wasting resources, do not create the same database multiple times.
-     * First check if the db cache object already contains an instance for this name
-     * note: PyDict_GetItem returns borrowed reference
-     */
-    weakref = PyDict_GetItemString(CFE_MissionLib_Python_DatabaseCache, (char*)dbstr);
-    if (weakref != NULL)
+    do
     {
-        self = (CFE_MissionLib_Python_Database_t *)PyWeakref_GetObject(weakref);
-        if (Py_TYPE(self) == &CFE_MissionLib_Python_DatabaseType)
+        if (PyUnicode_Check(arg1))
         {
-            Py_INCREF(self);
-            return (PyObject*)self;
+            dbname = PyUnicode_AsASCIIString(arg1);
         }
+        else
+        {
+            dbname = PyObject_ASCII(arg1);
+        }
+
+        if (dbname == NULL)
+        {
+            break;
+        }
+
+        /*
+        * To avoid wasting resources, do not create the same database multiple times.
+        * First check if the db cache object already contains an instance for this name
+        * note: PyDict_GetItem returns borrowed reference
+        */
+        self = (CFE_MissionLib_Python_Database_t *)CFE_MissionLib_Python_GetFromCache(CFE_MissionLib_Python_DatabaseCache, dbname, &CFE_MissionLib_Python_DatabaseType);
+        if (self != NULL)
+        {
+            IsSuccess = true;
+            break;
+        }
+
+        dbstr = PyBytes_AsString(dbname);
+        if (dbstr == NULL)
+        {
+            break;
+        }
+
+        snprintf(tempstring,sizeof(tempstring),"%s_eds_sb_dispatchdb.so", dbstr);
+
+        /* Clear any pending dlerror value */
+        dlerror();
+        handle = dlopen(tempstring, RTLD_LOCAL|RTLD_NOW);
+        errstr = dlerror();
+
+        if (handle == NULL && errstr == NULL)
+        {
+            errstr = "Unspecified Error - NULL handle";
+        }
+
+        if (errstr != NULL)
+        {
+            PyErr_Format(PyExc_RuntimeError, "dlopen: %s", errstr);
+            break;
+        }
+
+        snprintf(tempstring,sizeof(tempstring),"%s_SOFTWAREBUS_INTERFACE", dbstr);
+        p = tempstring;
+        while (*p != 0)
+        {
+            *p = toupper(*p);
+            ++p;
+        }
+
+        symbol = dlsym(handle, tempstring);
+        if (symbol == NULL)
+        {
+            PyErr_Format(PyExc_RuntimeError, "Symbol %s undefined", tempstring);
+            break;
+        }
+
+        self = (CFE_MissionLib_Python_Database_t*)obj->tp_alloc(obj, 0);
+        if (self == NULL)
+        {
+            break;
+        }
+
+        self->IntfDb = (const CFE_MissionLib_SoftwareBus_Interface_t *)symbol;
+
+        Py_INCREF(dbname);
+        self->DbName = dbname;
+
+        self->IntfCache = PyDict_New();
+        if (self->IntfCache == NULL)
+        {
+            break;
+        }
+
+        /* Create a weak reference to store in the local cache in case this
+        * database is constructed again. */
+        if (CFE_MissionLib_Python_SaveToCache(CFE_MissionLib_Python_DatabaseCache, dbname, (PyObject*)self) < 0)
+        {
+            /* if something went wrong this raises an error and must return NULL */
+            break;
+        }
+
+        self->dl = handle;
+
+        IsSuccess = true;
     }
-    else if (arg2 == Py_None)
-    {
-    	PyErr_Format(PyExc_RuntimeError, "EdsDb Python Object argument required");
-    	return NULL;
-    }
+    while (false);
 
-    snprintf(tempstring,sizeof(tempstring),"%s_eds_interfacedb.so", dbstr);
-
-    /* Clear any pending dlerror value */
-    dlerror();
-    handle = dlopen(tempstring, RTLD_LOCAL|RTLD_NOW);
-    errstr = dlerror();
-
-    if (handle == NULL && errstr == NULL)
-    {
-        errstr = "Unspecified Error - NULL handle";
-    }
-
-    if (errstr != NULL)
+    Py_XDECREF(dbname);
+    if (!IsSuccess)
     {
         if (handle != NULL)
         {
             dlclose(handle);
+            handle = NULL;
         }
-        PyErr_SetString(PyExc_RuntimeError, errstr);
-        return NULL;
+        if (self != NULL)
+        {
+            Py_CLEAR(self->DbName);
+            Py_CLEAR(self->IntfCache);
+            Py_DECREF(self);
+            self = NULL;
+        }
     }
-
-    snprintf(tempstring,sizeof(tempstring),"%s_SOFTWAREBUS_INTERFACE", dbstr);
-    p = tempstring;
-    while (*p != 0)
-    {
-        *p = toupper(*p);
-        ++p;
-    }
-
-    symbol = dlsym(handle, tempstring);
-    if (symbol == NULL)
-    {
-        dlclose(handle);
-        PyErr_Format(PyExc_RuntimeError, "Symbol %s undefined", tempstring);
-        return NULL;
-    }
-
-    nameobj = PyUnicode_FromString(dbstr);
-    if (nameobj == NULL)
-    {
-        dlclose(handle);
-        return NULL;
-    }
-
-    self = CFE_MissionLib_Python_Database_CreateImpl(&CFE_MissionLib_Python_DatabaseType, nameobj, symbol, arg2);
-    Py_DECREF(nameobj);
-    if (self == NULL)
-    {
-        dlclose(handle);
-        return NULL;
-    }
-
-    self->dl = handle;
 
     return (PyObject*)self;
 }
@@ -378,7 +398,6 @@ static PyObject *CFE_MissionLib_Python_DecodeEdsId(PyObject *obj, PyObject *args
 {
     CFE_MissionLib_Python_Database_t *IntfDb = (CFE_MissionLib_Python_Database_t *)obj;
     PyObject *arg1;
-    EdsLib_Python_Database_t *EdsDb;
 
     Py_ssize_t BytesSize;
     char *NetworkBuffer;
@@ -390,8 +409,11 @@ static PyObject *CFE_MissionLib_Python_DecodeEdsId(PyObject *obj, PyObject *args
     EdsComponent_CFE_SB_Listener_t ListenerParams;
 
     EdsLib_Id_t EdsId;
+    EdsLib_Id_t CmdEdsId;
     uint16_t TopicId;
     EdsLib_DataTypeDB_TypeInfo_t TypeInfo;
+    CFE_MissionLib_TopicInfo_t TopicInfo;
+    const EdsDataType_CFE_HDR_Message_t *MsgPtr;
     int32_t Status;
 
     PyObject *result = NULL;
@@ -406,8 +428,6 @@ static PyObject *CFE_MissionLib_Python_DecodeEdsId(PyObject *obj, PyObject *args
 
     do
     {
-    	EdsDb = IntfDb->EdsDbObj;
-
     	if (!PyBytes_Check(arg1))
     	{
     		PyErr_Format(PyExc_RuntimeError, "DecodeEdsId argument not of bytes string type");
@@ -416,15 +436,15 @@ static PyObject *CFE_MissionLib_Python_DecodeEdsId(PyObject *obj, PyObject *args
     	BytesSize = PyBytes_Size(arg1);
         PyBytes_AsStringAndSize(arg1, &NetworkBuffer, &BytesSize);
 
-        EdsId = EDSLIB_MAKE_ID(EDS_INDEX(CFE_HDR), CFE_HDR_TelemetryHeader_DATADICTIONARY);
-        Status = EdsLib_DataTypeDB_GetTypeInfo(EdsDb->GD, EdsId, &TypeInfo);
+        EdsId = EDSLIB_MAKE_ID(EDS_INDEX(CFE_HDR), EdsContainer_CFE_HDR_TelemetryHeader_DATADICTIONARY);
+        Status = EdsLib_DataTypeDB_GetTypeInfo(CFE_MissionLib_GetParent(IntfDb->IntfDb), EdsId, &TypeInfo);
         if (Status != CFE_MISSIONLIB_SUCCESS)
         {
     	    PyErr_Format(PyExc_RuntimeError, "Unable to get type info for CCSDS_SPACEPACKET: return status = %d", Status);
     	    break;
         }
 
-        Status = EdsLib_DataTypeDB_UnpackPartialObject(EdsDb->GD, &EdsId,
+        Status = EdsLib_DataTypeDB_UnpackPartialObject(CFE_MissionLib_GetParent(IntfDb->IntfDb), &EdsId,
                 LocalBuffer.Byte, NetworkBuffer, sizeof(LocalBuffer), 8*TypeInfo.Size.Bytes, 0);
         if (Status != CFE_MISSIONLIB_SUCCESS)
         {
@@ -432,30 +452,38 @@ static PyObject *CFE_MissionLib_Python_DecodeEdsId(PyObject *obj, PyObject *args
     	    break;
         }
 
-        CFE_MissionLib_Get_PubSub_Parameters(&PubSubParams, &LocalBuffer.BaseObject);
+        MsgPtr = (const EdsDataType_CFE_HDR_Message_t *)&LocalBuffer;
+
+        CFE_MissionLib_Get_PubSub_Parameters(&PubSubParams, MsgPtr);
 
         if (CFE_MissionLib_PubSub_IsPublisherComponent(&PubSubParams))
         {
             CFE_MissionLib_UnmapPublisherComponent(&PublisherParams, &PubSubParams);
             TopicId = PublisherParams.Telemetry.TopicId;
-
-            Status = CFE_MissionLib_GetArgumentType(IntfDb->IntfDb, EDS_INTERFACE_ID(CFE_SB_Telemetry),
-                    PublisherParams.Telemetry.TopicId, 1, 1, &EdsId);
+            CmdEdsId = CFE_SB_TELEMETRY_ID;
         }
         else if (CFE_MissionLib_PubSub_IsListenerComponent(&PubSubParams))
         {
             CFE_MissionLib_UnmapListenerComponent(&ListenerParams, &PubSubParams);
             TopicId = ListenerParams.Telecommand.TopicId;
-
-            Status = CFE_MissionLib_GetArgumentType(IntfDb->IntfDb, EDS_INTERFACE_ID(CFE_SB_Telecommand),
-                    ListenerParams.Telecommand.TopicId, 1, 1, &EdsId);
+            CmdEdsId = CFE_SB_TELECOMMAND_ID;
         }
         else
         {
-            Status = CFE_MISSIONLIB_INVALID_INTERFACE;
+    	    PyErr_Format(PyExc_RuntimeError, "Unable to identify component for MsgId=0x%x", (unsigned int)PubSubParams.MsgId.Value);
+    	    break;
         }
 
+        Status = CFE_MissionLib_GetTopicInfo(IntfDb->IntfDb, TopicId, &TopicInfo);
         if (Status != CFE_MISSIONLIB_SUCCESS)
+        {
+    	    PyErr_Format(PyExc_RuntimeError, "CFE_MissionLib_GetTopicInfo(%d) rc=%d", (int)TopicId, (int)Status);
+    	    break;
+        }
+
+        Status = EdsLib_IntfDB_FindAllArgumentTypes(CFE_MissionLib_GetParent(IntfDb->IntfDb), CmdEdsId,
+            TopicInfo.ParentIntfId, &EdsId, 1);
+        if (Status != EDSLIB_SUCCESS)
         {
     	    PyErr_Format(PyExc_RuntimeError, "Unable to get argument type: return status = %d", Status);
     	    break;
@@ -595,30 +623,28 @@ static PyObject *CFE_MissionLib_Python_InstanceIterator_iternext(PyObject *obj)
     CFE_MissionLib_Python_InstanceIterator_t *self = (CFE_MissionLib_Python_InstanceIterator_t*)obj;
     CFE_MissionLib_Python_Database_t *dbobj = NULL;
     const char * Label = NULL;
-    char Buffer[64];
-    char CheckBuffer[64];
 
     PyObject *key = NULL;
     PyObject *instanceid = NULL;
     PyObject *result = NULL;
 
+    if (self->refobj == NULL)
+    {
+        /* bad object */
+        return NULL;
+    }
+
+    dbobj = (CFE_MissionLib_Python_Database_t *)self->refobj;
+
     do
     {
-    	if (self->refobj == NULL)
+        if (self->Index >= CFE_MissionLib_GetNumInstances(dbobj->IntfDb))
         {
+            /* Reached the end */
             break;
         }
 
-        dbobj = (CFE_MissionLib_Python_Database_t *)self->refobj;
-
-        Label = CFE_MissionLib_GetInstanceName(dbobj->IntfDb, self->Index, Buffer, sizeof(Buffer));
-
-        // If the instance doesn't exist then the return buffer is a string of the input index
-        snprintf(CheckBuffer, sizeof(CheckBuffer), "%u", (unsigned int) self->Index);
-        if (strcmp(Label,CheckBuffer) == 0)
-        {
-            break;
-        }
+        Label = CFE_MissionLib_GetInstanceNameNonNull(dbobj->IntfDb, self->Index);
 
         key = PyUnicode_FromString(Label);
 

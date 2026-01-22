@@ -38,6 +38,11 @@
 #include "edslib_displaydb.h"
 #include "edslib_internal.h"
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib local helper function
+ *
+ *-----------------------------------------------------------------*/
 static EdsLib_Iterator_Rc_t EdsLib_DisplayLocateMember_GetContainerPosition_Callback(
         const EdsLib_DatabaseObject_t *GD,
         EdsLib_Iterator_CbType_t CbType,
@@ -69,6 +74,11 @@ static EdsLib_Iterator_Rc_t EdsLib_DisplayLocateMember_GetContainerPosition_Call
     return EDSLIB_ITERATOR_RC_STOP;
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib local helper function
+ *
+ *-----------------------------------------------------------------*/
 static void EdsLib_DisplayLocateMember_GetContainerPosition(const EdsLib_DatabaseObject_t *GD, EdsLib_DisplayLocateMember_ControlBlock_t *CtrlBlock)
 {
     EDSLIB_DECLARE_DISPLAY_ITERATOR_CB(IteratorState,
@@ -81,6 +91,11 @@ static void EdsLib_DisplayLocateMember_GetContainerPosition(const EdsLib_Databas
     EdsLib_DataTypeIterator_Impl(GD, &IteratorState.BaseIter.Cb);
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib local helper function
+ *
+ *-----------------------------------------------------------------*/
 static void EdsLib_DisplayLocateMember_GetArrayPosition(const EdsLib_DatabaseObject_t *GD, EdsLib_DisplayLocateMember_ControlBlock_t *CtrlBlock)
 {
     const EdsLib_DisplayDB_Entry_t *DisplayInf;
@@ -124,6 +139,12 @@ static void EdsLib_DisplayLocateMember_GetArrayPosition(const EdsLib_DatabaseObj
     }
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 void EdsLib_DisplayLocateMember_Impl(const EdsLib_DatabaseObject_t *GD, EdsLib_DisplayLocateMember_ControlBlock_t *CtrlBlock)
 {
     const char *EndPos;
@@ -168,6 +189,7 @@ void EdsLib_DisplayLocateMember_Impl(const EdsLib_DatabaseObject_t *GD, EdsLib_D
             }
             break;
         case EDSLIB_BASICTYPE_CONTAINER:
+        case EDSLIB_BASICTYPE_COMPONENT:
             if (*CtrlBlock->ContentPos == '.')
             {
                 do
@@ -195,5 +217,3 @@ void EdsLib_DisplayLocateMember_Impl(const EdsLib_DatabaseObject_t *GD, EdsLib_D
         }
     }
 }
-
-

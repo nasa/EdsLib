@@ -99,6 +99,28 @@ int32_t EdsLib_DataTypeDB_FinalizePackedObject(const EdsLib_DatabaseObject_t *GD
 
 /*
  * ----------------------------------------------------
+ * Generated stub function for EdsLib_DataTypeDB_FinalizePackedObjectVarSize()
+ * ----------------------------------------------------
+ */
+int32_t EdsLib_DataTypeDB_FinalizePackedObjectVarSize(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId,
+                                                      const void *NativeBuffer, void *PackedBuffer,
+                                                      const EdsLib_SizeInfo_t *ProcessedSize)
+{
+    UT_GenStub_SetupReturnBuffer(EdsLib_DataTypeDB_FinalizePackedObjectVarSize, int32_t);
+
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_FinalizePackedObjectVarSize, const EdsLib_DatabaseObject_t *, GD);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_FinalizePackedObjectVarSize, EdsLib_Id_t, EdsId);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_FinalizePackedObjectVarSize, const void *, NativeBuffer);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_FinalizePackedObjectVarSize, void *, PackedBuffer);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_FinalizePackedObjectVarSize, const EdsLib_SizeInfo_t *, ProcessedSize);
+
+    UT_GenStub_Execute(EdsLib_DataTypeDB_FinalizePackedObjectVarSize, Basic, NULL);
+
+    return UT_GenStub_GetReturnValue(EdsLib_DataTypeDB_FinalizePackedObjectVarSize, int32_t);
+}
+
+/*
+ * ----------------------------------------------------
  * Generated stub function for EdsLib_DataTypeDB_GetAppIdx()
  * ----------------------------------------------------
  */
@@ -237,7 +259,7 @@ int32_t EdsLib_DataTypeDB_GetTypeInfo(const EdsLib_DatabaseObject_t *GD, EdsLib_
  * ----------------------------------------------------
  */
 int32_t EdsLib_DataTypeDB_IdentifyBuffer(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId,
-                                         const void *                              MessageBuffer,
+                                         const void                               *MessageBuffer,
                                          EdsLib_DataTypeDB_DerivativeObjectInfo_t *DerivObjInfo)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_DataTypeDB_IdentifyBuffer, int32_t);
@@ -250,6 +272,29 @@ int32_t EdsLib_DataTypeDB_IdentifyBuffer(const EdsLib_DatabaseObject_t *GD, EdsL
     UT_GenStub_Execute(EdsLib_DataTypeDB_IdentifyBuffer, Basic, NULL);
 
     return UT_GenStub_GetReturnValue(EdsLib_DataTypeDB_IdentifyBuffer, int32_t);
+}
+
+/*
+ * ----------------------------------------------------
+ * Generated stub function for EdsLib_DataTypeDB_IdentifyBufferWithSize()
+ * ----------------------------------------------------
+ */
+int32_t EdsLib_DataTypeDB_IdentifyBufferWithSize(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId,
+                                                 const void *BufferPtr, size_t BufferSize,
+                                                 EdsLib_DataTypeDB_DerivativeObjectInfo_t *DerivObjInfo)
+{
+    UT_GenStub_SetupReturnBuffer(EdsLib_DataTypeDB_IdentifyBufferWithSize, int32_t);
+
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_IdentifyBufferWithSize, const EdsLib_DatabaseObject_t *, GD);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_IdentifyBufferWithSize, EdsLib_Id_t, EdsId);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_IdentifyBufferWithSize, const void *, BufferPtr);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_IdentifyBufferWithSize, size_t, BufferSize);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_IdentifyBufferWithSize, EdsLib_DataTypeDB_DerivativeObjectInfo_t *,
+                        DerivObjInfo);
+
+    UT_GenStub_Execute(EdsLib_DataTypeDB_IdentifyBufferWithSize, Basic, NULL);
+
+    return UT_GenStub_GetReturnValue(EdsLib_DataTypeDB_IdentifyBufferWithSize, int32_t);
 }
 
 /*
@@ -327,6 +372,28 @@ int32_t EdsLib_DataTypeDB_PackCompleteObject(const EdsLib_DatabaseObject_t *GD, 
 
 /*
  * ----------------------------------------------------
+ * Generated stub function for EdsLib_DataTypeDB_PackCompleteObjectVarSize()
+ * ----------------------------------------------------
+ */
+int32_t EdsLib_DataTypeDB_PackCompleteObjectVarSize(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t *EdsId,
+                                                    void *DestBuffer, const void *SourceBuffer,
+                                                    EdsLib_SizeInfo_t *PackedSize)
+{
+    UT_GenStub_SetupReturnBuffer(EdsLib_DataTypeDB_PackCompleteObjectVarSize, int32_t);
+
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_PackCompleteObjectVarSize, const EdsLib_DatabaseObject_t *, GD);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_PackCompleteObjectVarSize, EdsLib_Id_t *, EdsId);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_PackCompleteObjectVarSize, void *, DestBuffer);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_PackCompleteObjectVarSize, const void *, SourceBuffer);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_PackCompleteObjectVarSize, EdsLib_SizeInfo_t *, PackedSize);
+
+    UT_GenStub_Execute(EdsLib_DataTypeDB_PackCompleteObjectVarSize, Basic, NULL);
+
+    return UT_GenStub_GetReturnValue(EdsLib_DataTypeDB_PackCompleteObjectVarSize, int32_t);
+}
+
+/*
+ * ----------------------------------------------------
  * Generated stub function for EdsLib_DataTypeDB_PackPartialObject()
  * ----------------------------------------------------
  */
@@ -347,6 +414,29 @@ int32_t EdsLib_DataTypeDB_PackPartialObject(const EdsLib_DatabaseObject_t *GD, E
     UT_GenStub_Execute(EdsLib_DataTypeDB_PackPartialObject, Basic, NULL);
 
     return UT_GenStub_GetReturnValue(EdsLib_DataTypeDB_PackPartialObject, int32_t);
+}
+
+/*
+ * ----------------------------------------------------
+ * Generated stub function for EdsLib_DataTypeDB_PackPartialObjectVarSize()
+ * ----------------------------------------------------
+ */
+int32_t EdsLib_DataTypeDB_PackPartialObjectVarSize(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t *EdsId,
+                                                   void *DestBuffer, const void *SourceBuffer,
+                                                   const EdsLib_SizeInfo_t *MaxSize, EdsLib_SizeInfo_t *ProcessedSize)
+{
+    UT_GenStub_SetupReturnBuffer(EdsLib_DataTypeDB_PackPartialObjectVarSize, int32_t);
+
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_PackPartialObjectVarSize, const EdsLib_DatabaseObject_t *, GD);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_PackPartialObjectVarSize, EdsLib_Id_t *, EdsId);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_PackPartialObjectVarSize, void *, DestBuffer);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_PackPartialObjectVarSize, const void *, SourceBuffer);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_PackPartialObjectVarSize, const EdsLib_SizeInfo_t *, MaxSize);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_PackPartialObjectVarSize, EdsLib_SizeInfo_t *, ProcessedSize);
+
+    UT_GenStub_Execute(EdsLib_DataTypeDB_PackPartialObjectVarSize, Basic, NULL);
+
+    return UT_GenStub_GetReturnValue(EdsLib_DataTypeDB_PackPartialObjectVarSize, int32_t);
 }
 
 /*
@@ -435,6 +525,29 @@ int32_t EdsLib_DataTypeDB_UnpackPartialObject(const EdsLib_DatabaseObject_t *GD,
 
 /*
  * ----------------------------------------------------
+ * Generated stub function for EdsLib_DataTypeDB_UnpackPartialObjectVarSize()
+ * ----------------------------------------------------
+ */
+int32_t EdsLib_DataTypeDB_UnpackPartialObjectVarSize(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t *EdsId,
+                                                     void *DestBuffer, const void *SourceBuffer,
+                                                     const EdsLib_SizeInfo_t *MaxSize, EdsLib_SizeInfo_t *ProcessedSize)
+{
+    UT_GenStub_SetupReturnBuffer(EdsLib_DataTypeDB_UnpackPartialObjectVarSize, int32_t);
+
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_UnpackPartialObjectVarSize, const EdsLib_DatabaseObject_t *, GD);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_UnpackPartialObjectVarSize, EdsLib_Id_t *, EdsId);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_UnpackPartialObjectVarSize, void *, DestBuffer);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_UnpackPartialObjectVarSize, const void *, SourceBuffer);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_UnpackPartialObjectVarSize, const EdsLib_SizeInfo_t *, MaxSize);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_UnpackPartialObjectVarSize, EdsLib_SizeInfo_t *, ProcessedSize);
+
+    UT_GenStub_Execute(EdsLib_DataTypeDB_UnpackPartialObjectVarSize, Basic, NULL);
+
+    return UT_GenStub_GetReturnValue(EdsLib_DataTypeDB_UnpackPartialObjectVarSize, int32_t);
+}
+
+/*
+ * ----------------------------------------------------
  * Generated stub function for EdsLib_DataTypeDB_Unregister()
  * ----------------------------------------------------
  */
@@ -469,4 +582,27 @@ int32_t EdsLib_DataTypeDB_VerifyUnpackedObject(const EdsLib_DatabaseObject_t *GD
     UT_GenStub_Execute(EdsLib_DataTypeDB_VerifyUnpackedObject, Basic, NULL);
 
     return UT_GenStub_GetReturnValue(EdsLib_DataTypeDB_VerifyUnpackedObject, int32_t);
+}
+
+/*
+ * ----------------------------------------------------
+ * Generated stub function for EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize()
+ * ----------------------------------------------------
+ */
+int32_t EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId,
+                                                      void *NativeBuffer, const void *PackedBuffer,
+                                                      uint32_t RecomputeFields, const EdsLib_SizeInfo_t *ProcessedSize)
+{
+    UT_GenStub_SetupReturnBuffer(EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize, int32_t);
+
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize, const EdsLib_DatabaseObject_t *, GD);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize, EdsLib_Id_t, EdsId);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize, void *, NativeBuffer);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize, const void *, PackedBuffer);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize, uint32_t, RecomputeFields);
+    UT_GenStub_AddParam(EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize, const EdsLib_SizeInfo_t *, ProcessedSize);
+
+    UT_GenStub_Execute(EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize, Basic, NULL);
+
+    return UT_GenStub_GetReturnValue(EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize, int32_t);
 }

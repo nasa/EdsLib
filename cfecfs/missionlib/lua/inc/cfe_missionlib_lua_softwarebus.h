@@ -37,10 +37,12 @@
 typedef struct
 {
     const CFE_MissionLib_SoftwareBus_Interface_t *IntfDB;
+    bool IsTelecommand;
+    bool IsTelemetry;
     uint16_t InstanceNumber;
-    uint16_t IntfId;
     uint16_t TopicId;
-    uint16_t IndicationId;
+    EdsLib_Id_t IntfEdsId;
+    EdsLib_Id_t IndicationEdsId;
     EdsLib_Id_t IndicationBaseArg;
 } CFE_MissionLib_Lua_Interface_Userdata_t;
 

@@ -27,8 +27,6 @@
 -- -------------------------------------------------------------------------
 SEDS.info ("SEDS write display objects START")
 
-local datasheet_namespace_objs = {}
-
 -- -----------------------------------------------------------------------
 -- Generate fields for a "display hint" object
 -- -----------------------------------------------------------------------
@@ -100,7 +98,7 @@ local function write_c_displayhint_object(output,node)
     end
     if (indextyperef) then
       displayhint = "REFERENCE_TYPE"
-      displayarg = string.format("{ .RefObj = %s }", indextyperef.edslib_refobj_initializer)
+      displayarg = string.format("{ .RefObj = %s }", indextyperef.edslib_refobj_typedb_initializer)
     end
   end
   return {
@@ -116,22 +114,8 @@ end
 -- This is just the user-friendly name of a data type
 -- To conserve some space the namespace is stored separately from the type names
 local function map_edslib_displayname(output,node)
-  local namespace = node:find_parent("PACKAGE")
-  local name = node:get_qualified_name()
-  namespace = namespace and namespace:get_qualified_name() or ""
-  if (string.sub(name,1,1 + string.len(namespace)) == (namespace .. "/")) then
-    name = string.sub(name,2 + string.len(namespace))
-    if (not datasheet_namespace_objs[namespace]) then
-      datasheet_namespace_objs[namespace] = SEDS.to_safe_identifier(namespace) .. "_NAMESPACE"
-      output:write(string.format("static const char %s[] = \"%s\";",
-        datasheet_namespace_objs[namespace], namespace))
-      output:add_whitespace(1)
-    end
-  else
-    namespace = nil
-  end
+  local name = node.name or ""
   return {
-    Namespace = datasheet_namespace_objs[namespace],
     Name = string.format("\"%s\"", name),
   }
 end
@@ -148,7 +132,7 @@ local datatype_output_handlers =
   write_c_displayhint_object
 }
 
-local global_sym_prefix = SEDS.get_define("MISSION_NAME")
+local global_sym_prefix = SEDS.get_define("EDSTOOL_PROJECT_NAME")
 local global_file_prefix = global_sym_prefix and string.lower(global_sym_prefix) or "eds"
 global_sym_prefix = global_sym_prefix and string.upper(global_sym_prefix) or "EDS"
 
@@ -167,7 +151,7 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
 
   output:section_marker("Display Hint Objects")
   for node in ds:iterate_subtree() do
-    if (node.edslib_refobj_local_index and node.header_data) then
+    if (node.edslib_refobj_typedb_index) then
       local objs = {}
       for i,handler in ipairs(datatype_output_handlers) do
         local fields = handler(output,node)
@@ -179,7 +163,7 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
     end
   end
 
-  local ds_name = SEDS.to_macro_name(ds.name)
+  local ds_name = SEDS.to_macro_name(ds:get_flattened_name())
 
   output:section_marker("Lookup Table")
   output:write(string.format("static const EdsLib_DisplayDB_Entry_t %s_DISPLAYINFO_TABLE[] =", ds_name))
@@ -224,12 +208,13 @@ end
 
 output:add_whitespace(1)
 
-output:write(string.format("const EdsLib_DisplayDB_t %s_DISPLAYDB_APPTBL[%s_MAX_INDEX] =", global_sym_prefix, global_sym_prefix))
+output:write(string.format("const EdsLib_DisplayDB_t EDSLIB_%s_DISPLAYDB_APPTBL[%s_MAX_INDEX] =", global_sym_prefix, global_sym_prefix))
 output:start_group("{")
 for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
   local ds_name = SEDS.to_macro_name(ds.name)
+  local ds_flat_name = SEDS.to_macro_name(ds:get_flattened_name())
   output:append_previous(",");
-  output:write(string.format("[%s_INDEX_%s] = &%s_DISPLAY_DB",global_sym_prefix,ds_name,ds_name))
+  output:write(string.format("[%s_INDEX_%s] = &%s_DISPLAY_DB",global_sym_prefix,ds_name,ds_flat_name))
 end
 output:end_group("};")
 

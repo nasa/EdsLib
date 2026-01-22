@@ -35,6 +35,12 @@
 
 #include "edslib_internal.h"
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 int32_t EdsLib_DataTypeIterator_Impl(const EdsLib_DatabaseObject_t *GD,
         EdsLib_DataTypeIterator_ControlBlock_t *StateInfo)
 {
@@ -60,11 +66,11 @@ int32_t EdsLib_DataTypeIterator_Impl(const EdsLib_DatabaseObject_t *GD,
         return EDSLIB_INCOMPLETE_DB_OBJECT;
     }
 
+    CurrLev->CurrDepth = TopDepth;
     CurrLev->EndOffset = CurrLev->DataDictPtr->SizeInfo;
     CurrLev->EndOffset.Bits += CurrLev->StartOffset.Bits;
     CurrLev->EndOffset.Bytes += CurrLev->StartOffset.Bytes;
-    if (CurrLev->DataDictPtr->BasicType != EDSLIB_BASICTYPE_CONTAINER &&
-            CurrLev->DataDictPtr->BasicType != EDSLIB_BASICTYPE_ARRAY)
+    if (CurrLev->DataDictPtr->NumSubElements == 0)
     {
         /*
          * This handles cases where the entity was a scalar.
@@ -100,6 +106,7 @@ int32_t EdsLib_DataTypeIterator_Impl(const EdsLib_DatabaseObject_t *GD,
                 ++CurrLev;
                 ++TopDepth;
                 memset(CurrLev, 0, sizeof(*CurrLev));
+                CurrLev->CurrDepth = TopDepth;
             }
 
             /* It is never valid to descend twice (must "continue" at least once to get the 1st element) */
@@ -180,7 +187,8 @@ int32_t EdsLib_DataTypeIterator_Impl(const EdsLib_DatabaseObject_t *GD,
                     CurrLev->EndOffset.Bits += ElementSize.Bits;
                 }
             }
-            else if (ParentLev->DataDictPtr->BasicType == EDSLIB_BASICTYPE_CONTAINER)
+            else if (ParentLev->DataDictPtr->BasicType == EDSLIB_BASICTYPE_CONTAINER ||
+                     ParentLev->DataDictPtr->BasicType == EDSLIB_BASICTYPE_COMPONENT)
             {
                 /* Copy the entry details directly from the DB */
                 CurrLev->Details = ParentLev->DataDictPtr->Detail.Container->
@@ -248,5 +256,3 @@ int32_t EdsLib_DataTypeIterator_Impl(const EdsLib_DatabaseObject_t *GD,
 
     return Status;
 }
-
-

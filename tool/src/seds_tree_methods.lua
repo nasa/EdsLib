@@ -197,8 +197,38 @@ end
 --
 local function get_flattened_name(node,suffix)
   local output = {}
+  local ref_entity = node
+
+  -- Name qualifier table for use with seds_tree_node objects
+  local SYMBOLNAME_QUALIFIER_TABLE = {
+    ["DEFINE"] = "EdsParam",
+    ["DATASHEET"] = "EdsDatasheet",
+    ["NAMESPACE"] = "EdsNamespace",
+    ["PACKAGE"] = "EdsPackage",
+    ["PACKAGEFILE"] = "EdsPackage",
+    ["BOOLEAN_DATATYPE"] = "EdsBoolean",
+    ["INTEGER_DATATYPE"] = "EdsInteger",
+    ["CONTAINER_DATATYPE"] = "EdsContainer",
+    ["ARRAY_DATATYPE"] = "EdsArray",
+    ["FLOAT_DATATYPE"] = "EdsFloat",
+    ["ENUMERATION_DATATYPE"] = "EdsEnum",
+    ["ENUMERATION_ENTRY"] = "EdsLabel",
+    ["STRING_DATATYPE"] = "EdsString",
+    ["GENERIC_TYPE"] = "EdsGeneric",
+    ["COMPONENT"] = "EdsComponent",
+    ["DECLARED_INTERFACE"] = "EdsInterface",
+    ["PROVIDED_INTERFACE"] = "EdsInterface",
+    ["REQUIRED_INTERFACE"] = "EdsInterface",
+    ["COMMAND"] = "EdsCommand"
+  }
+
+  while (ref_entity.entity_type == "ALIAS_DATATYPE") do
+    ref_entity = ref_entity.type
+  end
+
   -- Note that LUA treats "nil" table values as unassigned
   -- So if any of the inputs are nil it will simply be omitted
+  output[1 + #output] = SYMBOLNAME_QUALIFIER_TABLE[ref_entity.entity_type]
   output[1 + #output] = get_qualified_name(node)
   output[1 + #output] = suffix
 
@@ -212,27 +242,9 @@ end
 -- Name qualifier table for use with seds_tree_node objects
 local CTYPE_QUALIFIER_TABLE = {
   ["packed"] = "PackedBuffer_",
+  ["align"] = "AlignedBuffer_",
   ["native"] = "NativeBuffer_",
   [true] = "NativeBuffer_"
-}
-
-local CTYPE_JPHFIX_TABLE = {
-  CONTAINER_DATATYPE = "Struct",
-  FLOAT_DATATYPE = "Atom",
-  INTEGER_DATATYPE = "Atom",
-  BOOLEAN_DATATYPE = "Atom",
-  GENERIC_TYPE = "Generic",
-  ENUMERATION_DATATYPE = "Enum",
-  STRING_DATATYPE = "String",
-  ARRAY_DATATYPE = "Array",
-  PARAMETER = "Parameter",
-  COMMAND = "Command",
-  ARGUMENT = "Argument",
-  COMPONENT = "Component",
-  VARIABLE = "Variable",
-  DECLARED_INTERFACE = "Interface",
-  PROVIDED_INTERFACE = "Interface",
-  REQUIRED_INTERFACE = "Interface"
 }
 
 -- -------------------------------------------------
@@ -250,8 +262,13 @@ local function get_ctype_basename(node, containment_style)
     prefix = containment_style .. "_"
   end
 
+  -- For implicitly created types, add a unique prefix so that there 
+  -- is no chance of a name collision with a non-implicit type
+  if (prefix and node.implicit_basetype) then
+    prefix = "Implicit" .. prefix
+  end
+
   return (prefix or "") .. SEDS.to_safe_identifier(node:get_qualified_name())
-  --return SEDS.to_safe_identifier(node:get_qualified_name())
 end
 
 -- -------------------------------------------------------------------------

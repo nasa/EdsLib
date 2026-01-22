@@ -552,7 +552,11 @@ void seds_output_file_open(seds_output_file_t *pfile, const char *basedir, const
 
     seds_output_file_close(pfile);
 
-    if (mkdir(basedir, 0755) < 0 && errno != EEXIST)
+    if (basedir == NULL)
+    {
+        basedir = ".";
+    }
+    else if (mkdir(basedir, 0755) < 0 && errno != EEXIST)
     {
         SEDS_REPORT_ERRNO(FATAL, basedir);
     }
@@ -787,6 +791,42 @@ static int seds_lua_output_file_set_method(lua_State *lua)
 
 /* ------------------------------------------------------------------- */
 /**
+ * Get definition from the lua environment with fallback
+ *
+ * Attempts to call SEDS.get_define() with the given varname, and leaves
+ * the result on the top of the stack.  This adjust the stack such that
+ * one (and only one) item is added, and it is either the result from 
+ * get_define or the fallback string.
+ *
+ */
+static void seds_get_define_safe(lua_State *lua, const char *varname, const char *fallback)
+{    
+    int stack_top = lua_gettop(lua);
+
+    lua_getglobal(lua, "SEDS");
+    if (lua_type(lua, -1) == LUA_TTABLE)
+    {
+        lua_getfield(lua, -1, "get_define");
+        if (lua_type(lua, -1) == LUA_TFUNCTION)
+        {
+            lua_pushstring(lua, varname);
+            lua_call(lua, 1, 1);
+        }
+    }
+
+    /* numbers or strings are allowed as a return value */
+    if (lua_type(lua, -1) != LUA_TNUMBER && lua_type(lua, -1) != LUA_TSTRING)
+    {
+        lua_pushstring(lua, fallback);
+    }
+
+    /* Put the result at the former stack top and remove intermediates */
+    lua_replace(lua, stack_top + 1);
+    lua_settop(lua, stack_top + 1);
+}
+
+/* ------------------------------------------------------------------- */
+/**
  * Lua callable file open function
  *
  * Unlike the other methods, this is attached in the SEDS global object.
@@ -880,27 +920,14 @@ static int seds_lua_output_file_open(lua_State *lua)
         if (inp != destfile && tolower((int)*inp) == 'h')
         {
             /* Must be a header file - put into "inc" subdir */
-            subdir = "inc";
+            seds_get_define_safe(lua, "INCDIR", "inc");
 
             /* Set up for the guard macro */
-            lua_getglobal(lua, "SEDS");
-            if (lua_type(lua, -1) == LUA_TTABLE)
-            {
-                lua_getfield(lua, -1, "get_define");
-                if (lua_type(lua, -1) == LUA_TFUNCTION)
-                {
-                    lua_pushstring(lua, "MISSION_NAME");
-                    lua_call(lua, 1, 1);
-                    if (lua_type(lua, -1) == LUA_TSTRING)
-                    {
-                        lua_pushstring(lua, "_");
-                        lua_concat(lua, 2);
-                        strncpy(pfile->cheader_guard_string, lua_tostring(lua, -1), sizeof(pfile->cheader_guard_string) - 1);
-                        pfile->cheader_guard_string[sizeof(pfile->cheader_guard_string) - 1] = 0;
-                    }
-                }
-                lua_pop(lua, 1);
-            }
+            seds_get_define_safe(lua, "EDSTOOL_PROJECT_NAME", "EDS");
+            lua_pushstring(lua, "_");
+            lua_concat(lua, 2);
+            strncpy(pfile->cheader_guard_string, lua_tostring(lua, -1), sizeof(pfile->cheader_guard_string) - 1);
+            pfile->cheader_guard_string[sizeof(pfile->cheader_guard_string) - 1] = 0;
             lua_pop(lua, 1);
 
             inp = destfile;
@@ -926,8 +953,10 @@ static int seds_lua_output_file_open(lua_State *lua)
         else
         {
             /* Must be a source file - put into "src" subdir */
-            subdir = "src";
+            seds_get_define_safe(lua, "SRCDIR", "src");
         }
+
+        subdir = lua_tostring(lua, -1);
 
         /*
          * Set up C-style comment blocks
@@ -978,7 +1007,7 @@ static int seds_lua_output_file_open(lua_State *lua)
     }
 
     lua_rawgetp(lua, LUA_REGISTRYINDEX, &sedstool.GLOBAL_SYMBOL_TABLE_KEY);
-    lua_getfield(lua, -1, "MISSION_BINARY_DIR");
+    lua_getfield(lua, -1, "EDSTOOL_OUTPUT_DIR");
 
     seds_output_file_open(pfile, lua_tostring(lua, -1), subdir, destfile, sourcefile);
 

@@ -45,10 +45,8 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
-/* compatibility shim to support compilation with Lua5.1 */
-#include "edslib_lua51_compatibility.h"
-
 #include "edslib_id.h"
+#include "edslib_global.h"
 #include "edslib_datatypedb.h"
 #include "edslib_displaydb.h"
 #include "edslib_binding_objects.h"
@@ -112,6 +110,7 @@ static int EdsLib_LuaBinding_GetField(lua_State *lua)
     switch (Object->TypeInfo.ElemType)
     {
     case EDSLIB_BASICTYPE_CONTAINER:
+    case EDSLIB_BASICTYPE_COMPONENT:
     {
         /* For containers, the field should be a name */
         const char *Name = luaL_checkstring(lua, 2);
@@ -731,9 +730,9 @@ static int EdsLib_LuaBinding_EncodeObject(lua_State *lua)
 {
     EdsLib_Binding_DescriptorObject_t *ObjectUserData;
     EdsLib_DataTypeDB_DerivedTypeInfo_t DerivInfo;
-    EdsLib_DataTypeDB_TypeInfo_t PackedInfo;
     EdsLib_Id_t PackMsg;
-    uint32_t MaxByteSize;
+    EdsLib_SizeInfo_t ActualSize;
+    uint32_t MaxPackedSize;
     uint8_t LocalScratchBuffer[64];
     void *PackBufPtr;
     int32_t PackStatus;
@@ -745,45 +744,47 @@ static int EdsLib_LuaBinding_EncodeObject(lua_State *lua)
             &DerivInfo) == EDSLIB_SUCCESS)
     {
         /* allocate enough buffer storage for the largest derivative type */
-        MaxByteSize = DerivInfo.MaxSize.Bytes;
+        MaxPackedSize = DerivInfo.MaxSize.Bits;
     }
     else
     {
         /* object has no derivative types, so allocate based on object size alone */
-        MaxByteSize = ObjectUserData->TypeInfo.Size.Bytes;
+        MaxPackedSize = ObjectUserData->TypeInfo.Size.Bits;
     }
 
     nret = 0;
     PackMsg = ObjectUserData->EdsId;
+    MaxPackedSize = EdsLib_BITS_TO_OCTETS(MaxPackedSize);
 
     /*
      * Use the local stack scratch buffer for smaller objects, or
      * Use the heap/malloc for larger objects
      */
-    if (MaxByteSize <= sizeof(LocalScratchBuffer))
+    if (MaxPackedSize <= sizeof(LocalScratchBuffer))
     {
         PackBufPtr = LocalScratchBuffer;
     }
     else
     {
-        PackBufPtr = malloc(MaxByteSize);
+        PackBufPtr = malloc(MaxPackedSize);
     }
 
     if (PackBufPtr != NULL)
     {
-        memset(PackBufPtr, 0, MaxByteSize);
+        memset(PackBufPtr, 0, MaxPackedSize);
 
-        PackStatus = EdsLib_DataTypeDB_PackCompleteObject(ObjectUserData->GD,
+        ActualSize.Bits = EdsLib_OCTETS_TO_BITS(MaxPackedSize);
+        ActualSize.Bytes = EdsLib_Binding_GetNativeSize(ObjectUserData);
+
+        PackStatus = EdsLib_DataTypeDB_PackCompleteObjectVarSize(ObjectUserData->GD,
                 &PackMsg,
                 PackBufPtr,
                 EdsLib_Binding_GetNativeObject(ObjectUserData),
-                8 * MaxByteSize,
-                MaxByteSize);
+                &ActualSize);
 
         if (PackStatus == EDSLIB_SUCCESS)
         {
-            EdsLib_DataTypeDB_GetTypeInfo(ObjectUserData->GD, PackMsg, &PackedInfo);
-            lua_pushlstring(lua, PackBufPtr, (PackedInfo.Size.Bits + 7) / 8);
+            lua_pushlstring(lua, PackBufPtr, EdsLib_BITS_TO_OCTETS(ActualSize.Bits));
             ++nret;
         }
 
@@ -834,8 +835,14 @@ static int EdsLib_LuaBinding_GetMetaData(lua_State *lua)
     case EDSLIB_BASICTYPE_CONTAINER:
         lua_pushstring(lua, "CONTAINER");
         break;
+    case EDSLIB_BASICTYPE_COMPONENT:
+        lua_pushstring(lua, "COMPONENT");
+        break;
     case EDSLIB_BASICTYPE_ARRAY:
         lua_pushstring(lua, "ARRAY");
+        break;
+    case EDSLIB_BASICTYPE_GENERIC:
+        lua_pushstring(lua, "GENERIC");
         break;
     default:
         lua_pushnil(lua);
@@ -887,7 +894,7 @@ static int EdsLib_LuaBinding_GetObjectLength(lua_State *lua)
     {
         ResultLen = Object->TypeInfo.NumSubElements;
     }
-    else if (Object->TypeInfo.ElemType == EDSLIB_BASICTYPE_CONTAINER)
+    else if (Object->TypeInfo.NumSubElements > 0)
     {
         /*
          * Note for containers this is not always the same as NumSubElements due to

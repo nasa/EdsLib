@@ -65,16 +65,22 @@ end
 -- This creates a filename of the form:
 --    qualifier_eds_filename
 --
--- where everything is converted to lowercase.  If qualifier is nil, then the MISSION_NAME
+-- where everything is converted to lowercase.  If qualifier is nil, then the EDSTOOL_PROJECT_NAME
 -- global definition is used, and if that is also nil then it is left out entirely.
 --
 SEDS.to_filename = function(filename, qualifier)
 
   if (not qualifier) then
-    qualifier = SEDS.get_define("MISSION_NAME") or ""
+    qualifier = SEDS.get_define("EDSTOOL_PROJECT_NAME")
   end
 
-  local result = string.lower(qualifier .. "_eds_" .. filename)
+  if (qualifier) then
+    qualifier = qualifier .. "_"
+  else
+    qualifier = ""
+  end
+
+  local result = string.lower(qualifier .. "eds_" .. filename)
 
   -- In order to ensure that it is a safe filename on most typical filesystems,
   -- remove any non alphanumeric character and replace it with an underbar.
@@ -136,16 +142,6 @@ SEDS.to_macro_name = function(ident)
   return result
 end
 
-local CTYPEDEF_JPHFIX_TABLE = {
-  CONTAINER_DATATYPE = "Struct",
-FLOAT_DATATYPE = "Atom",
-INTEGER_DATATYPE = "Atom",
-BOOLEAN_DATATYPE = "Atom",
-ENUMERATION_DATATYPE = "Enum",
-STRING_DATATYPE = "String",
-ARRAY_DATATYPE = "Array"
-}
-
 local CTYPEDEF_QUALIFIER_TABLE = {
   GENERIC_TYPE = "Generic_",
   PARAMETER = "Parameter_",
@@ -181,6 +177,11 @@ SEDS.to_ctype_typedef = function(ref,containment_style)
     -- if containment_style was set, then the qualifier should already be embedded within refstr
     if (containment_style) then
       prefix = ""
+    elseif (ref.implicit_basetype) then
+      -- There can actually be more than one type on a single entry, so this needs to include
+      -- the data type as well as the name to differentiate it and avoid collision.
+      prefix = "Implicit_" .. SEDS.to_safe_identifier(ref.entity_type) .. "_"
+      prefix = prefix:gsub("_DATATYPE_", "_") -- DATATYPE is redundant
     else
       prefix = "DataType_"
     end
@@ -347,6 +348,11 @@ SEDS.any_datatype_filter = SEDS.create_nodetype_filter
   "GENERIC_TYPE"
 }
 
+SEDS.generictype_filter = SEDS.create_nodetype_filter
+{
+  "GENERIC_TYPE"
+}
+
 -- A filter function that will match only containers (for base types)
 SEDS.container_filter = SEDS.create_nodetype_filter
 {
@@ -421,9 +427,8 @@ SEDS.container_entry_filter = SEDS.create_nodetype_filter
   "CONTAINER_ERROR_CONTROL_ENTRY"
 }
 
-SEDS.intf_entry_filter = SEDS.create_nodetype_filter
+SEDS.command_filter = SEDS.create_nodetype_filter
 {
-  "PARAMETER",
   "COMMAND"
 }
 
@@ -447,6 +452,19 @@ SEDS.constraint_filter = SEDS.create_nodetype_filter
   "VALUE_CONSTRAINT",
   "TYPE_CONSTRAINT",
   "RANGE_CONSTRAINT"
+}
+
+SEDS.presence_constraint_filter = SEDS.create_nodetype_filter
+{
+  "PRESENCE_VALUE_CONSTRAINT",
+  "PRESENCE_TYPE_CONSTRAINT",
+  "PRESENCE_RANGE_CONSTRAINT"
+}
+
+SEDS.namespace_filter = SEDS.create_nodetype_filter
+{
+  "PACKAGE",
+  "NAMESPACE"
 }
 
 -- End of file.  Return the table object to the caller

@@ -53,7 +53,7 @@
 #include "testexec.h"
 #include "to_lab_eds_datatypes.h"
 
-#define TO_LAB_BASE_PORT        1235
+#define TO_LAB_BASE_PORT        2234
 #define CI_LAB_BASE_PORT        1234
 
 #define UDP_NET_BUFFER_SIZE     8192

@@ -37,6 +37,7 @@
 #include "seds_tree_node.h"
 #include "seds_instance_node.h"
 #include "seds_memreq.h"
+#include "seds_range.h"
 #include "seds_outputfile.h"
 #include "seds_xmlparser.h"
 #include "seds_plugin.h"
@@ -74,14 +75,16 @@ seds_toplevel_t sedstool;
 
 static const char *SEDS_REQUIRED_GLOBALS[] =
 {
-    "MISSION_BINARY_DIR",
-    "MISSION_NAME",
+    "EDSTOOL_OUTPUT_DIR",
+    "EDSTOOL_PROJECT_NAME",
     "CC",
     "LD",
     "AR",
     "CFLAGS",
     "LDFLAGS",
-
+    "SRCDIR",
+    "INCDIR",
+    "OBJDIR"
 };
 
 static void seds_export_environment(lua_State *lua)
@@ -508,6 +511,7 @@ int main(int argc, char *argv[])
     seds_tree_node_register_globals(lua);
     seds_instance_node_register_globals(lua);
     seds_memreq_register_globals(lua);
+    seds_range_register_globals(lua);
     seds_preprocess_register_globals(lua);
     seds_outputfile_register_globals(lua);
     seds_plugin_register_globals(lua);

@@ -55,16 +55,16 @@ local function get_integer_bits_from_range(range, enctype)
   local maxdigits
   local bitsperdigit
 
-  if (range.max and range.max.value) then
-    max = range.max.value
-    if (not range.max.inclusive) then
+  if (range.max_value) then
+    max = range.max_value
+    if (not range.max_inclusive) then
       max = max - 1
     end
   end
 
-  if (range.min and range.min.value) then
-    min = range.min.value
-    if (not range.min.inclusive) then
+  if (range.min_value) then
+    min = range.min_value
+    if (not range.min_inclusive) then
       min = min + 1
     end
   else
@@ -79,7 +79,7 @@ local function get_integer_bits_from_range(range, enctype)
   if (enctype == "packedbcd" or enctype == "bcd") then
     -- determine number of digits in positive range
     if (max > 0) then
-      local e = math.log10(max)
+      local e = math.log(max, 10)
       -- currently no sign indicator for positive values
       positivedigits = math.ceil(math.abs(e))
     else
@@ -88,7 +88,7 @@ local function get_integer_bits_from_range(range, enctype)
 
     -- determine number of digits in negative range
     if (min < 0) then
-      local e = math.log10(-min)
+      local e = math.log(-min, 10)
       -- add 1 for the "minus" indicator
       negativedigits = 1 + math.ceil(math.abs(e))
     else
@@ -104,42 +104,7 @@ local function get_integer_bits_from_range(range, enctype)
   else
     bitsperdigit = 1
 
-    -- determine number of digits in positive range
-    if (max > 0) then
-      local v,e = math.frexp(max)
-      positivedigits = (e > 1) and e or 1
-      -- Because numbers are internally "double" values,
-      -- anything above ~52 bits may result in an extra
-      -- digit due to rounding up.  This adds a "slop factor"
-      -- to avoid triggering false errors (the cost is that
-      -- this might not flag a borderline case that is an error)
-      if (positivedigits > 52 and v < 0.55) then
-        positivedigits = positivedigits - 1
-      end
-    else
-      positivedigits = 0
-    end
-
-    -- determine number of digits in negative range
-    if (min < 0) then
-      local v,e = math.frexp(-min)
-      negativedigits = (e > 1) and (e+1) or 2
-      -- same as positive case
-      if (negativedigits > 52 and math.abs(v) < 0.55) then
-        negativedigits = negativedigits - 1
-      elseif (v == 0.5 and (not enctype or enctype == "twoscomplement")) then
-        -- special handling for twos complement, has one extra
-        -- value of range on the negative side
-        negativedigits = negativedigits - 1
-      end
-
-      -- In base 2 a sign bit is always needed
-      -- account for extra bit on the positive side, too
-      positivedigits = 1 + positivedigits
-    else
-      negativedigits = 0
-    end
-
+    positivedigits,negativedigits = SEDS.calulate_range_digits(max,min,enctype)
   end
 
   -- the size of the field will be the larger of either
@@ -224,7 +189,7 @@ local function get_integer_size(encnode,rangenode)
     end
 
     -- the sign consumes space for one digit, which must be subtracted
-    limit = math.pow(base,digits - (signed and 1 or 0))
+    limit = base ^ (digits - (signed and 1 or 0))
 
     if (limit > base) then
       if (signed) then
@@ -319,14 +284,26 @@ local function resolve_container_datatype_size(node)
   --  1. whether or not we have any non-simple entries (error control, length, list, etc)
   --  2. what the possible range of each entry is
   local special_fields = false
+  local variable_presence = false
   for idx,off in ipairs(offsets) do
     local refnode = off.entry
     local vrange
     local resolved_range
+    local presence_node
     if (refnode) then
       special_fields = special_fields or refnode.entity_type ~= "CONTAINER_ENTRY"
       vrange = refnode:find_first("VALID_RANGE")
       resolved_range = vrange and vrange.resolved_range
+      presence_node = refnode:find_first("PRESENT_WHEN")
+      if (presence_node) then
+        variable_presence = true
+
+        -- We need to modify the hash based on the constraints, otherwise it might
+        -- falsly identify a matching container when it has different constraints
+        for constr in presence_node:iterate_subtree(SEDS.presence_constraint_filter) do
+          final_size:flavor("PRESENCE" .. tostring(constr.resolved_range))
+        end
+      end
     end
     if (not resolved_range and off.type) then
       resolved_range = off.type.resolved_range
@@ -336,6 +313,10 @@ local function resolve_container_datatype_size(node)
       end
     end
     off.resolved_range = resolved_range
+  end
+
+  if (variable_presence) then
+    final_size:setvariable(true)
   end
 
   if (special_fields) then

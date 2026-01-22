@@ -179,9 +179,9 @@ void EdsLib_Binding_InitStaticFields(EdsLib_Binding_DescriptorObject_t *ObjectUs
  * Generated stub function for EdsLib_Binding_InitSubObject()
  * ----------------------------------------------------
  */
-void EdsLib_Binding_InitSubObject(EdsLib_Binding_DescriptorObject_t *      SubObject,
+void EdsLib_Binding_InitSubObject(EdsLib_Binding_DescriptorObject_t       *SubObject,
                                   const EdsLib_Binding_DescriptorObject_t *ParentObj,
-                                  const EdsLib_DataTypeDB_EntityInfo_t *   Component)
+                                  const EdsLib_DataTypeDB_EntityInfo_t    *Component)
 {
     UT_GenStub_AddParam(EdsLib_Binding_InitSubObject, EdsLib_Binding_DescriptorObject_t *, SubObject);
     UT_GenStub_AddParam(EdsLib_Binding_InitSubObject, const EdsLib_Binding_DescriptorObject_t *, ParentObj);
@@ -226,7 +226,7 @@ void EdsLib_Binding_Initialize(void)
  * ----------------------------------------------------
  */
 int32_t EdsLib_Binding_LoadValue(const EdsLib_Binding_DescriptorObject_t *ObjectUserData,
-                                 EdsLib_GenericValueBuffer_t *            ValBuf)
+                                 EdsLib_GenericValueBuffer_t             *ValBuf)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_Binding_LoadValue, int32_t);
 
@@ -244,7 +244,7 @@ int32_t EdsLib_Binding_LoadValue(const EdsLib_Binding_DescriptorObject_t *Object
  * ----------------------------------------------------
  */
 void EdsLib_Binding_SetDescBuffer(EdsLib_Binding_DescriptorObject_t *DescrObj,
-                                  EdsLib_Binding_Buffer_Content_t *  TargetBuffer)
+                                  EdsLib_Binding_Buffer_Content_t   *TargetBuffer)
 {
     UT_GenStub_AddParam(EdsLib_Binding_SetDescBuffer, EdsLib_Binding_DescriptorObject_t *, DescrObj);
     UT_GenStub_AddParam(EdsLib_Binding_SetDescBuffer, EdsLib_Binding_Buffer_Content_t *, TargetBuffer);
@@ -258,7 +258,7 @@ void EdsLib_Binding_SetDescBuffer(EdsLib_Binding_DescriptorObject_t *DescrObj,
  * ----------------------------------------------------
  */
 int32_t EdsLib_Binding_StoreValue(const EdsLib_Binding_DescriptorObject_t *ObjectUserData,
-                                  EdsLib_GenericValueBuffer_t *            ValBuf)
+                                  EdsLib_GenericValueBuffer_t             *ValBuf)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_Binding_StoreValue, int32_t);
 

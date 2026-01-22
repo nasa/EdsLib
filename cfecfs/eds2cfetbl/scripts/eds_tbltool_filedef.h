@@ -10,7 +10,7 @@ EdsDataType_CFE_SB_MsgIdValue_t CFE_SB_CmdTopicIdToMsgId(uint16_t TopicId, uint1
 EdsDataType_CFE_SB_MsgIdValue_t CFE_SB_TlmTopicIdToMsgId(uint16_t TopicId, uint16_t InstanceNum);
 
 uint16_t EdsTableTool_GetProcessorId(void);
-void EdsTableTool_DoExport(void *arg, const void *filedefptr, const void *obj, size_t sz);
+void EdsTableTool_DoExport(const void *filedefptr, const void *objptr, size_t objsize, const char *typename, size_t typesize);
 
 
 static inline EdsDataType_CFE_SB_MsgIdValue_t CFE_SB_GlobalCmdTopicIdToMsgId(uint16_t TopicId)

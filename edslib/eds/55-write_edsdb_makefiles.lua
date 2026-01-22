@@ -32,8 +32,8 @@ local output
 local objdir = SEDS.get_define("OBJDIR") or "obj"
 local makefilename = SEDS.to_filename("db_objects.mk")
 local libtypes = { ".a", ".so", ".obj" }
-local dbobjects = { "_datatypedb_impl.o", "_displaydb_impl.o" }
-local global_sym_prefix = SEDS.get_define("MISSION_NAME")
+local dbobjects = { "_datatypedb_impl.o", "_displaydb_impl.o", "_intfdb_impl.o" }
+local global_sym_prefix = SEDS.get_define("EDSTOOL_PROJECT_NAME")
 global_sym_prefix = global_sym_prefix and string.upper(global_sym_prefix) or "EDS"
 
 -- -------------------------------------
@@ -67,15 +67,42 @@ output:write(string.format("#include \"edslib_database_types.h\""))
 output:write(string.format("#include \"%s\"",SEDS.to_filename("master_index.h")))
 output:add_whitespace(1)
 
-output:write(string.format("extern EdsLib_DataTypeDB_t %s_DATATYPEDB_APPTBL[];",global_sym_prefix))
-output:write(string.format("extern EdsLib_DisplayDB_t %s_DISPLAYDB_APPTBL[];",global_sym_prefix))
+output:write(string.format("extern EdsLib_DataTypeDB_t EDSLIB_%s_DATATYPEDB_APPTBL[];",global_sym_prefix))
+output:write(string.format("extern EdsLib_DisplayDB_t EDSLIB_%s_DISPLAYDB_APPTBL[];",global_sym_prefix))
+output:write(string.format("extern EdsLib_IntfDB_t EDSLIB_%s_INTFDB_APPTBL[];",global_sym_prefix))
+output:add_whitespace(1)
+
+output:write(string.format("static const char * const EDSLIB_%s_APPNAMETBL[] =", global_sym_prefix))
+output:start_group("{")
+output:write("NULL") -- the entry "0" is not a valid appidx
+
+for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
+  local ns_str
+  local ns_node = ds
+  while (true) do
+    ns_node = ns_node:iterate_children(SEDS.namespace_filter)()  -- grab the first item from the iterator
+    if (not ns_node) then
+      break
+    end
+    ns_str = (ns_str and (ns_str .. "/") or "") .. ns_node.name
+  end
+  output:append_previous(",")
+  if (ns_str) then
+    output:write(string.format("\"%s\"", ns_str))
+  else
+    output:write("NULL") -- Not expected, but need to fill the slot with something so the indicies line up
+  end
+end
+output:end_group("};")
 
 output:section_marker("EDS mission object that incorporates all generated elements")
 output:write(string.format("const EdsLib_DatabaseObject_t %s_DATABASE =",global_sym_prefix))
 output:start_group("{")
 output:write(string.format(".AppTableSize = %s_MAX_INDEX,",global_sym_prefix))
-output:write(string.format(".DataTypeDB_Table = %s_DATATYPEDB_APPTBL,",global_sym_prefix))
-output:write(string.format(".DisplayDB_Table = %s_DISPLAYDB_APPTBL,",global_sym_prefix))
+output:write(string.format(".AppName_Table = EDSLIB_%s_APPNAMETBL,", global_sym_prefix))
+output:write(string.format(".DataTypeDB_Table = EDSLIB_%s_DATATYPEDB_APPTBL,",global_sym_prefix))
+output:write(string.format(".DisplayDB_Table = EDSLIB_%s_DISPLAYDB_APPTBL,",global_sym_prefix))
+output:write(string.format(".IntfDB_Table = EDSLIB_%s_INTFDB_APPTBL,",global_sym_prefix))
 output:end_group("};")
 
 SEDS.output_close(output)
@@ -89,8 +116,9 @@ SEDS.output_close(output)
 -- --------------------------------------------------------------------
 output = SEDS.output_open(makefilename)
 
-output:write("include $(O)/edstool-buildenv.d $(wildcard $(O)/*.d)")
-output:write("include $(EDSLIB_SOURCE_DIR)/cmake/dbobj_patternrules.mk")
+output:write("include edstool-namespace-$(EDSTOOL_PROJECT_NAME).mk")
+output:write("include $(O)/edstool-buildenv.mk $(wildcard $(O)/*.d)")
+output:write("include $(EDS_REPO_SOURCE_DIR)/edslib/cmake/dbobj_patternrules.mk")
 output:add_whitespace(1)
 
 output:section_marker("Mission Summary Object")

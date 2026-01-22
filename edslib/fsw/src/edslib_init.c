@@ -34,17 +34,19 @@
 
 #include "edslib_internal.h"
 
-/*
- * *************************************************************************************
+/*----------------------------------------------------------------
+ *
+ * EdsLib public API function
+ *
  * Complete Initializer Function
  * Initializes the DataTypeDB, DisplayDB, and Binding Object subsystems.
- * *************************************************************************************
- */
-
+ *
+ *-----------------------------------------------------------------*/
 void EdsLib_Initialize(void)
 {
     EdsLib_DataTypeDB_Initialize();
     EdsLib_DisplayDB_Initialize();
+    EdsLib_IntfDB_Initialize();
     EdsLib_Binding_Initialize();
 }
 

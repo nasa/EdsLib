@@ -55,9 +55,8 @@ for rule in SEDS.root:iterate_subtree("INSTANCE_RULE") do
   if (pattern == "singleton") then
     -- Singletons should have a "component" attribute that identifies the component to instantiate
     -- As the pattern suggests, only a single one will be created, and it will be created now.
-    if (not rule.component) then
-      rule:error("invalid singleton component")
-    else
+    -- Just ignore it if the component is not defined
+    if (rule.component) then
       pending_instance_list[1 + #pending_instance_list] =
         SEDS.new_component_instance(rule.component, rule)
     end

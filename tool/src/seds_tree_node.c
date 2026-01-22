@@ -135,6 +135,9 @@ static const char *SEDS_NODETYPE_LOOKUP[SEDS_NODETYPE_MAX] =
         [SEDS_NODETYPE_TYPE_CONSTRAINT] = "TYPE_CONSTRAINT",
         [SEDS_NODETYPE_RANGE_CONSTRAINT] = "RANGE_CONSTRAINT",
         [SEDS_NODETYPE_VALUE_CONSTRAINT] = "VALUE_CONSTRAINT",
+        [SEDS_NODETYPE_PRESENCE_TYPE_CONSTRAINT] = "PRESENCE_TYPE_CONSTRAINT",
+        [SEDS_NODETYPE_PRESENCE_RANGE_CONSTRAINT] = "PRESENCE_RANGE_CONSTRAINT",
+        [SEDS_NODETYPE_PRESENCE_VALUE_CONSTRAINT] = "PRESENCE_VALUE_CONSTRAINT",
         [SEDS_NODETYPE_CONSTRAINT_LAST] = "CONSTRAINT_LAST",
         [SEDS_NODETYPE_ENCODING_FIRST] = "ENCODING_FIRST",
         [SEDS_NODETYPE_INTEGER_DATA_ENCODING] = "INTEGER_DATA_ENCODING",
@@ -362,12 +365,17 @@ static int seds_tree_node_get_property(lua_State *lua)
  */
 static int seds_tree_node_to_string(lua_State *lua)
 {
-    seds_node_t *pnode = lua_touserdata(lua, 1);
+    seds_node_t *pnode = luaL_checkudata(lua, 1, "seds_node");
+    int uv_idx;
     luaL_Buffer buf;
 
+    /* Note - As of Lua 5.4, this may push something onto the stack.
+     * Whereas in 5.3 and below, it does not change the stack. */
     luaL_buffinit(lua, &buf);
 
-    lua_getuservalue(lua, 1);           /* stack pos = 2 */
+    lua_getuservalue(lua, 1);
+    uv_idx = lua_gettop(lua); /* abs position of the uv */
+
     if (pnode->node_type < SEDS_NODETYPE_MAX)
     {
         luaL_addstring(&buf, SEDS_NODETYPE_LOOKUP[pnode->node_type]);
@@ -376,13 +384,13 @@ static int seds_tree_node_to_string(lua_State *lua)
     {
         luaL_addstring(&buf, SEDS_NODETYPE_LOOKUP[SEDS_NODETYPE_UNKNOWN]);
     }
-    lua_getfield(lua, 2, "name");
+    lua_getfield(lua, uv_idx, "name");
     if (lua_isstring(lua, -1))
     {
         luaL_addstring(&buf, " name=");
         luaL_addstring(&buf, lua_tostring(lua, -1));
     }
-    lua_settop(lua, 1);
+    lua_settop(lua, uv_idx - 1);
     luaL_pushresult(&buf);
     return 1;
 }
@@ -503,4 +511,3 @@ void seds_tree_node_register_globals(lua_State *lua)
     lua_rawsetp(lua, LUA_REGISTRYINDEX, &SEDS_TREE_PROPERTIES_LUA_KEY);
 
 }
-

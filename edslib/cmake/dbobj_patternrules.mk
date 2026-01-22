@@ -6,24 +6,7 @@
 #  ******************************************************************************
 #
 
-EDSTOOL_ARCH ?= host
-
-$(O)/%_impl.o: src/%_impl.c
-	@echo EDS: Compiling $(<) for $(EDSTOOL_ARCH)
-	$(CC) $(CFLAGS) -Iinc -D_EDSLIB_BUILD_ -MMD -c -o $@ $<
-
-
-#
-#  ******************************************************************************
-#  **                Pattern rule to build a static archive file               **
-#  ******************************************************************************
-#
-
-$(O)/%.a:
-	@echo EDS: Archiving $(@) for $(EDSTOOL_ARCH)
-	-rm -f $(@)
-	$(AR) cr $@ $^
-
+include $(EDS_REPO_SOURCE_DIR)/edslib/cmake/base_patternrules.mk
 
 #
 #  ******************************************************************************

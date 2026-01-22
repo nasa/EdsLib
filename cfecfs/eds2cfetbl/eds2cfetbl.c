@@ -53,10 +53,13 @@
 #include "scripts/eds_tbltool_filedef.h"
 
 #include "edslib_init.h"
+#include "edslib_global.h"
+#include "edslib_datatypedb.h"
+#include "edslib_displaydb.h"
+#include "edslib_intfdb.h"
+#include "edslib_binding_objects.h"
 
-/* compatibility shim to support compilation with Lua5.1 */
-#include "edslib_lua51_compatibility.h"
-
+#include "cfe_tbl_eds_defines.h"
 #include "cfe_tbl_filedef.h"
 #include "cfe_mission_eds_parameters.h"
 #include "cfe_mission_eds_interface_parameters.h"
@@ -67,20 +70,59 @@
 #include "cfe_missionlib_lua_softwarebus.h"
 #include "cfe_missionlib_runtime.h"
 
+/* an identifying marker that will be put at the beginning of every "info" (non error/warning) line */
+#define EDSTABLETOOL_INFO "--> "
+
+/* an identifying marker that will be put at the beginning of every EDSTABLETOOL_WARNING "line */
+#define EDSTABLETOOL_WARNING " **WARNING** "
+
+/* an identifying marker that will be put at the beginning of every "error" line */
+#define EDSTABLETOOL_ERROR " **ERROR** "
 
 const char LUA_APPLIST_KEY = 0;
 
+/* This structure captures the metadata from importing an object from C */
+typedef struct EdsTableTool_CObj
+{
+    /* this should capture the original CFE_TBL_FileDef object */
+    CFE_TBL_FileDef_t FileDefInfo;
+
+    /* all the remaining items are filled in as info is determined */
+    size_t TotalObjectSize;
+    size_t ElementSize;
+
+    void *ObjPtr;
+
+    char CTypeName[64];
+    char EdsTypeName[64];
+
+    EdsDataType_BASE_TYPES_ApiName_t RuntimeAppName;
+    EdsDataType_BASE_TYPES_ApiName_t TableName;
+
+    EdsLib_Id_t IntfDataTypeEdsId;
+    EdsLib_Id_t CTypeEdsId;
+    EdsLib_Id_t SelectedTypeEdsId;
+
+} EdsTableTool_CObj_t;
+
+
 typedef struct EdsTableTool_Global
 {
+    /* The Instance number of the current target (in cases where it is instance specific) */
     uint16_t ProcessorId;
-    uint16_t NumMultiple;
 
-    char EdsTypeName[64];
+    /* Whether to allow "passthrough" encoding for objects that do not have EDS */
+    bool AllowPassthrough;
+
+    /* temporary holding buffer for binary objects imported from C table files */
+    EdsTableTool_CObj_t CObj;
 
 } EdsTableTool_Global_t;
 
 EdsTableTool_Global_t EdsTableTool_Global;
 
+/* The table load command is a fixed definition, does not need a lookup */
+const EdsLib_Id_t EDS_TABLE_LOAD_CMD_ID = EDSLIB_INTF_ID(EDS_INDEX(CFE_TBL), EdsCommand_CFE_TBL_Table_load_DECLARATION);
 
 /*----------------------------------------------------------------
  *
@@ -129,69 +171,67 @@ uint16_t EdsTableTool_GetProcessorId(void)
  *
  * Exports a C-defined object to the global instance
  *
- * This expects a lua_State object as the abstract argument,
- * and a table should be the topmost entry in the stack.  The
- * object(s) from C will be wrapped in a Lua object and appended
- * to the table.
+ * This just saves the object info, including the data associated with it,
+ * into the global object so it can be dealt with later.  It has to be copied
+ * to the global because when this is called the object exists only on the stack
+ * in the caller context.
  *
  *-----------------------------------------------------------------*/
-void EdsTableTool_DoExport(void *arg, const void *filedefptr, const void *objptr, size_t objsize)
+void EdsTableTool_DoExport(const void *filedefptr, const void *objptr, size_t objsize, const char *typename, size_t typesize)
 {
-    lua_State *lua = arg;
-    const uint8_t *sptr = objptr;
-    void *tptr;
-    size_t tsz;
-    int tbl_pos;
+    EdsTableTool_CObj_t *CObj = &EdsTableTool_Global.CObj;
 
-    /* There should be a table at the top of the initial stack */
-    tbl_pos = lua_gettop(lua);
+    memset(CObj, 0, sizeof(*CObj));
 
-    lua_getglobal(lua, "EdsDB");
+    /* Save the original file def info */
+    memcpy(&CObj->FileDefInfo, filedefptr, sizeof(CFE_TBL_FileDef_t));
 
-    while (objsize > 0)
+    /*
+     * The size specified in FILEDEF should concur with the size of the actual object.
+     * If the CFE_TBL_FILEDEF macro was used, then this should always be true because the macro
+     * uses sizeof() on the object just like the wrapper does.  However some older definitions
+     * will create the CFE_TBL_FileDef_t object directly, and this could be different
+     */
+    if (CObj->FileDefInfo.ObjectSize != objsize)
     {
-        /* Call "New_Object" for the object type */
-        lua_getfield(lua, -1, "NewObject");
-        lua_pushstring(lua, EdsTableTool_Global.EdsTypeName);
-        if (lua_pcall(lua, 1, 1, 1) != LUA_OK)
-        {
-            /* note - error handler already displayed error message */
-            fprintf(stderr, "Failed to execute: EdsDB.NewObject(%s)\n", EdsTableTool_Global.EdsTypeName);
-            exit(EXIT_FAILURE);
-        }
-
-        /* Fill the Lua object with the data from the C world */
-        EdsLib_LuaBinding_GetNativeObject(lua, -1, &tptr, &tsz);
-        memcpy(tptr, sptr, tsz);
-        sptr += tsz;
-        objsize -= tsz;
-
-        /* Append to the table at the top of the initial stack */
-        lua_rawseti(lua, tbl_pos, 1 + lua_rawlen(lua, tbl_pos));
+        fprintf(stderr, EDSTABLETOOL_WARNING "Size from FileDef (%lu) differs from actual object (%lu)\n",
+            (unsigned long)CObj->FileDefInfo.ObjectSize, (unsigned long)objsize);
     }
 
-    /* Reset the stack to the same point as it was initially */
-    lua_settop(lua, tbl_pos);
+    CObj->ObjPtr = malloc(objsize);
+    if (CObj->ObjPtr == NULL)
+    {
+        fprintf(stderr, EDSTABLETOOL_ERROR "malloc(): %s\n", strerror(errno));
+        abort();
+    }
+
+    memcpy(CObj->ObjPtr, objptr, objsize);
+
+    strncpy(CObj->CTypeName, typename, sizeof(CObj->CTypeName)-1);
+
+    CObj->TotalObjectSize = objsize;
+    CObj->ElementSize = typesize;
 }
 
-void LoadTemplateFile(lua_State *lua, const char *Filename)
+/*----------------------------------------------------------------
+ *
+ * Preloads a "C" table definition for backward compatibilty
+ * The result of this is used to pre-fill the object buffer so scripts
+ * can still execute on this and change the output.  If no script is
+ * executed, then this will be the final result.
+ *
+ * This will populate the "CObj" member of the global
+ *
+ *-----------------------------------------------------------------*/
+void EdsTableTool_LoadCTemplateFile(const char *Filename)
 {
     void *dlhandle;
     void *fptr;
     const char *tmpstr;
-    int obj_idx;
-    size_t RuntimeAppNameLen;
-    CFE_TBL_FileDef_t *CFE_TBL_FileDefPtr;
-    EdsDataType_BASE_TYPES_ApiName_t RuntimeAppName;
-    EdsDataType_BASE_TYPES_ApiName_t TableName;
-    const char *EdsAppName;
-    size_t EdsAppNameLen;
-    char EdsTypeName[64];
+    void (*DynamicGeneratorFuncPtr)(void);
     char ModuleTempName[64];
-    void (*DynamicGeneratorFuncPtr)(void *);
-    EdsLib_Id_t EdsId;
-    EdsLib_DataTypeDB_TypeInfo_t TypeInfo;
-    uint16_t AppIdx;
+
+    printf(EDSTABLETOOL_INFO "Initializing table data from: %s\n", Filename);
 
     dlerror();
     dlhandle = dlopen(Filename, RTLD_LAZY | RTLD_LOCAL);
@@ -202,24 +242,12 @@ void LoadTemplateFile(lua_State *lua, const char *Filename)
         {
             tmpstr = "[Unknown Error]";
         }
-        fprintf(stderr,"Load Error: %s\n", tmpstr);
+        fprintf(stderr, EDSTABLETOOL_ERROR "dlopen(): %s\n", tmpstr);
         exit(EXIT_FAILURE);
     }
 
-    CFE_TBL_FileDefPtr = (CFE_TBL_FileDef_t *)dlsym(dlhandle, "CFE_TBL_FileDef");
-    tmpstr = dlerror();
-    if (CFE_TBL_FileDefPtr == NULL || tmpstr != NULL)
-    {
-        if (tmpstr == NULL)
-        {
-            tmpstr = "[Table object is NULL]";
-        }
-        fprintf(stderr,"Error looking up CFE_TBL_FileDef: %s\n", tmpstr);
-        exit(EXIT_FAILURE);
-    }
-
-    snprintf(ModuleTempName, sizeof(ModuleTempName), "%s_EDS_TYPEDEF_NAME", CFE_TBL_FileDefPtr->ObjectName);
-    fptr = dlsym(dlhandle, ModuleTempName);
+    /* The generated wrapper always has the same function name */
+    fptr = dlsym(dlhandle, "EdsTableTool_GENERATOR");
     tmpstr = dlerror();
     if (fptr == NULL || tmpstr != NULL)
     {
@@ -227,28 +255,106 @@ void LoadTemplateFile(lua_State *lua, const char *Filename)
         {
             tmpstr = "[Object pointer is NULL]";
         }
-        fprintf(stderr,"Lookup Error on '%s': %s\n", ModuleTempName, tmpstr);
-        exit(EXIT_FAILURE);
-    }
-
-    strncpy(EdsTypeName, fptr, sizeof(EdsTypeName) - 1);
-    EdsTypeName[sizeof(EdsTypeName) - 1] = 0;
-
-    /* If the table defines a "dynamic content" function, this needs to be executed first */
-    snprintf(ModuleTempName, sizeof(ModuleTempName), "%s_GENERATOR", CFE_TBL_FileDefPtr->ObjectName);
-    fptr = dlsym(dlhandle, ModuleTempName);
-    tmpstr = dlerror();
-    if (fptr == NULL || tmpstr != NULL)
-    {
-        if (tmpstr == NULL)
-        {
-            tmpstr = "[Object pointer is NULL]";
-        }
-        fprintf(stderr,"Lookup Error on '%s': %s\n", ModuleTempName, tmpstr);
+        fprintf(stderr, EDSTABLETOOL_ERROR "dlsym('%s'): %s\n", ModuleTempName, tmpstr);
         exit(EXIT_FAILURE);
     }
 
     *((void **)&DynamicGeneratorFuncPtr) = fptr;
+
+    /*
+     * If a dynamic generator function was defined, then it must be called now before dlclose().
+     * This populates the object in memory (can still be post-processed in Lua too)
+     */
+    if (DynamicGeneratorFuncPtr != NULL)
+    {
+        DynamicGeneratorFuncPtr();
+
+        printf(EDSTABLETOOL_INFO "Got object from C domain, shape=%lux%lu, total size=%lu\n",
+                (unsigned long)EdsTableTool_Global.CObj.TotalObjectSize / EdsTableTool_Global.CObj.ElementSize,
+                (unsigned long)EdsTableTool_Global.CObj.ElementSize,
+                (unsigned long)EdsTableTool_Global.CObj.TotalObjectSize);
+    }
+
+    dlclose(dlhandle);
+}
+
+/*----------------------------------------------------------------
+ *
+ * Determine which EDS data type to use for the table encoding.
+ *
+ * The tool gets type info from two places, the original C declaration and by
+ * looking up the table interface in the EDS Database.  Ideally they should match
+ * and then there is no ambiguity.  However for a variety of historical reasons,
+ * the C data type may not exactly match the table interface type, but they must
+ * be at least compatible.  This attempts to determine a common point of compatibility,
+ * via base type and/or containment relationships.
+ *
+ *-----------------------------------------------------------------*/
+EdsLib_Id_t EdsTableTool_FindCommonType(EdsLib_Id_t Type1, EdsLib_Id_t Type2)
+{
+    EdsLib_DataTypeDB_TypeInfo_t TypeInfo;
+    EdsLib_DataTypeDB_EntityInfo_t MemberInfo;
+    EdsLib_Id_t ResultEdsId;
+    int32_t EdsStatus;
+
+    /* Find some common point between the two types */
+    ResultEdsId = Type1;
+    while (!EdsLib_Is_Similar(ResultEdsId, Type2))
+    {
+        EdsStatus = EdsLib_DataTypeDB_GetTypeInfo(&EDS_DATABASE, ResultEdsId, &TypeInfo);
+        if (EdsStatus != EDSLIB_SUCCESS)
+        {
+            ResultEdsId = EDSLIB_ID_INVALID;
+            break;
+        }
+
+        /* one possibility is that the type is a base type of the other type */
+        EdsStatus = EdsLib_DataTypeDB_BaseCheck(&EDS_DATABASE, ResultEdsId, Type2);
+        if (EdsStatus == EDSLIB_SUCCESS)
+        {
+            /* In this case use the derived type */
+            ResultEdsId = Type2;
+            break;
+        }
+
+        /* another possibility is that the table intf type contains/wraps the C data type */
+        /* Check the first member type - if its a container, this is the base type,
+            * or if it is an array, this is the array data type */
+        EdsStatus = EdsLib_DataTypeDB_GetMemberByIndex(&EDS_DATABASE, ResultEdsId, 0, &MemberInfo);
+        if (EdsStatus != EDSLIB_SUCCESS)
+        {
+            ResultEdsId = EDSLIB_ID_INVALID;
+            break;
+        }
+
+        /* Repeat check using the member type */
+        ResultEdsId = MemberInfo.EdsId;
+    }
+
+    return ResultEdsId;
+}
+
+/*----------------------------------------------------------------
+ *
+ * Identifies the object obtained from the C file
+ *
+ * This will utilize the "CObj" member of the global, which should
+ * have been populated by EdsTableTool_LoadCTemplateFile.  It looks
+ * up the type(s) in the EDS DB and attempts to correlate something
+ * to the objects imported from C.
+ *
+ *-----------------------------------------------------------------*/
+void EdsTableTool_IdentifyCObj(void)
+{
+    EdsTableTool_CObj_t *CObj = &EdsTableTool_Global.CObj;
+    const char *tmpstr;
+    char *TempPtr;
+    size_t tmplen;
+    char TypeNameBuff[64];
+    EdsLib_Id_t TblIntfEdsId;
+    EdsLib_Id_t AppComponentEdsId;
+    uint8_t PkgIdx;
+    int32_t EdsStatus;
 
     /*
      * The TableName in the FileDef object is supposed to be of the form "AppName.TableName" -
@@ -259,200 +365,293 @@ void LoadTemplateFile(lua_State *lua, const char *Filename)
      * if naming conventions are followed.  (and if conventions are not followed, this tool
      * is not likely to work).
      */
-    tmpstr = strchr(CFE_TBL_FileDefPtr->TableName, '.');
+    tmpstr = strchr(CObj->FileDefInfo.TableName, '.');
     if (tmpstr == NULL)
     {
-        RuntimeAppNameLen = 0;
-        tmpstr = CFE_TBL_FileDefPtr->TableName;
+        tmplen = 0;
+        tmpstr = CObj->FileDefInfo.TableName;
     }
     else
     {
-        RuntimeAppNameLen = tmpstr - CFE_TBL_FileDefPtr->TableName;
+        tmplen = tmpstr - CObj->FileDefInfo.TableName;
         ++tmpstr;
     }
 
-    if (RuntimeAppNameLen >= sizeof(RuntimeAppName))
+    if (tmplen >= sizeof(CObj->RuntimeAppName))
     {
-        RuntimeAppNameLen = sizeof(RuntimeAppName) - 1;
+        tmplen = sizeof(CObj->RuntimeAppName) - 1;
     }
 
-    memcpy(RuntimeAppName, CFE_TBL_FileDefPtr->TableName, RuntimeAppNameLen);
-    RuntimeAppName[RuntimeAppNameLen] = 0;
-    printf("Runtime App Name: %s\n", RuntimeAppName);
+    memcpy(CObj->RuntimeAppName, CObj->FileDefInfo.TableName, tmplen);
+    CObj->RuntimeAppName[tmplen] = 0;
 
-    /*
-     * It is common practice to have an "_APP" suffix to the runtime app name here,
-     * so this is done as a prefix match.
-     */
-    AppIdx = EDS_MAX_DATASHEETS;
-    while (true)
+    strncpy(CObj->TableName, tmpstr, sizeof(CObj->TableName) - 1);
+    CObj->TableName[sizeof(CObj->TableName) - 1] = 0;
+
+    printf(EDSTABLETOOL_INFO "Identifying C Object: AppName=\'%s\', TableName=\'%s\', CType=\'%s\'\n",
+        CObj->RuntimeAppName, CObj->TableName, CObj->CTypeName);
+
+    /* Try to determine the EdsId of the C data type.  This should exist, but in some cases
+     * the user has defined a custom type only for the table definition (such as a union).  This
+     * may be OK as long as the custom type is compatible, but this tool cannot verify that */
+    tmpstr = CObj->CTypeName;
+    if (strncmp(CObj->RuntimeAppName, tmpstr, tmplen) == 0 && ispunct((unsigned char)tmpstr[tmplen]))
     {
-        --AppIdx;
-        if (AppIdx == 0)
+        tmpstr += tmplen + 1;
+    }
+    snprintf(TypeNameBuff, sizeof(TypeNameBuff), "%s/%s", CObj->RuntimeAppName, tmpstr);
+
+    /* The C typedef should have a "_t" suffix - trim this off for EDS type names */
+    tmplen = strlen(TypeNameBuff);
+    if (tmplen > 2 && strcmp(&TypeNameBuff[tmplen-2], "_t") == 0)
+    {
+        TypeNameBuff[tmplen - 2] = 0;
+    }
+
+    CObj->CTypeEdsId = EdsLib_DisplayDB_LookupTypeName(&EDS_DATABASE, TypeNameBuff);
+    if (EdsLib_Is_Valid(CObj->CTypeEdsId))
+    {
+        printf(EDSTABLETOOL_INFO "Found EDS type definition \'%s\' for C datatype \'%s\'\n", TypeNameBuff, CObj->CTypeName);
+    }
+
+    /* Now find an EDS interface definition and data type that matches */
+    AppComponentEdsId = EDSLIB_ID_INVALID;
+    TblIntfEdsId = EDSLIB_ID_INVALID;
+
+    /* Note that tables will not be loadable by TBL services unless there is an exact match.  This
+     * previously made extra assumptions about the possibility of an _APP suffix and other differences,
+     * but the FSW is just looking for an exact match, so using other matching schemes is only going
+     * to defer failure to load time rather than build time */
+    EdsStatus = EdsLib_FindPackageIdxByName(&EDS_DATABASE, CObj->RuntimeAppName, &PkgIdx);
+    if (EdsStatus == EDSLIB_SUCCESS)
+    {
+        /* Primary Data type lookup method: Find an interface in the Application section */
+        EdsStatus = EdsLib_IntfDB_FindComponentByLocalName(&EDS_DATABASE, PkgIdx, "Application", &AppComponentEdsId);
+        if (EdsStatus == EDSLIB_SUCCESS)
         {
-            /*
-             * If the naming convention was not followed and no EDS entry is found for this app name,
-             * then this tool is unlikely work EXCEPT if the user has overloaded the "Description"
-             * field to refer to a specific EDS DB entry, so this will proceed if that is the case.
-             */
-            EdsAppName    = NULL;
-            EdsAppNameLen = 0;
-            printf("ERROR: No matching EDS package name for table: \'%s\'\n", CFE_TBL_FileDefPtr->TableName);
-            break;
+            EdsStatus = EdsLib_IntfDB_FindComponentInterfaceByLocalName(&EDS_DATABASE, AppComponentEdsId, CObj->TableName, &TblIntfEdsId);
         }
 
-        /* Note that this API does not return NULL, it returns "UNDEF" if the AppIdx is not registered,
-         * but that should not happen with a static DB and an AppIdx within range */
-        EdsId = EDSLIB_MAKE_ID(AppIdx, 1);
-        EdsAppName    = EdsLib_DisplayDB_GetNamespace(&EDS_DATABASE, EdsId);
-        EdsAppNameLen = strlen(EdsAppName);
-        if (strncasecmp(EdsAppName, CFE_TBL_FileDefPtr->TableName, EdsAppNameLen) == 0)
+        /* Fallback - if no exact match, check for a numeric suffix.  Some apps (such as MD)
+        * have multiple instances of the same table and they attach a numeric suffix to the name */
+        if (EdsStatus != EDSLIB_SUCCESS)
         {
-            if (!isalpha((unsigned char)CFE_TBL_FileDefPtr->TableName[EdsAppNameLen]))
+            TempPtr = CObj->TableName + strlen(CObj->TableName);
+            while(TempPtr > CObj->TableName)
             {
-                printf("Matched EDS Package Name: %s\n", EdsAppName);
-                break;
+                --TempPtr;
+                if (!isdigit((int)(*TempPtr)))
+                {
+                    break;
+                }
+
+                *TempPtr = 0;
+            }
+            EdsStatus = EdsLib_IntfDB_FindComponentInterfaceByLocalName(&EDS_DATABASE, AppComponentEdsId, CObj->TableName, &TblIntfEdsId);
+        }
+
+        if (EdsStatus == EDSLIB_SUCCESS)
+        {
+            /* Determine the argument data type for "load" command */
+            EdsStatus = EdsLib_IntfDB_FindAllArgumentTypes(&EDS_DATABASE, EDS_TABLE_LOAD_CMD_ID, TblIntfEdsId, &CObj->IntfDataTypeEdsId, 1);
+        }
+
+        /*
+        * If we only got one of the two types (C Datatype or Intf Datatype) then use that.
+        *  (the table may not load correctly but that is a problem elsewhere)
+        *
+        * If we got both, and they are equal, then there is also no problem.
+        * However if we get both an they are different, we have to correlate them somehow.
+        * The most likely situation is that the C table is an array, and there is possibly
+        * a separate container around that array.
+        */
+        if (!EdsLib_Is_Valid(CObj->IntfDataTypeEdsId))
+        {
+            /* Intf type not known - just use the C type */
+            CObj->SelectedTypeEdsId = CObj->CTypeEdsId;
+        }
+        else if (!EdsLib_Is_Valid(CObj->CTypeEdsId))
+        {
+            /* C type not known - just use the intf type */
+            CObj->SelectedTypeEdsId = CObj->IntfDataTypeEdsId;
+        }
+        else
+        {
+            /* see if there is some type that is common between them */
+            CObj->SelectedTypeEdsId = EdsTableTool_FindCommonType(CObj->IntfDataTypeEdsId, CObj->CTypeEdsId);
+            if (!EdsLib_Is_Valid(CObj->SelectedTypeEdsId))
+            {
+                /* try again but reversed */
+                CObj->SelectedTypeEdsId = EdsTableTool_FindCommonType(CObj->CTypeEdsId, CObj->IntfDataTypeEdsId);
             }
         }
     }
-
-    if (EdsAppName == NULL)
+    else
     {
-        fprintf(stderr,"Aborting table build, unidentified application: %s\n", CFE_TBL_FileDefPtr->TableName);
+        CObj->SelectedTypeEdsId = EDSLIB_ID_INVALID;
+    }
+
+    TypeNameBuff[0] = 0;
+    EdsLib_DisplayDB_GetTypeName(&EDS_DATABASE, CObj->SelectedTypeEdsId, TypeNameBuff, sizeof(TypeNameBuff));
+
+    /* sanity check that the type name is valid - it might have returned undefined string */
+    if (EdsLib_Is_Valid(EdsLib_DisplayDB_LookupTypeName(&EDS_DATABASE, TypeNameBuff)))
+    {
+        printf(EDSTABLETOOL_INFO "Selected EDS type definition \'%s\' for table \'%s\'\n", TypeNameBuff, CObj->FileDefInfo.TableName);
+
+        strncpy(CObj->EdsTypeName, TypeNameBuff, sizeof(CObj->EdsTypeName) - 1);
+        CObj->EdsTypeName[sizeof(CObj->EdsTypeName) - 1] = 0;
+    }
+    else if (EdsTableTool_Global.AllowPassthrough)
+    {
+        printf(EDSTABLETOOL_INFO "Allowing passthrough encoding for table \'%s\'\n", CObj->FileDefInfo.TableName);
+        CObj->EdsTypeName[0] = 0;
+    }
+    else
+    {
+        fprintf(stderr, EDSTABLETOOL_ERROR "Could not map table \'%s\' to an EDS-defined data type\n", CObj->FileDefInfo.TableName);
         exit(EXIT_FAILURE);
     }
+}
 
-    /*
-     * Sometimes the app name is repeated in the table name, so skip it again if so
-     */
-    if (strncmp(RuntimeAppName, tmpstr, RuntimeAppNameLen) == 0)
+/*----------------------------------------------------------------
+ *
+ * Exports a C-defined object to the Lua environment
+ *
+ * This expects a lua_State object as the abstract argument,
+ * and a table should be the topmost entry in the stack.  The
+ * object(s) from C will be wrapped in a Lua object and appended
+ * to the table.
+ *
+ *-----------------------------------------------------------------*/
+void EdsTableTool_AppendObjsFromCObj(lua_State *lua, EdsTableTool_CObj_t *CObj)
+{
+    EdsLib_Binding_DescriptorObject_t *ObjectUserData;
+    EdsLib_DataTypeDB_DerivedTypeInfo_t DerivInfo;
+    int32_t EdsStatus;
+    const uint8_t *sptr;
+    void *tptr;
+    size_t tsz;
+    int tbl_pos;
+    size_t bytes_remain;
+    size_t bytes_per_elem;
+
+    /* There should be a table at the top of the initial stack */
+    tbl_pos = lua_gettop(lua);
+
+    /* now do a sanity check on the size */
+    EdsStatus = EdsLib_DataTypeDB_GetDerivedInfo(&EDS_DATABASE, CObj->SelectedTypeEdsId, &DerivInfo);
+    if (EdsStatus != EDSLIB_SUCCESS)
     {
-        tmpstr += RuntimeAppNameLen;
+        /* Just directly use the C object data */
+        lua_pushlstring(lua, CObj->ObjPtr, CObj->TotalObjectSize);
+        lua_rawseti(lua, tbl_pos, 1);
+
+        bytes_per_elem = 0;
+        bytes_remain = 0;
+        sptr = NULL;
     }
-    else if (strncmp(EdsAppName, tmpstr, EdsAppNameLen) == 0)
+    else
     {
-        tmpstr += EdsAppNameLen;
-    }
+        bytes_remain = CObj->TotalObjectSize;
+        sptr = CObj->ObjPtr;
 
-    /* Skip punctuation/name separators */
-    while (ispunct((unsigned char) *tmpstr))
-    {
-        ++tmpstr;
-    }
-
-    strncpy(TableName, tmpstr, sizeof(TableName) - 1);
-    TableName[sizeof(TableName) - 1] = 0;
-    printf("Runtime Table Name: %s\n", TableName);
-
-    /* Now find an EDS type that might match */
-    EdsId = EDSLIB_ID_INVALID;
-
-    /*
-     * Plan A:
-     * The makefile scripts/tool should have extracted the type name
-     */
-    if (strncmp(EdsTypeName, EdsAppName, EdsAppNameLen) == 0)
-    {
-        EdsTypeName[EdsAppNameLen] = '/';
-    }
-
-    if (strlen(EdsTypeName) > 2 && strcmp(&EdsTypeName[strlen(EdsTypeName) - 2], "_t") == 0)
-    {
-        EdsTypeName[strlen(EdsTypeName) - 2] = 0;
-    }
-
-    printf("Attempting to lookup: %s\n", EdsTypeName);
-    EdsId = EdsLib_DisplayDB_LookupTypeName(&EDS_DATABASE, EdsTypeName);
-
-    /*
-     * Plan B:
-     * If the specific EDS type was indicated in the description field, then use it.
-     */
-    if (!EdsLib_Is_Valid(EdsId) && strchr(CFE_TBL_FileDefPtr->Description, '/') != NULL)
-    {
-        strncpy(EdsTypeName, CFE_TBL_FileDefPtr->Description, sizeof(EdsTypeName));
-        EdsId = EdsLib_DisplayDB_LookupTypeName(&EDS_DATABASE, EdsTypeName);
-    }
-
-    /*
-     * Plan C:
-     * Attempt to deduce it from the AppName.TableName string
-     */
-    if (!EdsLib_Is_Valid(EdsId) && EdsAppName != NULL)
-    {
-        snprintf(EdsTypeName, sizeof(EdsTypeName), "%s/%s", EdsAppName, TableName);
-        EdsId = EdsLib_DisplayDB_LookupTypeName(&EDS_DATABASE, EdsTypeName);
-    }
-
-    /* as a last-ditch attempt, see if the ObjectName might be in the form of EDSAPP_EDSTYPE */
-    if (!EdsLib_Is_Valid(EdsId) && EdsAppName != NULL)
-    {
-        tmpstr = CFE_TBL_FileDefPtr->ObjectName;
-        if (strncmp(RuntimeAppName, tmpstr, RuntimeAppNameLen) == 0 && ispunct((unsigned char)tmpstr[RuntimeAppNameLen]))
+        if (CObj->ElementSize < CObj->TotalObjectSize && DerivInfo.MaxSize.Bytes <= CObj->ElementSize)
         {
-            tmpstr += RuntimeAppNameLen + 1;
+            /* there are multiple elements, each one gets encoded individually */
+            bytes_per_elem = CObj->ElementSize;
         }
-        else if (strncmp(EdsAppName, tmpstr, EdsAppNameLen) == 0 && ispunct((unsigned char)tmpstr[EdsAppNameLen]))
+        else
         {
-            tmpstr += EdsAppNameLen + 1;
+            /* The entire object gets encoded in one go */
+            bytes_per_elem = CObj->TotalObjectSize;
         }
-        snprintf(EdsTypeName, sizeof(EdsTypeName), "%s/%s", EdsAppName, tmpstr);
-        EdsId = EdsLib_DisplayDB_LookupTypeName(&EDS_DATABASE, EdsTypeName);
     }
 
-    if (!EdsLib_Is_Valid(EdsId) || EdsLib_DataTypeDB_GetTypeInfo(&EDS_DATABASE, EdsId, &TypeInfo) != EDSLIB_SUCCESS)
+    lua_getglobal(lua, "EdsDB");
+    while (bytes_remain > 0)
     {
-        fprintf(stderr,"Error: Cannot get info for table EDS Type Name \'%s\' (id %x)\n", EdsTypeName, (unsigned int)EdsId);
-        exit(EXIT_FAILURE);
+        /* Call "New_Object" for the object type */
+        lua_getfield(lua, -1, "NewObject");
+        lua_pushstring(lua, CObj->EdsTypeName);
+        if (lua_pcall(lua, 1, 1, 1) != LUA_OK)
+        {
+            /* note - error handler already displayed error message */
+            fprintf(stderr, EDSTABLETOOL_ERROR "Failed to execute: EdsDB.NewObject(%s)\n", CObj->EdsTypeName);
+            exit(EXIT_FAILURE);
+        }
+
+        ObjectUserData = luaL_testudata(lua, -1, "EdsLib_Object");
+
+        /* Fill the Lua object with the data from the C world */
+        tsz = EdsLib_Binding_GetBufferMaxSize(ObjectUserData);
+        EdsLib_LuaBinding_GetNativeObject(lua, -1, &tptr, NULL);
+
+        /* this should not happen because the size was checked earlier */
+        if (tsz < bytes_per_elem)
+        {
+            fprintf(stderr, EDSTABLETOOL_ERROR "Object of %lu bytes cannot be copied into buffer of %lu bytes (datatype=%s)\n",
+                    (unsigned long)bytes_per_elem, (unsigned long)tsz, CObj->EdsTypeName);
+            exit(EXIT_FAILURE);
+        }
+
+        memcpy(tptr, sptr, bytes_per_elem);
+        sptr += bytes_per_elem;
+        bytes_remain -= bytes_per_elem;
+
+        /* Append to the table at the top of the initial stack */
+        lua_rawseti(lua, tbl_pos, 1 + lua_rawlen(lua, tbl_pos));
     }
 
-    printf("--> Using EDS ID 0x%x for \'%s\' data structure, %lu bytes\n",(unsigned int)EdsId,EdsTypeName,(unsigned long)TypeInfo.Size.Bytes);
+    /* Reset the stack to the same point as it was initially */
+    lua_settop(lua, tbl_pos);
+}
 
-    if ((CFE_TBL_FileDefPtr->ObjectSize % TypeInfo.Size.Bytes) != 0)
-    {
-        fprintf(stderr,"Error: Data size mismatch for EDS Type \'%s\' (id %x): %lu(file)/%lu(EDS)\n",
-            EdsTypeName, (unsigned int)EdsId, (unsigned long)CFE_TBL_FileDefPtr->ObjectSize, (unsigned long)TypeInfo.Size.Bytes);
-        exit(EXIT_FAILURE);
-    }
+/*----------------------------------------------------------------
+ *
+ * Processes the object obtained from the C file
+ *
+ * This will utilize the "CObj" member of the global, which should
+ * have been populated by EdsTableTool_LoadCTemplateFile
+ *
+ *-----------------------------------------------------------------*/
+void EdsTableTool_CreateLuaObjFromCObj(lua_State *lua)
+{
+    EdsTableTool_CObj_t *CObj = &EdsTableTool_Global.CObj;
+    int obj_idx;
 
-    EdsTableTool_Global.NumMultiple = CFE_TBL_FileDefPtr->ObjectSize / TypeInfo.Size.Bytes;
-    strncpy(EdsTableTool_Global.EdsTypeName, EdsTypeName, sizeof(EdsTableTool_Global.EdsTypeName) - 1);
-
-    lua_getglobal(lua, RuntimeAppName);
+    lua_getglobal(lua, CObj->RuntimeAppName);
     if (lua_type(lua, -1) != LUA_TTABLE)
     {
         lua_pop(lua, 1);
         lua_newtable(lua);
         lua_pushvalue(lua, -1);
-        lua_setglobal(lua, RuntimeAppName);
+        lua_setglobal(lua, CObj->RuntimeAppName);
     }
 
     lua_newtable(lua);
     obj_idx = lua_gettop(lua);
 
-    lua_pushstring(lua, CFE_TBL_FileDefPtr->TableName);
+    lua_pushstring(lua, CObj->FileDefInfo.TableName);
     lua_setfield(lua, obj_idx, "TableName");  /* Set "TableName" in Table object */
 
-    lua_pushstring(lua, CFE_TBL_FileDefPtr->Description);
+    lua_pushstring(lua, CObj->FileDefInfo.Description);
     lua_setfield(lua, obj_idx, "Description");  /* Set "Description" in Table object */
 
-    lua_pushstring(lua, CFE_TBL_FileDefPtr->TgtFilename);
+    lua_pushstring(lua, CObj->FileDefInfo.TgtFilename);
     lua_setfield(lua, obj_idx, "TgtFilename");  /* Set "TgtFilename" in Table object */
 
-    printf("Loaded Template: %s/%s\n", RuntimeAppName, TableName);
-
     /*
-     * If a dynamic generator function was defined, then it must be called now before dlclose().
-     * This populates the object in memory (can still be post-processed in Lua too)
+     * If a C object is loaded, make EDS objects out of it
      */
-    if (DynamicGeneratorFuncPtr != NULL)
+    if (CObj->ObjPtr != NULL)
     {
         /* The C object could be an array of entries, so make a table to hold them */
         lua_newtable(lua);
 
-        DynamicGeneratorFuncPtr(lua);
+        EdsTableTool_AppendObjsFromCObj(lua, CObj);
 
-        printf("--> Got %zu object(s) from C domain\n", lua_rawlen(lua, -1));
+        printf(EDSTABLETOOL_INFO "Got %lu object(s) from C domain\n", (unsigned long)lua_rawlen(lua, -1));
 
         /*
          * If only one object was obtained, then just put that object directly in the parent,
@@ -467,44 +666,87 @@ void LoadTemplateFile(lua_State *lua, const char *Filename)
         lua_settop(lua, obj_idx);
     }
 
-    dlclose(dlhandle);
-
     /* Append the Applist table to hold the loaded table template objects */
     lua_rawgetp(lua, LUA_REGISTRYINDEX, &LUA_APPLIST_KEY);
     lua_pushvalue(lua, obj_idx);
     lua_rawseti(lua, -2, 1 + lua_rawlen(lua, -2));
 
-    lua_setfield(lua, -2, TableName);  /* Set entry in App table */
+    lua_settop(lua, obj_idx);
+    lua_setfield(lua, -2, CObj->TableName);  /* Set entry in App table */
     lua_pop(lua, 1);
+
+    printf(EDSTABLETOOL_INFO "Stored in global context as %s.%s \n", CObj->RuntimeAppName, CObj->TableName);
+
+    /* now that the object is wrapped in a Lua binding, the original is no longer needed */
+    /* this permits another file to be loaded */
+    free(CObj->ObjPtr);
+    memset(&EdsTableTool_Global.CObj, 0, sizeof(EdsTableTool_Global.CObj));
+
+    lua_settop(lua, obj_idx - 2);
 }
 
-void LoadLuaFile(lua_State *lua, const char *Filename)
+/*----------------------------------------------------------------
+ *
+ * Loads and executes a lua script
+ *
+ * The lua script can perform any arbitrary processing of the data objects
+ *
+ *-----------------------------------------------------------------*/
+void EdsTableTool_LoadLuaFile(lua_State *lua, const char *Filename)
 {
+    printf(EDSTABLETOOL_INFO "Executing LUA script: %s\n", Filename);
+
     if (luaL_loadfile(lua, Filename) != LUA_OK)
     {
-        fprintf(stderr,"Cannot load Lua file: %s: %s\n", Filename, lua_tostring(lua, -1));
+        fprintf(stderr, EDSTABLETOOL_ERROR "Cannot load Lua file: %s: %s\n", Filename, lua_tostring(lua, -1));
         exit(EXIT_FAILURE);
     }
-    printf("Executing LUA: %s\n", Filename);
+
     if (lua_pcall(lua, 0, 0, 1) != LUA_OK)
     {
         /* note - error handler already displayed error message */
-        fprintf(stderr, "Failed to execute: %s\n", Filename);
+        fprintf(stderr, EDSTABLETOOL_ERROR "Failed to execute: %s\n", Filename);
         exit(EXIT_FAILURE);
     }
 }
 
-void PushEncodedSingleObject(lua_State *lua)
+/*----------------------------------------------------------------
+ *
+ * Encodes the singular Lua object at the top of the stack
+ *
+ * Input stack should have a single native object at the top (-1)
+ * That object will be removed and replaced with the encoded representation
+ *
+ *-----------------------------------------------------------------*/
+void EdsTableTool_PushEncodedSingleObject(lua_State *lua)
 {
-    luaL_checkudata(lua, -1, "EdsLib_Object");
-    lua_getglobal(lua, "EdsDB");
-    lua_getfield(lua, -1, "Encode");
-    lua_remove(lua, -2);     /* remove the EdsDB global */
-    lua_pushvalue(lua, -2);
-    lua_call(lua, 1, 1);
+    if (luaL_testudata(lua, -1, "EdsLib_Object"))
+    {
+        lua_getglobal(lua, "EdsDB");
+        lua_getfield(lua, -1, "Encode");
+        lua_remove(lua, -2);     /* remove the EdsDB global */
+        lua_pushvalue(lua, -2);
+        lua_call(lua, 1, 1);
+    }
+    else
+    {
+        luaL_checkstring(lua, -1);
+    }
 }
 
-void PushEncodedMultiObject(lua_State *lua)
+/*----------------------------------------------------------------
+ *
+ * Encodes the Lua table object at the top of the stack
+ *
+ * Input stack should have a Lua table containing an array/list of native objects
+ * That object will be removed, each element will be individually encoded by
+ * invoking EdsTableTool_PushEncodedSingleObject, then all the resulting binary
+ * blobs will be concatenated together into a single blob.
+ *
+ * The final result will be put on the stack, replacing the original table.
+ *
+ *-----------------------------------------------------------------*/
+void EdsTableTool_PushEncodedMultiObject(lua_State *lua)
 {
     size_t num_tbl;
     size_t num_enc;
@@ -521,25 +763,84 @@ void PushEncodedMultiObject(lua_State *lua)
     {
         ++num_enc;
         lua_rawgeti(lua, obj_idx, num_enc); /* Get the EdsLib_Object table entry */
-        PushEncodedSingleObject(lua);
+        EdsTableTool_PushEncodedSingleObject(lua);
         lua_remove(lua, -2);     /* remove the EdsLib_Object table entry from stack */
     }
 
     lua_concat(lua, num_enc);
 }
 
-int Write_GenericFile(lua_State *lua)
+/*----------------------------------------------------------------
+ *
+ * Opens a file for output
+ *
+ * This is just a wrapper around fopen() that applies the OUTPUT_DIR
+ *
+ * The "filename_pos" should refer to a stack position containing a
+ * relative file name
+ *
+ * If the "OUTPUT_DIR" global is set, it will create a full path using
+ * the specified directory combined with the file name.  If the
+ * "OUTPUT_DIR" is not set, then the full path will be based on
+ * the current directory (.)
+ *
+ * In both cases the file is opened for writing ("w" mode) and the
+ * file pointer is returned.
+ *
+ *-----------------------------------------------------------------*/
+FILE *EdsTableTool_OpenOutputFile(lua_State *lua, int filename_pos)
 {
     FILE *OutputFile = NULL;
-    const char *OutputName = luaL_checkstring(lua, 1);
+    int start_top = lua_gettop(lua);
+    const char *OutputName = luaL_checkstring(lua, filename_pos);
+    char OutputFullNameBuffer[256];
+    const char *OutputPath;
 
-    OutputFile = fopen(OutputName, "w");
-    if (OutputFile == NULL)
+    if (OutputName != NULL)
     {
-        return luaL_error(lua, "%s: %s", OutputName, strerror(errno));
+        lua_getglobal(lua, "OUTPUT_DIR");
+        if (lua_isnoneornil(lua, -1))
+        {
+            OutputPath = ".";
+        }
+        else
+        {
+            OutputPath = lua_tostring(lua, -1);
+        }
+
+        snprintf(OutputFullNameBuffer, sizeof(OutputFullNameBuffer), "%s/%s", OutputPath, OutputName);
+        OutputFile = fopen(OutputFullNameBuffer, "w");
     }
 
-    PushEncodedSingleObject(lua);
+    lua_settop(lua, start_top);
+
+    return OutputFile;
+}
+
+/*----------------------------------------------------------------
+ *
+ * Writes an encoded object to a file (generic)
+ *
+ * The stack should contain a single native (unencoded) object at the top
+ * That object will be encoded to binary, and written to the output file.
+ *
+ * There is no additional headers or framing added to the object; the file
+ * will contain only the binary data from the object and nothing else.
+ *
+ * The filename is retrieved from absolute stack position 1.
+ *
+ *-----------------------------------------------------------------*/
+int EdsTableTool_WriteGenericFile(lua_State *lua)
+{
+    FILE *OutputFile;
+
+    OutputFile = EdsTableTool_OpenOutputFile(lua, 1);
+    if (OutputFile == NULL)
+    {
+        return luaL_error(lua, "%s: %s", lua_tostring(lua, 1), strerror(errno));
+    }
+
+    EdsTableTool_PushEncodedSingleObject(lua);
     fwrite(lua_tostring(lua, -1), lua_rawlen(lua, -1), 1, OutputFile);
     fclose(OutputFile);
     lua_pop(lua, 1);
@@ -547,7 +848,21 @@ int Write_GenericFile(lua_State *lua)
     return 0;
 }
 
-int Write_CFE_EnacapsulationFile(lua_State *lua)
+/*----------------------------------------------------------------
+ *
+ * Writes an encoded object to a file (CFE table)
+ *
+ * The stack should contain a native (unencoded) object or table at the top
+ * That object will be encoded to binary, and written to the output file.
+ *
+ * This function writes a CFE_FS header and a CFE_TBL header to the file,
+ * then writes the encoded data.  The resulting file is intended to be
+ * compatible with the CFE Table load.
+ *
+ * The filename is retrieved from absolute stack position 1.
+ *
+ *-----------------------------------------------------------------*/
+int EdsTableTool_WriteCfeTableFile(lua_State *lua)
 {
     union
     {
@@ -559,22 +874,22 @@ int Write_CFE_EnacapsulationFile(lua_State *lua)
     uint32_t TblHeaderBlockSize;
     uint32_t FileHeaderBlockSize;
     EdsLib_Id_t PackedEdsId;
-    FILE *OutputFile = NULL;
-    const char *OutputName = luaL_checkstring(lua, 1);
+    FILE *OutputFile;
+    const char *OutputName;
     EdsLib_DataTypeDB_TypeInfo_t BlockInfo;
     const void *content_ptr;
     size_t content_sz;
 
-    PackedEdsId = EdsLib_DisplayDB_LookupTypeName(&EDS_DATABASE, EdsTableTool_Global.EdsTypeName);
-    printf("Generating file using EDS ID: %x\n", (unsigned int)PackedEdsId);
+    OutputFile = NULL;
+    OutputName = luaL_checkstring(lua, 1);
 
     if (lua_type(lua, -1) == LUA_TTABLE)
     {
-        PushEncodedMultiObject(lua);
+        EdsTableTool_PushEncodedMultiObject(lua);
     }
     else
     {
-        PushEncodedSingleObject(lua);
+        EdsTableTool_PushEncodedSingleObject(lua);
     }
 
     if (lua_isnoneornil(lua, -1))
@@ -583,12 +898,10 @@ int Write_CFE_EnacapsulationFile(lua_State *lua)
     }
 
     memset(&Buffer, 0, sizeof(Buffer));
-    Buffer.TblHeader.EdsAppId = EdsLib_Get_AppIdx(PackedEdsId);
-    Buffer.TblHeader.EdsFormatId = EdsLib_Get_FormatIdx(PackedEdsId);
     Buffer.TblHeader.NumBytes = lua_rawlen(lua, -1);
     strncpy(Buffer.TblHeader.TableName, luaL_checkstring(lua, 3), sizeof(Buffer.TblHeader.TableName));
 
-    PackedEdsId = EDSLIB_MAKE_ID(EDS_INDEX(CFE_TBL), CFE_TBL_File_Hdr_DATADICTIONARY);
+    PackedEdsId = EDSLIB_MAKE_ID(EDS_INDEX(CFE_TBL), EdsContainer_CFE_TBL_File_Hdr_DATADICTIONARY);
     EdsLib_DataTypeDB_PackCompleteObject(&EDS_DATABASE, &PackedEdsId,
             PackedTblHeader, &Buffer.TblHeader, sizeof(PackedTblHeader) * 8, sizeof(Buffer.TblHeader));
     EdsLib_DataTypeDB_GetTypeInfo(&EDS_DATABASE, PackedEdsId, &BlockInfo);
@@ -600,13 +913,13 @@ int Write_CFE_EnacapsulationFile(lua_State *lua)
     Buffer.FileHeader.Length = TblHeaderBlockSize + lua_rawlen(lua, -1);
     snprintf(Buffer.FileHeader.Description, sizeof(Buffer.FileHeader.Description), "%s", luaL_checkstring(lua, 2));
 
-    PackedEdsId = EDSLIB_MAKE_ID(EDS_INDEX(CFE_FS), CFE_FS_Header_DATADICTIONARY);
+    PackedEdsId = EDSLIB_MAKE_ID(EDS_INDEX(CFE_FS), EdsContainer_CFE_FS_Header_DATADICTIONARY);
     EdsLib_DataTypeDB_PackCompleteObject(&EDS_DATABASE, &PackedEdsId,
             PackedFileHeader, &Buffer, sizeof(PackedFileHeader) * 8, sizeof(Buffer));
     EdsLib_DataTypeDB_GetTypeInfo(&EDS_DATABASE, PackedEdsId, &BlockInfo);
     FileHeaderBlockSize = (BlockInfo.Size.Bits + 7) / 8;
 
-    OutputFile = fopen(OutputName, "w");
+    OutputFile = EdsTableTool_OpenOutputFile(lua, 1);
     if (OutputFile == NULL)
     {
         return luaL_error(lua, "%s: %s", OutputName, strerror(errno));
@@ -622,16 +935,67 @@ int Write_CFE_EnacapsulationFile(lua_State *lua)
     }
     else
     {
-        fprintf(stderr, "WARNING: No content produced\n");
+        fprintf(stderr, EDSTABLETOOL_WARNING "No content produced\n");
     }
+
     fclose(OutputFile);
-    printf("Wrote File: %s\n", OutputName);
+    printf(EDSTABLETOOL_INFO "Wrote File: %s\n", OutputName);
     lua_pop(lua, 1);
 
     return 0;
 }
 
-static int ErrorHandler(lua_State *lua)
+/*----------------------------------------------------------------
+ *
+ * Gets the template object metadata from the C domain
+ *
+ * Retrieves the lua table associated with the specified table name (arg 1)
+ *
+ * This is the meta object that was created by EdsTableTool_CreateLuaObjFromCObj()
+ * and is used when saving the file associated with this template object.
+ *
+ *-----------------------------------------------------------------*/
+static int EdsTableTool_GetCObjectMetaData(lua_State *lua)
+{
+    int nret = 0;
+    int tpos;
+    int tidx;
+
+    /* This registry entry is a list of objects created from .so files */
+    /* See EdsTableTool_CreateLuaObjFromCObj() for how it is assembled */
+    lua_rawgetp(lua, LUA_REGISTRYINDEX, &LUA_APPLIST_KEY);
+    tidx = lua_gettop(lua);
+    tpos = lua_rawlen(lua, tidx);
+    while (tpos > 0)
+    {
+        lua_rawgeti(lua, tidx, tpos);
+        if (lua_type(lua, -1) == LUA_TTABLE)
+        {
+            lua_getfield(lua, -1, "TableName");
+            if (lua_compare(lua, -1, 1, LUA_OPEQ))
+            {
+                /* found a match, return it */
+                lua_settop(lua, tidx + 1);
+                nret = 1;
+                break;
+            }
+        }
+
+        lua_settop(lua, tidx);
+        --tpos;
+    }
+
+    return nret;
+}
+
+/*----------------------------------------------------------------
+ *
+ * Handles errors in processing the objects from Lua
+ *
+ * Reports an error to the console, along with a Lua backtrace
+ *
+ *-----------------------------------------------------------------*/
+static int EdsTableTool_ErrorHandler(lua_State *lua)
 {
     lua_getglobal(lua, "debug");
     lua_getfield(lua, -1, "traceback");
@@ -639,10 +1003,15 @@ static int ErrorHandler(lua_State *lua)
     lua_pushnil(lua);
     lua_pushinteger(lua, 3);
     lua_call(lua, 2, 1);
-    fprintf(stderr, "Error: %s\n%s\n", lua_tostring(lua, 1), lua_tostring(lua, 2));
+    fprintf(stderr, EDSTABLETOOL_ERROR "%s\n%s\n", lua_tostring(lua, 1), lua_tostring(lua, 2));
     return 0;
 }
 
+/*----------------------------------------------------------------
+ *
+ * Main entry point to the tool
+ *
+ *-----------------------------------------------------------------*/
 int main(int argc, char *argv[])
 {
     int arg;
@@ -657,20 +1026,24 @@ int main(int argc, char *argv[])
     luaL_openlibs(lua);
 
     /* Stack index 1 will be the error handler function (used for protected calls) */
-    lua_pushcfunction(lua, ErrorHandler);
+    lua_pushcfunction(lua, EdsTableTool_ErrorHandler);
 
     /* Create an Applist table to hold the loaded table template objects */
     lua_newtable(lua);
     lua_rawsetp(lua, LUA_REGISTRYINDEX, &LUA_APPLIST_KEY);
 
-    while ((arg = getopt (argc, argv, "e:")) != -1)
+    while ((arg = getopt (argc, argv, "e:p")) != -1)
     {
        switch (arg)
        {
+       case 'p':
+          EdsTableTool_Global.AllowPassthrough = true;
+          break;
+
        case 'e':
           if (luaL_loadstring(lua, optarg) != LUA_OK)
           {
-              fprintf(stderr,"ERROR: Invalid command line expression: %s\n",
+              fprintf(stderr, EDSTABLETOOL_ERROR "Invalid command line expression: %s\n",
                       luaL_tolstring(lua,-1, NULL));
               lua_pop(lua, 2);
               return EXIT_FAILURE;
@@ -678,7 +1051,7 @@ int main(int argc, char *argv[])
 
           if (lua_pcall(lua, 0, 0, 1) != LUA_OK)
           {
-              fprintf(stderr,"ERROR: Cannot evaluate command line expression: %s\n",
+              fprintf(stderr, EDSTABLETOOL_ERROR "Cannot evaluate command line expression: %s\n",
                       luaL_tolstring(lua,-1, NULL));
               lua_pop(lua, 2);
               return EXIT_FAILURE;
@@ -688,11 +1061,11 @@ int main(int argc, char *argv[])
        case '?':
           if (isprint (optopt))
           {
-             fprintf(stderr, "Unknown option `-%c'.\n", optopt);
+             fprintf(stderr, EDSTABLETOOL_ERROR "Unknown option `-%c'.\n", optopt);
           }
           else
           {
-             fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
+             fprintf(stderr, EDSTABLETOOL_ERROR "Unknown option character `\\x%x'.\n", optopt);
           }
           return EXIT_FAILURE;
           break;
@@ -706,7 +1079,7 @@ int main(int argc, char *argv[])
     /* All additional args are input files.  If none, this should be considered an error */
     if (optind >= argc)
     {
-        fprintf(stderr, "ERROR: No input files specified on command line.\n");
+        fprintf(stderr, EDSTABLETOOL_ERROR "No input files specified on command line.\n");
         return EXIT_FAILURE;
     }
 
@@ -716,40 +1089,37 @@ int main(int argc, char *argv[])
     lua_getglobal(lua, "CPUNUMBER");
     if (lua_isstring(lua, -2) && lua_isnil(lua, -1))
     {
-        lua_pushinteger(lua, CFE_MissionLib_GetInstanceNumber(&CFE_SOFTWAREBUS_INTERFACE,
-                lua_tostring(lua, -2)));
-        lua_setglobal(lua, "CPUNUMBER");
+        uint16_t InstanceNum;
+
+        InstanceNum = CFE_MissionLib_GetInstanceNumber(&CFE_SOFTWAREBUS_INTERFACE, lua_tostring(lua, -2));
+        if (InstanceNum > 0)
+        {
+            lua_pushinteger(lua, InstanceNum);
+            lua_setglobal(lua, "CPUNUMBER");
+        }
     }
     else if (lua_isnumber(lua, -1) && lua_isnil(lua, -2))
     {
-        char TempBuf[64];
-        lua_pushstring(lua, CFE_MissionLib_GetInstanceName(&CFE_SOFTWAREBUS_INTERFACE,
-                lua_tointeger(lua, -1), TempBuf, sizeof(TempBuf)));
-        lua_setglobal(lua, "CPUNAME");
+        const char *NameStr;
+
+        NameStr = CFE_MissionLib_GetInstanceNameNonNull(&CFE_SOFTWAREBUS_INTERFACE, lua_tointeger(lua, -1));
+        if (NameStr != NULL)
+        {
+            lua_pushstring(lua, NameStr);
+            lua_setglobal(lua, "CPUNAME");
+        }
     }
     lua_pop(lua, 2);
 
-    /*
-     * if the SIMULATION compile-time directive is set, create a global
-     * Lua variable with that name so Lua code can do "if SIMULATION" statements
-     * as needed to support simulated environments.
-     *
-     * Note that a double macro is needed here, to force expansion of the macro
-     * rather than stringifying the macro name itself i.e. "SIMULATION"
-     */
-#ifdef SIMULATION
-#define EDS2CFETBL_STRINGIFY(x)     #x
-#define EDS2CFETBL_SIMSTRING(x)     EDS2CFETBL_STRINGIFY(x)
-    lua_pushstring(lua, EDS2CFETBL_SIMSTRING(SIMULATION));
-    lua_setglobal(lua, "SIMULATION");
-#endif
-
     lua_pushinteger(lua, CFE_FS_SubType_TBL_IMG);
-    lua_pushcclosure(lua, Write_CFE_EnacapsulationFile, 1);
+    lua_pushcclosure(lua, EdsTableTool_WriteCfeTableFile, 1);
     lua_setglobal(lua, "Write_CFE_LoadFile");
 
-    lua_pushcfunction(lua, Write_GenericFile);
+    lua_pushcfunction(lua, EdsTableTool_WriteGenericFile);
     lua_setglobal(lua, "Write_GenericFile");
+
+    lua_pushcfunction(lua, EdsTableTool_GetCObjectMetaData);
+    lua_setglobal(lua, "Get_CObjectMetaData");
 
     EdsLib_Lua_Attach(lua, &EDS_DATABASE);
     CFE_MissionLib_Lua_SoftwareBus_Attach(lua, &CFE_SOFTWAREBUS_INTERFACE);
@@ -765,15 +1135,24 @@ int main(int argc, char *argv[])
         slen = strlen(argv[arg]);
         if (slen >= 3 && strcmp(argv[arg] + slen - 3, ".so") == 0)
         {
-            LoadTemplateFile(lua, argv[arg]);
+            /* Handling a C table object (.so file) is a multi-step process */
+            /* the first step is to populate the "CObj" member in the global */
+            EdsTableTool_LoadCTemplateFile(argv[arg]);
+
+            /* next step is to identify that object */
+            EdsTableTool_IdentifyCObj();
+
+            /* now create Lua object(s) from those C objects */
+            /* note: future lua scripts may act on these objects */
+            EdsTableTool_CreateLuaObjFromCObj(lua);
         }
         else if (slen >= 4 && strcmp(argv[arg] + slen - 4, ".lua") == 0)
         {
-            LoadLuaFile(lua, argv[arg]);
+            EdsTableTool_LoadLuaFile(lua, argv[arg]);
         }
         else
         {
-            fprintf(stderr,"WARNING: Unable to handle file argument: %s\n",argv[arg]);
+            fprintf(stderr, EDSTABLETOOL_ERROR "Unable to handle file argument: %s\n",argv[arg]);
             return EXIT_FAILURE;
         }
     }
@@ -797,7 +1176,7 @@ int main(int argc, char *argv[])
         if (lua_pcall(lua, 4, 0, 1) != LUA_OK)
         {
             /* note - more descriptive error message already printed by error handler function */
-            fprintf(stderr, "Failed to write CFE table file from template\n");
+            fprintf(stderr, EDSTABLETOOL_ERROR "Failed to write CFE table file from template\n");
             return (EXIT_FAILURE);
         }
 

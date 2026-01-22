@@ -169,6 +169,7 @@ for _,datatypeset in ipairs(datatypesets) do
 
         dimension_list.parent = implicit_arraynode
         implicit_arraynode.datatyperef = typeref
+        implicit_arraynode.implicit_basetype = typeref
         typeref = implicit_arraynode
       end
 

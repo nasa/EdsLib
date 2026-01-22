@@ -39,8 +39,13 @@
 #
 project(EDS_CFECFS_MISSIONLIB_FSW C)
 
-include_directories(inc)
-include_directories(${EDSLIB_FSW_SOURCE_DIR}/inc)
+set(CFECFS_MISSIONLIB_TARGET_LIST 
+    EDS_${MISSION_NAME}_runtime_shared
+    EDS_${MISSION_NAME}_runtime_static
+    cfe_missionlib 
+    cfe_missionlib_pic
+    cfe_missionlib_runtime_pic
+)
 
 # The "runtime" libraries are specifically intended to provide the mapping logic required
 # to convert between CFE Message IDs, which are used for routing, to CFE Topic IDs which
@@ -109,30 +114,45 @@ add_custom_target(missionlib-runtime-install
         EDS_${MISSION_NAME}_runtime_shared
 )
 
-add_library(cfe_missionlib STATIC
+set(CFE_MISSIONLIB_SOURCES
     src/cfe_missionlib_api.c
+    src/cfe_missionlib_lookup.c
 )
-target_compile_definitions(cfe_missionlib PRIVATE
-    "_EDSLIB_BUILD_"
-)
-target_include_directories(cfe_missionlib INTERFACE
-    ${CMAKE_CURRENT_SOURCE_DIR}/inc
-    ${EDSLIB_FSW_SOURCE_DIR}/inc
+
+add_library(cfe_missionlib STATIC
+    ${CFE_MISSIONLIB_SOURCES}
 )
 
 # CFE_MissionLib pic libraries
+# The position independent code variant is only needed for things like the Python module
+# so using the EXCLUDE_FROM_ALL is intended to only build it if something depends on it
 add_library(cfe_missionlib_pic STATIC EXCLUDE_FROM_ALL
-    src/cfe_missionlib_api.c
+    ${CFE_MISSIONLIB_SOURCES}
 )
 set_target_properties(cfe_missionlib_pic PROPERTIES
-    POSITION_INDEPENDENT_CODE TRUE COMPILE_DEFINITIONS "_EDSLIB_BUILD_")
+    POSITION_INDEPENDENT_CODE TRUE
+)
 
 add_library(cfe_missionlib_runtime_pic STATIC EXCLUDE_FROM_ALL
-    src/cfe_missionlib_api.c
     ${RUNTIME_SOURCE}
 )
 set_target_properties(cfe_missionlib_runtime_pic PROPERTIES
-    POSITION_INDEPENDENT_CODE TRUE COMPILE_DEFINITIONS "_EDSLIB_BUILD_")
+    POSITION_INDEPENDENT_CODE TRUE
+)
+
+
+# all targets should share the inc directory publicly, and privately set _EDSLIB_BUILD_
+foreach(LOCALTGT ${CFECFS_MISSIONLIB_TARGET_LIST})
+    target_include_directories(${LOCALTGT} PUBLIC
+        inc
+    )
+    target_compile_definitions(${LOCALTGT} PRIVATE
+        COMPILE_DEFINITIONS "_EDSLIB_BUILD_"
+    )
+    target_link_libraries(${LOCALTGT} edslib_api)
+endforeach()
+
+
 
 # UT stubs are only needed for a CFS target build
 if (ENABLE_UNIT_TESTS AND IS_CFS_ARCH_BUILD)

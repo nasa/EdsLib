@@ -27,6 +27,10 @@ add_library(ut_missionlib_stubs
     cfe_missionlib_stub_helpers.c
 )
 
+target_include_directories(ut_missionlib_stubs PUBLIC 
+  $<TARGET_PROPERTY:cfe_missionlib,INTERFACE_INCLUDE_DIRECTORIES>
+)
+
 target_link_libraries(ut_missionlib_stubs
   ut_assert
 )

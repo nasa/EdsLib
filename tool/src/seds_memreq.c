@@ -43,6 +43,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "seds_memreq.h"
 
@@ -102,6 +103,11 @@ static int seds_memreq_add(lua_State *lua)
         psize->packing_status = SEDS_BYTEPACK_STATUS_OTHER;
     }
 
+    if (padd->is_variable_size)
+    {
+        psize->is_variable_size = true;
+    }
+
     start_offset_bits = psize->raw_bit_size;
     start_offset_bytes = (psize->endpoint_bytes + padd->local_align_mask) & ~padd->local_align_mask;
     psize->endpoint_bytes = start_offset_bytes + padd->local_storage_bytes;
@@ -145,6 +151,7 @@ static int seds_memreq_union(lua_State *lua)
     if (padd->raw_bit_size > psize->raw_bit_size)
     {
         psize->raw_bit_size = padd->raw_bit_size;
+        psize->is_variable_size = padd->is_variable_size;
     }
 
     psize->packing_status = SEDS_BYTEPACK_STATUS_OTHER;
@@ -278,6 +285,18 @@ static int seds_memreq_setpack(lua_State *lua)
 }
 
 /**
+ * Lua-callable function to set if an object is variably sized
+ *
+ */
+static int seds_memreq_setvariable(lua_State *lua)
+{
+    seds_memreq_t *psize = luaL_checkudata(lua, 1, "seds_memreq");
+
+    psize->is_variable_size = lua_toboolean(lua, 2);
+    return 0;
+}
+
+/**
  * Lua callable function to add a "pad" to an object size
  *
  * The object is padded by the specified number of bits.  This does not affect
@@ -336,6 +355,12 @@ static int seds_memreq_get_property(lua_State *lua)
         if (strcmp(lua_tostring(lua, 2), "alignment") == 0)
         {
             lua_pushinteger(lua, 8 * (1 + psize->local_align_mask));
+            return 1;
+        }
+
+        if (strcmp(lua_tostring(lua, 2), "is_variable") == 0)
+        {
+            lua_pushboolean(lua, psize->is_variable_size);
             return 1;
         }
 
@@ -400,6 +425,12 @@ static int seds_memreq_get_property(lua_State *lua)
         if (strcmp(lua_tostring(lua, 2), "setpack") == 0)
         {
             lua_pushcfunction(lua, seds_memreq_setpack);
+            return 1;
+        }
+
+        if (strcmp(lua_tostring(lua, 2), "setvariable") == 0)
+        {
+            lua_pushcfunction(lua, seds_memreq_setvariable);
             return 1;
         }
 
@@ -529,11 +560,114 @@ int seds_memreq_new_object(lua_State *lua)
     return 1;
 }
 
+unsigned int seds_get_binary_digits(double limit, bool twos_complement)
+{
+    unsigned int digits;
+    double val;
+    int exp;
+
+    val = frexp(fabs(limit), &exp);
+    if (isinf(val))
+    {
+        /* Infinite is not really supported, just use max bits */
+        digits = 64;
+    }
+    else if (isnormal(val) && val != 0.0 && exp >= 1) /* This can return NaN if the input was NaN */
+    {
+        digits = exp;
+
+        /*
+        * Because numbers are internally "double" values in Lua,
+        * anything above ~52 bits may result in an extra
+        * digit due to rounding up.  This adds a "slop factor"
+        * to avoid triggering false errors (the cost is that
+        * this might not flag a borderline case that is an error)
+        */
+        if (digits > 52 && val < 0.55)
+        {
+            --digits;
+        }
+        else if (twos_complement && val == 0.5 && limit < 0.0)
+        {
+            /* special handling for twos complement, has one extra
+            * value of range on the negative side */
+            --digits;
+        }
+    }
+    else
+    {
+        digits = 1;
+    }
+
+    return digits;
+}
+
+/**
+ * Lua-callable function to calculate the number of digits required for a value
+ *
+ * This requires some math functions that were deprecated in Lua 5.4 so this
+ * implementation is written in C.
+ *
+ * Input Lua stack:
+ *      1: Maximum Value of data type
+ *      2: Minimum Value of data type
+ *      3: Encoding type (optional)
+ */
+int seds_calulate_range_digits(lua_State *lua)
+{
+    double max = lua_tonumber(lua, 1);
+    double min = lua_tonumber(lua, 2);
+    double posdig;
+    double negdig;
+    bool twos_complement;
+
+    if (lua_type(lua, 3) == LUA_TSTRING)
+    {
+        twos_complement = (strcmp(lua_tostring(lua, 3), "twoscomplement") == 0);
+    }
+    else
+    {
+        /* By default assume twos complement */
+        twos_complement = true;
+    }
+
+    /* determine number of digits in positive range */
+    if (max > 0)
+    {
+        posdig = seds_get_binary_digits(max, twos_complement);
+    }
+    else
+    {
+        posdig = 0;
+    }
+
+    /* determine number of digits in negative range */
+    if (min < 0)
+    {
+        negdig = seds_get_binary_digits(min, twos_complement);
+    }
+    else
+    {
+        negdig = 0;
+    }
+
+    /* If both positive and negative values are representable
+     * then this needs a sign bit, so add 1 to both sides */
+    if (posdig > 0 && negdig > 0)
+    {
+        ++posdig;
+        ++negdig;
+    }
+
+    lua_pushinteger(lua, posdig);
+    lua_pushinteger(lua, negdig);
+    return 2;
+}
+
 /*******************************************************************************/
 /*                      Externally-Called Functions                            */
 /*      (referenced outside this unit and prototyped in a separate header)     */
 /*******************************************************************************/
-
 
 /*
  * ------------------------------------------------------
@@ -545,5 +679,6 @@ void seds_memreq_register_globals(lua_State *lua)
     luaL_checktype(lua, -1, LUA_TTABLE);
     lua_pushcfunction(lua, seds_memreq_new_object);
     lua_setfield(lua, -2, "new_size_object");
-
+    lua_pushcfunction(lua, seds_calulate_range_digits);
+    lua_setfield(lua, -2, "calulate_range_digits");
 }

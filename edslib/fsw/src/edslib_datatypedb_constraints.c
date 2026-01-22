@@ -42,11 +42,18 @@
 
 #include "edslib_internal.h"
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 int32_t EdsLib_DataTypeDB_ConstraintIterator_Impl(const EdsLib_DatabaseObject_t *GD,
         EdsLib_ConstraintIterator_ControlBlock_t *CtlBlock, const EdsLib_DatabaseRef_t *BaseRef)
 {
     const EdsLib_DataTypeDB_Entry_t *DataDictPtr;
     const EdsLib_ContainerDescriptor_t *DerivDescPtr;
+    const EdsLib_IdentityCheckSequence_t *DerivativeCheck;
     const EdsLib_IdentSequenceEntry_t *IdentSequencePtr;
     const EdsLib_DerivativeEntry_t *DerivEntryPtr;
     const EdsLib_ValueEntry_t *SelectedEntry;
@@ -64,10 +71,16 @@ int32_t EdsLib_DataTypeDB_ConstraintIterator_Impl(const EdsLib_DatabaseObject_t 
     }
 
     DerivDescPtr = DataDictPtr->Detail.Container;
-    if (DerivDescPtr == NULL ||
-            DerivDescPtr->IdentSequenceList == NULL ||
-            DerivDescPtr->ValueList == NULL ||
-            DerivDescPtr->ConstraintEntityList == NULL)
+    if (DerivDescPtr == NULL)
+    {
+        DerivativeCheck = NULL;
+    }
+    else
+    {
+        DerivativeCheck = DerivDescPtr->CheckSequence;
+    }
+
+    if (DerivativeCheck == NULL)
     {
         return EDSLIB_NO_MATCHING_VALUE;
     }
@@ -76,8 +89,7 @@ int32_t EdsLib_DataTypeDB_ConstraintIterator_Impl(const EdsLib_DatabaseObject_t 
     DerivEntryPtr = DerivDescPtr->DerivativeList;
     for (DerivIdx=0; DerivIdx < DerivDescPtr->DerivativeListSize; ++DerivIdx)
     {
-        if ((DerivEntryPtr->RefObj.AppIndex == CtlBlock->TargetRef.AppIndex &&
-                DerivEntryPtr->RefObj.TypeIndex == CtlBlock->TargetRef.TypeIndex))
+        if (EdsLib_DatabaseRef_IsEqual(&DerivEntryPtr->RefObj, &CtlBlock->TargetRef))
         {
             Status = EDSLIB_SUCCESS;
         }
@@ -102,37 +114,42 @@ int32_t EdsLib_DataTypeDB_ConstraintIterator_Impl(const EdsLib_DatabaseObject_t 
      * start at the result (the derivative) and follow the ParentOperation
      * links, which reveal the conditions required on the base type.
      */
-    IdentSequencePtr = &DerivDescPtr->IdentSequenceList[DerivEntryPtr->IdentSeqIdx];
+    IdentSequencePtr = &DerivativeCheck->SequenceList[DerivEntryPtr->IdentSeqIdx];
     CtlBlock->TempConstraintValue.ValueType = EDSLIB_BASICTYPE_NONE;
     while (IdentSequencePtr->EntryType != EDSLIB_IDENT_SEQUENCE_INVALID)
     {
-        if (IdentSequencePtr->EntryType == EDSLIB_IDENT_SEQUENCE_VALUE_CONDITION)
+        if (IdentSequencePtr->EntryType == EDSLIB_IDENT_SEQUENCE_CHECK_CONDITION)
         {
-            SelectedEntry = &DerivDescPtr->ValueList[IdentSequencePtr->RefIdx];
+            SelectedEntry = &DerivativeCheck->ValueList[IdentSequencePtr->Datum];
         }
         else if (IdentSequencePtr->EntryType == EDSLIB_IDENT_SEQUENCE_ENTITY_LOCATION)
         {
-            SelectedLocation = &DerivDescPtr->ConstraintEntityList[IdentSequencePtr->RefIdx];
+            SelectedLocation = &DerivativeCheck->ConstraintEntityList[IdentSequencePtr->Datum];
             if (SelectedEntry != NULL)
             {
                 DataDictPtr = EdsLib_DataTypeDB_GetEntry(GD, &SelectedLocation->RefObj);
-                if (DataDictPtr != NULL)
+                if (DataDictPtr != NULL && SelectedEntry->ConstraintStyle == EDSLIB_VALUE_CONSTRAINTSTYLE_SINGLE_VALUE)
                 {
-                    if (DataDictPtr->BasicType == EDSLIB_BASICTYPE_SIGNED_INT)
+                    if (SelectedEntry->BasicType == EDSLIB_BASICTYPE_SIGNED_INT)
                     {
-                        CtlBlock->TempConstraintValue.Value.SignedInteger = SelectedEntry->RefValue.Integer;
-                        CtlBlock->TempConstraintValue.ValueType = DataDictPtr->BasicType;
+                        CtlBlock->TempConstraintValue.Value.SignedInteger = SelectedEntry->RefValue.Single.SignedInt;
+                        CtlBlock->TempConstraintValue.ValueType = SelectedEntry->BasicType;
                     }
-                    else if (DataDictPtr->BasicType == EDSLIB_BASICTYPE_UNSIGNED_INT)
+                    else if (SelectedEntry->BasicType == EDSLIB_BASICTYPE_UNSIGNED_INT)
                     {
-                        CtlBlock->TempConstraintValue.Value.UnsignedInteger = SelectedEntry->RefValue.Unsigned;
-                        CtlBlock->TempConstraintValue.ValueType = DataDictPtr->BasicType;
+                        CtlBlock->TempConstraintValue.Value.UnsignedInteger = SelectedEntry->RefValue.Single.UnsignedInt;
+                        CtlBlock->TempConstraintValue.ValueType = SelectedEntry->BasicType;
                     }
-                    else if (DataDictPtr->BasicType == EDSLIB_BASICTYPE_BINARY)
+                    else if (SelectedEntry->BasicType == EDSLIB_BASICTYPE_FLOAT)
                     {
-                        strncpy(CtlBlock->TempConstraintValue.Value.StringData, SelectedEntry->RefValue.String,
+                        CtlBlock->TempConstraintValue.Value.FloatingPoint = SelectedEntry->RefValue.Single.FloatingPt;
+                        CtlBlock->TempConstraintValue.ValueType = SelectedEntry->BasicType;
+                    }
+                    else if (SelectedEntry->BasicType == EDSLIB_BASICTYPE_BINARY)
+                    {
+                        strncpy(CtlBlock->TempConstraintValue.Value.StringData, SelectedEntry->RefValue.Single.String,
                                 sizeof(CtlBlock->TempConstraintValue.Value.StringData));
-                        CtlBlock->TempConstraintValue.ValueType = DataDictPtr->BasicType;
+                        CtlBlock->TempConstraintValue.ValueType = SelectedEntry->BasicType;
                     }
                 }
                 if (CtlBlock->TempConstraintValue.ValueType != EDSLIB_BASICTYPE_NONE)
@@ -146,21 +163,399 @@ int32_t EdsLib_DataTypeDB_ConstraintIterator_Impl(const EdsLib_DatabaseObject_t 
                 SelectedEntry = NULL;
             }
         }
-        IdentSequencePtr = &DerivDescPtr->IdentSequenceList[IdentSequencePtr->ParentOperation];
+        IdentSequencePtr = &DerivativeCheck->SequenceList[IdentSequencePtr->ParentOperation];
     }
 
     return EDSLIB_SUCCESS;
 }
 
-int32_t EdsLib_DataTypeIdentifyBuffer_Impl(const EdsLib_DatabaseObject_t *GD, const EdsLib_DataTypeDB_Entry_t *DataDictPtr, const void *Buffer, uint16_t *DerivTableIndex, EdsLib_DatabaseRef_t *ActualObj)
+/*----------------------------------------------------------------
+ *
+ * EdsLib local helper function function
+ * Compare two numeric values
+ *
+ *-----------------------------------------------------------------*/
+int8_t EdsLib_DataType_CompareSignedInt(EdsLib_Generic_SignedInt_t Value1, EdsLib_Generic_SignedInt_t Value2)
 {
-    const EdsLib_ValueEntry_t *SelectedEntry;
-    const EdsLib_ConstraintEntity_t *SelectedLocation;
+    int8_t Result;
+
+    if (Value1 < Value2)
+    {
+        Result = -1;
+    }
+    else if (Value1 > Value2)
+    {
+        Result = 1;
+    }
+    else
+    {
+        Result = 0;
+    }
+
+    return Result;
+}
+
+/*----------------------------------------------------------------
+ *
+ * EdsLib local helper function function
+ * Compare two numeric values
+ *
+ *-----------------------------------------------------------------*/
+int8_t EdsLib_DataType_CompareUnsignedInt(EdsLib_Generic_UnsignedInt_t Value1, EdsLib_Generic_UnsignedInt_t Value2)
+{
+    int8_t Result;
+
+    if (Value1 < Value2)
+    {
+        Result = -1;
+    }
+    else if (Value1 > Value2)
+    {
+        Result = 1;
+    }
+    else
+    {
+        Result = 0;
+    }
+
+    return Result;
+}
+
+/*----------------------------------------------------------------
+ *
+ * EdsLib local helper function function
+ * Compare two numeric values
+ *
+ *-----------------------------------------------------------------*/
+int8_t EdsLib_DataType_CompareFloatingPt(EdsLib_Generic_FloatingPoint_t Value1, EdsLib_Generic_FloatingPoint_t Value2)
+{
+    int8_t Result;
+
+    if (Value1 < Value2)
+    {
+        Result = -1;
+    }
+    else if (Value1 > Value2)
+    {
+        Result = 1;
+    }
+    else
+    {
+        Result = 0;
+    }
+
+    return Result;
+}
+
+/*----------------------------------------------------------------
+ *
+ * EdsLib local helper function function
+ * Compare two numeric values
+ *
+ *-----------------------------------------------------------------*/
+int8_t EdsLib_DataType_CompareGeneric(const EdsLib_GenericValueBuffer_t *Value1, EdsLib_GenericValueBuffer_t *Value2)
+{
+    int8_t Result;
+
+    /* ensure the data is consistently typed - value2 will be coerced into whatever type value1 is */
+    EdsLib_DataTypeConvert(Value2, Value1->ValueType);
+    switch(Value1->ValueType)
+    {
+        case EDSLIB_BASICTYPE_UNSIGNED_INT:
+            Result = EdsLib_DataType_CompareUnsignedInt(Value1->Value.UnsignedInteger, Value2->Value.UnsignedInteger);
+            break;
+        case EDSLIB_BASICTYPE_SIGNED_INT:
+            Result = EdsLib_DataType_CompareSignedInt(Value1->Value.SignedInteger, Value2->Value.SignedInteger);
+            break;
+        case EDSLIB_BASICTYPE_FLOAT:
+            Result = EdsLib_DataType_CompareUnsignedInt(Value1->Value.FloatingPoint, Value2->Value.FloatingPoint);
+            break;
+        case EDSLIB_BASICTYPE_BINARY:
+            Result = strncmp(Value1->Value.StringData, Value2->Value.StringData, sizeof(Value1->Value));
+            break;
+        default:
+            Result = -1;
+            break;
+    }
+
+    return Result;
+}
+
+/*----------------------------------------------------------------
+ *
+ * EdsLib local helper function function
+ * Load a reference value from the DB
+ *
+ *-----------------------------------------------------------------*/
+void EdsLib_DataType_IdentLoadReference(EdsLib_GenericValueBuffer_t *ValuePtr, EdsLib_BasicType_t RefType, const EdsLib_SingleValue_t *RefValPtr)
+{
+    ValuePtr->ValueType = RefType;
+    switch(RefType)
+    {
+        case EDSLIB_BASICTYPE_UNSIGNED_INT:
+            ValuePtr->Value.UnsignedInteger = RefValPtr->UnsignedInt;
+            break;
+        case EDSLIB_BASICTYPE_SIGNED_INT:
+            ValuePtr->Value.SignedInteger = RefValPtr->SignedInt;
+            break;
+        case EDSLIB_BASICTYPE_FLOAT:
+            ValuePtr->Value.FloatingPoint = RefValPtr->FloatingPt;
+            break;
+        case EDSLIB_BASICTYPE_BINARY:
+            strncpy(ValuePtr->Value.StringData, RefValPtr->String, sizeof(ValuePtr->Value));
+            break;
+        default:
+            memset(ValuePtr, 0, sizeof(*ValuePtr));
+            break;
+    }
+}
+
+/*----------------------------------------------------------------
+ *
+ * EdsLib local helper function function
+ * Implement single value check
+ *
+ *-----------------------------------------------------------------*/
+int8_t EdsLib_DataType_IdentValueCheckSingle(const EdsLib_ValueEntry_t *SelectedEntry, const EdsLib_GenericValueBuffer_t *ValuePtr)
+{
+    EdsLib_GenericValueBuffer_t RefValue;
+
+    /* this case is simple */
+    EdsLib_DataType_IdentLoadReference(&RefValue, SelectedEntry->BasicType, &SelectedEntry->RefValue.Single);
+    return EdsLib_DataType_CompareGeneric(ValuePtr, &RefValue);
+}
+
+/*----------------------------------------------------------------
+ *
+ * EdsLib local helper function function
+ * Implement range value check
+ *
+ *-----------------------------------------------------------------*/
+int8_t EdsLib_DataType_IdentValueCheckRange(const EdsLib_ValueEntry_t *SelectedEntry, const EdsLib_GenericValueBuffer_t *ValuePtr)
+{
+    EdsLib_GenericValueBuffer_t RefTemp;
+    int8_t MinResult;
+    int8_t MaxResult;
+    int8_t MinReq;
+    int8_t MaxReq;
+
+    /* load the minimum, if applicable */
+    switch(SelectedEntry->InclusionStyle)
+    {
+        case EDSLIB_VALUE_INCLUSIONSTYLE_NONE:
+            MinResult = -1;
+            break;
+
+        case EDSLIB_VALUE_INCLUSIONSTYLE_INCLUSIVE_MIN_INCLUSIVE_MAX:
+        case EDSLIB_VALUE_INCLUSIONSTYLE_INCLUSIVE_MIN_EXCLUSIVE_MAX:
+        case EDSLIB_VALUE_INCLUSIONSTYLE_EXCLUSIVE_MIN_INCLUSIVE_MAX:
+        case EDSLIB_VALUE_INCLUSIONSTYLE_EXCLUSIVE_MIN_EXCLUSIVE_MAX:
+        case EDSLIB_VALUE_INCLUSIONSTYLE_AT_LEAST:
+        case EDSLIB_VALUE_INCLUSIONSTYLE_GREATER_THAN:
+            EdsLib_DataType_IdentLoadReference(&RefTemp, SelectedEntry->BasicType, &SelectedEntry->RefValue.Pair.Min);
+            MinResult = EdsLib_DataType_CompareGeneric(ValuePtr, &RefTemp);
+            break;
+
+        default:
+            MinResult = 1;
+            break;
+    }
+
+    /* load the maximum, if applicable */
+    switch(SelectedEntry->InclusionStyle)
+    {
+        case EDSLIB_VALUE_INCLUSIONSTYLE_NONE:
+            MaxResult = 1;
+            break;
+
+        case EDSLIB_VALUE_INCLUSIONSTYLE_INCLUSIVE_MIN_INCLUSIVE_MAX:
+        case EDSLIB_VALUE_INCLUSIONSTYLE_INCLUSIVE_MIN_EXCLUSIVE_MAX:
+        case EDSLIB_VALUE_INCLUSIONSTYLE_EXCLUSIVE_MIN_INCLUSIVE_MAX:
+        case EDSLIB_VALUE_INCLUSIONSTYLE_EXCLUSIVE_MIN_EXCLUSIVE_MAX:
+        case EDSLIB_VALUE_INCLUSIONSTYLE_LESS_THAN:
+        case EDSLIB_VALUE_INCLUSIONSTYLE_AT_MOST:
+            EdsLib_DataType_IdentLoadReference(&RefTemp, SelectedEntry->BasicType, &SelectedEntry->RefValue.Pair.Max);
+            MaxResult = EdsLib_DataType_CompareGeneric(ValuePtr, &RefTemp);
+            break;
+
+        default:
+            MaxResult = -1;
+            break;
+    }
+
+    switch(SelectedEntry->InclusionStyle)
+    {
+        case EDSLIB_VALUE_INCLUSIONSTYLE_INCLUSIVE_MIN_INCLUSIVE_MAX:
+        case EDSLIB_VALUE_INCLUSIONSTYLE_INCLUSIVE_MIN_EXCLUSIVE_MAX:
+        case EDSLIB_VALUE_INCLUSIONSTYLE_AT_LEAST:
+            MinReq = 0;
+            break;
+
+        default:
+            MinReq = 1;
+            break;
+    }
+
+    switch(SelectedEntry->InclusionStyle)
+    {
+        case EDSLIB_VALUE_INCLUSIONSTYLE_INCLUSIVE_MIN_INCLUSIVE_MAX:
+        case EDSLIB_VALUE_INCLUSIONSTYLE_EXCLUSIVE_MIN_INCLUSIVE_MAX:
+        case EDSLIB_VALUE_INCLUSIONSTYLE_AT_MOST:
+            MaxReq = 0;
+            break;
+
+        default:
+            MaxReq = -1;
+            break;
+    }
+
+    if (MinResult < MinReq)
+    {
+        return -1;
+    }
+    else if (MaxResult > MaxReq)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+/*----------------------------------------------------------------
+ *
+ * EdsLib local helper function function
+ * Implement value check supporting both single and range
+ *
+ *-----------------------------------------------------------------*/
+int8_t EdsLib_DataType_IdentValueCheck(const EdsLib_ValueEntry_t *SelectedEntry, const EdsLib_GenericValueBuffer_t *ValuePtr)
+{
+    int8_t Result;
+
+    switch (SelectedEntry->ConstraintStyle)
+    {
+        case EDSLIB_VALUE_CONSTRAINTSTYLE_SINGLE_VALUE:
+        {
+            Result = EdsLib_DataType_IdentValueCheckSingle(SelectedEntry, ValuePtr);
+            break;
+        }
+
+        case EDSLIB_VALUE_CONSTRAINTSTYLE_RANGE_VALUE:
+        {
+            Result = EdsLib_DataType_IdentValueCheckRange(SelectedEntry, ValuePtr);
+            break;
+        }
+
+        default:
+        {
+            Result = -1;
+            break;
+        }
+    }
+
+    return Result;
+ }
+
+ /*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
+const EdsLib_IdentSequenceEntry_t *EdsLib_DataTypeExecuteConstraintSequence_Impl(const EdsLib_DatabaseObject_t *GD,
+    const EdsLib_IdentityCheckSequence_t *CheckSequence, const void *Buffer, size_t MaxOffset)
+{
+    const EdsLib_ValueEntry_t *SelectedValue;
+    const EdsLib_ConstraintEntity_t *SelectedConstraint;
+    const EdsLib_IdentSequenceEntry_t *IdentSequencePtr;
+    const EdsLib_DataTypeDB_Entry_t *DataTypePtr;
+    EdsLib_ConstPtr_t SrcPtr;
+    EdsLib_GenericValueBuffer_t ValueBuff;
+    int8_t CompareResult;
+    uint16_t CurrSeqPos;
+
+    CurrSeqPos = CheckSequence->SequenceEntryIdx;
+    do
+    {
+        if (CurrSeqPos > CheckSequence->SequenceEntryIdx)
+        {
+            CurrSeqPos = 0;
+        }
+
+        IdentSequencePtr = &CheckSequence->SequenceList[CurrSeqPos];
+
+        if (IdentSequencePtr->EntryType == EDSLIB_IDENT_SEQUENCE_CHECK_CONDITION)
+        {
+            SelectedValue = &CheckSequence->ValueList[IdentSequencePtr->Datum];
+            CompareResult = EdsLib_DataType_IdentValueCheck(SelectedValue, &ValueBuff);
+        }
+        else if (IdentSequencePtr->EntryType == EDSLIB_IDENT_SEQUENCE_ENTITY_LOCATION)
+        {
+            SelectedConstraint = &CheckSequence->ConstraintEntityList[IdentSequencePtr->Datum];
+            DataTypePtr = EdsLib_DataTypeDB_GetEntry(GD, &SelectedConstraint->RefObj);
+            if (DataTypePtr != NULL && (SelectedConstraint->Offset.Bytes + DataTypePtr->SizeInfo.Bytes) <= MaxOffset)
+            {
+                SrcPtr.Ptr = (const uint8_t *)Buffer + SelectedConstraint->Offset.Bytes;
+                EdsLib_DataTypeLoad_Impl(&ValueBuff, SrcPtr, DataTypePtr);
+            }
+            else
+            {
+                ValueBuff.ValueType = EDSLIB_BASICTYPE_NONE;
+            }
+            if (ValueBuff.ValueType != EDSLIB_BASICTYPE_NONE)
+            {
+                CompareResult = 0;
+            }
+            else
+            {
+                CompareResult = -1;
+            }
+        }
+        else
+        {
+            /* got to the end, this is always the "result" regardless of what it is */
+            /* The caller should interpret this as a default result */
+            break;
+        }
+
+        if (CompareResult > 0)
+        {
+            /*
+             * Runtime value was greater than reference value from DB,
+             * so jump following the greater than link
+             */
+            CurrSeqPos = IdentSequencePtr->JumpIfGreater;
+        }
+        else if (CompareResult < 0)
+        {
+            /*
+             * Runtime value was less than reference value from DB,
+             * so jump following the less than link
+             */
+            CurrSeqPos = IdentSequencePtr->JumpIfLess;
+        }
+        else
+        {
+            /* a "match" means simply move to the next item */
+            --CurrSeqPos;
+        }
+    }
+    while (true);
+
+    return IdentSequencePtr;
+}
+
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
+int32_t EdsLib_DataTypeIdentifyBuffer_Impl(const EdsLib_DatabaseObject_t *GD, const EdsLib_DataTypeDB_Entry_t *DataDictPtr, const void *Buffer, size_t MaxOffset, uint16_t *DerivTableIndex, EdsLib_DatabaseRef_t *ActualObj)
+{
     const EdsLib_ContainerDescriptor_t *DerivedContainerDesc;
     const EdsLib_IdentSequenceEntry_t *IdentSequencePtr;
-    EdsLib_ConstPtr_t DataPtr;
-    EdsLib_GenericValueBuffer_t ValueBuff;
-    intmax_t CompareResult;
     int32_t Status;
 
     if (DataDictPtr == NULL || DataDictPtr->BasicType != EDSLIB_BASICTYPE_CONTAINER)
@@ -171,96 +566,24 @@ int32_t EdsLib_DataTypeIdentifyBuffer_Impl(const EdsLib_DatabaseObject_t *GD, co
     DerivedContainerDesc = DataDictPtr->Detail.Container;
 
     Status = EDSLIB_NO_MATCHING_VALUE;
-    if (DerivedContainerDesc->IdentSequenceList != NULL)
+    if (DerivedContainerDesc->CheckSequence != NULL)
     {
-        IdentSequencePtr = &DerivedContainerDesc->IdentSequenceList[DerivedContainerDesc->IdentSequenceBase];
-        while (1)
-        {
-            if (IdentSequencePtr->EntryType == EDSLIB_IDENT_SEQUENCE_VALUE_CONDITION)
-            {
-                SelectedEntry = &DerivedContainerDesc->ValueList[IdentSequencePtr->RefIdx];
-                if (ValueBuff.ValueType == EDSLIB_BASICTYPE_SIGNED_INT)
-                {
-                    CompareResult = (ValueBuff.Value.SignedInteger - SelectedEntry->RefValue.Integer);
-                }
-                else if (ValueBuff.ValueType == EDSLIB_BASICTYPE_UNSIGNED_INT)
-                {
-                    CompareResult = (ValueBuff.Value.UnsignedInteger - SelectedEntry->RefValue.Unsigned);
-                }
-                else if (ValueBuff.ValueType == EDSLIB_BASICTYPE_BINARY)
-                {
-                    CompareResult = strncmp(ValueBuff.Value.StringData, SelectedEntry->RefValue.String,
-                            sizeof(ValueBuff.Value.StringData));
-                }
-                else
-                {
-                    CompareResult = -1;
-                }
-            }
-            else if (IdentSequencePtr->EntryType == EDSLIB_IDENT_SEQUENCE_ENTITY_LOCATION)
-            {
-                SelectedLocation = &DerivedContainerDesc->ConstraintEntityList[IdentSequencePtr->RefIdx];
-                DataPtr.Ptr = Buffer;
-                DataPtr.Addr += SelectedLocation->Offset.Bytes;
-                EdsLib_DataTypeLoad_Impl(&ValueBuff, DataPtr, EdsLib_DataTypeDB_GetEntry(GD, &SelectedLocation->RefObj));
-                if (ValueBuff.ValueType != EDSLIB_BASICTYPE_NONE)
-                {
-                    CompareResult = 0;
-                }
-                else
-                {
-                    CompareResult = -1;
-                }
-            }
-            else
-            {
-                break;
-            }
+        IdentSequencePtr = EdsLib_DataTypeExecuteConstraintSequence_Impl(GD,
+            DerivedContainerDesc->CheckSequence, Buffer, MaxOffset);
 
-            if (CompareResult == 0)
-            {
-                /*
-                 * Indicated operation was satisfied or successfully completed-
-                 * Move to the next entry in the table for the next operation.
-                 */
-                --IdentSequencePtr;
-            }
-            else if (CompareResult > 0)
-            {
-                /*
-                 * Runtime value was greater than reference value from DB,
-                 * so jump following the greater than link
-                 */
-                IdentSequencePtr = &DerivedContainerDesc->IdentSequenceList
-                        [IdentSequencePtr->NextOperationGreater];
-            }
-            else
-            {
-                /*
-                 * Runtime value was less than reference value from DB,
-                 * so jump following the less than link
-                 */
-                IdentSequencePtr = &DerivedContainerDesc->IdentSequenceList
-                        [IdentSequencePtr->NextOperationLess];
-            }
-        }
-
-        if (IdentSequencePtr->EntryType == EDSLIB_IDENT_SEQUENCE_RESULT)
+        if (IdentSequencePtr != NULL && IdentSequencePtr->EntryType == EDSLIB_IDENT_SEQUENCE_REFOBJ_RESULT)
         {
             Status = EDSLIB_SUCCESS;
             if (DerivTableIndex != NULL)
             {
-                *DerivTableIndex = IdentSequencePtr->RefIdx;
+                *DerivTableIndex = IdentSequencePtr->Datum;
             }
             if (ActualObj != NULL)
             {
-                *ActualObj = DerivedContainerDesc->DerivativeList[IdentSequencePtr->RefIdx].RefObj;
+                *ActualObj = DerivedContainerDesc->DerivativeList[IdentSequencePtr->Datum].RefObj;
             }
         }
-
     }
 
     return Status;
 }
-
-

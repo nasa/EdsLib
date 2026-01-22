@@ -150,20 +150,19 @@ static void EdsLib_Python_ConvertEdsMembers_Callback(void *Arg, const EdsLib_Ent
              * "PyList_SetItem" steals the reference,
              * but "PyDict_SetItemString" does not.
              */
-            if (ParentConv->desc.TypeInfo.ElemType == EDSLIB_BASICTYPE_CONTAINER &&
-                    ParamDesc->FullName != NULL)
-            {
-                /* If a container then use the named index.
-                 * The python object should always be a Dictionary in this case */
-                PyDict_SetItemString(ParentConv->pyobj, (char*)ParamDesc->FullName, subpair.pyobj);
-                Py_DECREF(subpair.pyobj);
-            }
-            else if (ParentConv->desc.TypeInfo.ElemType == EDSLIB_BASICTYPE_ARRAY)
+            if (ParentConv->desc.TypeInfo.ElemType == EDSLIB_BASICTYPE_ARRAY)
             {
                 /* If an array then use the numeric index.
                  * The python object should always be a List in this case.
                  * This steals a reference - no need to DECREF */
                 PyList_SET_ITEM(ParentConv->pyobj, ParamDesc->SeqNum, subpair.pyobj);
+            }
+            else if (ParamDesc->FullName != NULL)
+            {
+                /* If there is a named index then use it
+                 * The python object should always be a Dictionary in this case */
+                PyDict_SetItemString(ParentConv->pyobj, (char*)ParamDesc->FullName, subpair.pyobj);
+                Py_DECREF(subpair.pyobj);
             }
             else
             {
@@ -187,7 +186,8 @@ static void EdsLib_Python_ConvertEdsObjectToPythonImpl(EdsLib_Python_ObjectConve
     {
         ConvPair->pyobj = PyList_New(ConvPair->desc.TypeInfo.NumSubElements);
     }
-    else if (ConvPair->desc.TypeInfo.ElemType == EDSLIB_BASICTYPE_CONTAINER)
+    else if (ConvPair->desc.TypeInfo.ElemType == EDSLIB_BASICTYPE_CONTAINER ||
+             ConvPair->desc.TypeInfo.ElemType == EDSLIB_BASICTYPE_COMPONENT)
     {
         ConvPair->pyobj = PyDict_New();
     }
@@ -516,18 +516,16 @@ bool EdsLib_Python_ConvertPythonToEdsScalar(EdsLib_Binding_DescriptorObject_t *e
                     edsobj->TypeInfo.ElemType == EDSLIB_BASICTYPE_BINARY))
     {
         ReprObj = PyObject_Repr(pyobj);
-        if (PyBytes_Check(ReprObj))
+        if (ReprObj != NULL)
         {
-            BytesObj = ReprObj;
-            Py_INCREF(ReprObj);
-        }
-        else if (PyUnicode_Check(ReprObj))
-        {
-            BytesObj = PyUnicode_AsUTF8String(ReprObj);
-        }
-        else
-        {
-            BytesObj = PyObject_Bytes(ReprObj);
+            if (PyUnicode_Check(ReprObj))
+            {
+                BytesObj = PyUnicode_AsUTF8String(ReprObj);
+            }
+            else
+            {
+                BytesObj = PyObject_Bytes(ReprObj);
+            }
         }
     }
 
@@ -743,4 +741,57 @@ void EdsLib_Python_ReleaseObjectDesciptor(EdsLib_Binding_DescriptorObject_t *des
     {
         EdsLib_Python_Buffer_ReleaseContentRef(content);
     }
+}
+
+EdsLib_Id_t EdsLib_Python_ConvertArgToEdsId(const EdsLib_DatabaseObject_t *GD, PyObject* arg)
+{
+    EdsLib_Id_t Result;
+    PyObject *temp_id;
+
+    temp_id = NULL;
+    Result = EDSLIB_ID_INVALID;
+
+    /*
+     * The identifier might come from the python interpreter as a string or number.
+     *  - If it is a number, treat it as an EdsId number (typecast it, basically)
+     *  - If it is a string, it could be unicode or some other nature of bytes object.
+     *
+     * In the latter case we must look up the name in EdsLib, but the names in EdsLib
+     * are only strict ASCII.  (allowing unicode chars might be a future enhancement).
+     * Thus we must make sure that the name is only ASCII before calling the API.
+     */
+    if (PyNumber_Check(arg))
+    {
+        /* Already numeric, assume it is an ID number */
+        temp_id = PyNumber_Long(arg);
+        if (temp_id != NULL)
+        {
+            Result = PyLong_AsUnsignedLong(temp_id);
+        }
+    }
+    else
+    {
+        /* Do a lookup but make sure the string is plain ASCII */
+        if (PyUnicode_Check(arg))
+        {
+            temp_id = PyUnicode_AsASCIIString(arg);
+        }
+        else
+        {
+            temp_id = PyObject_ASCII(arg);
+        }
+
+        if (temp_id != NULL)
+        {
+            Result = EdsLib_DisplayDB_LookupTypeName(GD, PyBytes_AsString(temp_id));
+            if (!EdsLib_Is_Valid(Result))
+            {
+                PyErr_Format(PyExc_ValueError, "Type not found in EDS DB: %s", PyBytes_AsString(temp_id));
+            }
+        }
+    }
+
+    Py_XDECREF(temp_id);
+
+    return Result;
 }

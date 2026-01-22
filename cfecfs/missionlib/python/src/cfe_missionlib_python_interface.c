@@ -38,8 +38,6 @@
 #include "cfe_mission_eds_interface_parameters.h"
 
 
-PyObject *CFE_MissionLib_Python_InterfaceCache = NULL;
-
 static void         CFE_MissionLib_Python_Interface_dealloc(PyObject * obj);
 static PyObject *   CFE_MissionLib_Python_Interface_new(PyTypeObject *obj, PyObject *args, PyObject *kwds);
 static PyObject *   CFE_MissionLib_Python_Interface_gettopic(PyObject *obj, PyObject *arg);
@@ -54,7 +52,7 @@ static int          CFE_MissionLib_Python_InterfaceIterator_traverse(PyObject *o
 static int          CFE_MissionLib_Python_InterfaceIterator_clear(PyObject *obj);
 static PyObject *   CFE_MissionLib_Python_InterfaceIterator_iternext(PyObject *obj);
 
-static CFE_MissionLib_Python_Interface_t *CFE_MissionLib_Python_Interface_GetFromInterfaceId_Impl(PyTypeObject *obj, PyObject *dbobj, uint16_t IntfId);
+static CFE_MissionLib_Python_Interface_t *CFE_MissionLib_Python_Interface_GetFromDeclEdsId_Impl(PyTypeObject *obj, PyObject *dbobj, EdsLib_Id_t DeclEdsId);
 
 static PyMethodDef CFE_MissionLib_Python_Interface_methods[] =
 {
@@ -108,8 +106,7 @@ static int CFE_MissionLib_Python_Interface_traverse(PyObject *obj, visitproc vis
     CFE_MissionLib_Python_Interface_t *self = (CFE_MissionLib_Python_Interface_t *)obj;
     Py_VISIT(self->DbObj);
     Py_VISIT(self->IntfName);
-    Py_VISIT(self->TypeCache);
-
+    Py_VISIT(self->TopicCache);
     return 0;
 }
 
@@ -118,8 +115,7 @@ static int CFE_MissionLib_Python_Interface_clear(PyObject *obj)
     CFE_MissionLib_Python_Interface_t *self = (CFE_MissionLib_Python_Interface_t *)obj;
     Py_CLEAR(self->DbObj);
     Py_CLEAR(self->IntfName);
-    Py_CLEAR(self->TypeCache);
-
+    Py_CLEAR(self->TopicCache);
     return 0;
 }
 
@@ -128,7 +124,7 @@ static void CFE_MissionLib_Python_Interface_dealloc(PyObject * obj)
     CFE_MissionLib_Python_Interface_t *self = (CFE_MissionLib_Python_Interface_t *)obj;
     Py_CLEAR(self->DbObj);
     Py_CLEAR(self->IntfName);
-    Py_CLEAR(self->TypeCache);
+    Py_CLEAR(self->TopicCache);
 
     if (self->WeakRefList != NULL)
     {
@@ -139,37 +135,36 @@ static void CFE_MissionLib_Python_Interface_dealloc(PyObject * obj)
     CFE_MissionLib_Python_InterfaceType.tp_base->tp_dealloc(obj);
 }
 
-static CFE_MissionLib_Python_Interface_t *CFE_MissionLib_Python_Interface_GetFromInterfaceId_Impl(PyTypeObject *obj, PyObject *dbobj, uint16_t IntfId)
+static CFE_MissionLib_Python_Interface_t *CFE_MissionLib_Python_Interface_GetFromDeclEdsId_Impl(PyTypeObject *obj, PyObject *dbobj, EdsLib_Id_t DeclEdsId)
 {
     CFE_MissionLib_Python_Database_t *DbObj = (CFE_MissionLib_Python_Database_t *)dbobj;
-    CFE_MissionLib_Python_Interface_t *self;
-    const char *InterfaceName = NULL;
-    PyObject *IntfIdVal;
-    PyObject *weakref;
+    CFE_MissionLib_Python_Interface_t *self = NULL;
+    char Buffer[128];
+    int32_t Status;
+    PyObject *DeclEdsIdVal;
+    bool IsSuccess;
 
+    IsSuccess = false;
     do
     {
-        IntfIdVal = PyLong_FromUnsignedLong(IntfId);
-        if (IntfIdVal == NULL)
+        DeclEdsIdVal = PyLong_FromUnsignedLong(DeclEdsId);
+        if (DeclEdsIdVal == NULL)
         {
             break;
         }
 
-        weakref = PyDict_GetItem(CFE_MissionLib_Python_InterfaceCache, IntfIdVal);
-        if (weakref != NULL)
+        self = (CFE_MissionLib_Python_Interface_t *)CFE_MissionLib_Python_GetFromCache(DbObj->IntfCache, DeclEdsIdVal, &CFE_MissionLib_Python_InterfaceType);
+        if (self != NULL)
         {
-            self = (CFE_MissionLib_Python_Interface_t *)PyWeakref_GetObject(weakref);
-            if (Py_TYPE(self) == &CFE_MissionLib_Python_InterfaceType)
+            if (EdsLib_Is_Match(DeclEdsId, self->DeclEdsId))
             {
-                if (IntfId == self->InterfaceId)
-                {
-                    Py_INCREF(self);
-                    break;
-                }
-
-                /* weakref expired, needs to be recreated */
-                self = NULL;
+                IsSuccess = true;
+                break;
             }
+
+            /* not a match */
+            Py_DECREF(self);
+            self = NULL;
         }
 
         self = (CFE_MissionLib_Python_Interface_t*)obj->tp_alloc(obj, 0);
@@ -178,52 +173,60 @@ static CFE_MissionLib_Python_Interface_t *CFE_MissionLib_Python_Interface_GetFro
             break;
         }
 
-        self->TypeCache = PyDict_New();
-        if (self->TypeCache == NULL)
+        Py_INCREF(DbObj);
+        self->DbObj = DbObj;
+        self->DeclEdsId = DeclEdsId;
+
+        self->TopicCache = PyDict_New();
+        if (self->TopicCache == NULL)
         {
-            Py_DECREF(self);
             break;
         }
 
-        Py_INCREF(DbObj);
-        self->DbObj = DbObj;
-        InterfaceName = CFE_MissionLib_GetInterfaceName(DbObj->IntfDb, IntfId);
-        self->IntfName = PyUnicode_FromFormat("%s",InterfaceName);
-        self->InterfaceId = IntfId;
-        CFE_MissionLib_GetInterfaceInfo(DbObj->IntfDb, IntfId, &self->IntfInfo);
+        Status = EdsLib_IntfDB_GetFullName(CFE_MissionLib_GetParent(DbObj->IntfDb), DeclEdsId, Buffer, sizeof(Buffer));
+        if (Status != EDSLIB_SUCCESS)
+        {
+            PyErr_Format(PyExc_RuntimeError, "Unable to get name of intf ID: %lx", (unsigned long)DeclEdsId);
+            break;
+        }
+
+        self->IntfName = PyUnicode_FromFormat("%s", Buffer);
+        if (self->IntfName == NULL)
+        {
+            break;
+        }
+
+        /* All SB interfaces should have a single command on it */
+        Status = EdsLib_IntfDB_FindAllCommands(CFE_MissionLib_GetParent(DbObj->IntfDb), DeclEdsId, &self->CmdEdsId, 1);
+        if (Status != EDSLIB_SUCCESS)
+        {
+            PyErr_Format(PyExc_RuntimeError, "Unable to enumerate commands on intf ID: %lx", (unsigned long)DeclEdsId);
+            break;
+        }
 
         /* Create a weak reference to store in the local cache in case this
          * database is constructed again. */
-        weakref = PyWeakref_NewRef((PyObject*)self, NULL);
-        if (weakref == NULL)
+        if (CFE_MissionLib_Python_SaveToCache(DbObj->IntfCache, DeclEdsIdVal, (PyObject*)self) < 0)
         {
-            Py_DECREF(self);
+            /* if something went wrong this raises an error and must return NULL */
             break;
         }
 
-        PyDict_SetItem(CFE_MissionLib_Python_InterfaceCache, IntfIdVal, weakref);
-        Py_DECREF(weakref);
+        IsSuccess = true;
     }
     while(0);
 
-    Py_XDECREF(IntfIdVal);
+    Py_XDECREF(DeclEdsIdVal);
+    if (!IsSuccess && self != NULL)
+    {
+        Py_CLEAR(self->IntfName);
+        Py_CLEAR(self->TopicCache);
+        Py_DECREF(self);
+        self = NULL;
+    }
+
     return self;
 }
-
-//const CFE_MissionLib_InterfaceId_Entry_t *CFE_MissionLib_Python_Interface_GetEntry(PyObject *obj)
-//{
-//    if (obj == NULL)
-//    {
-//        return NULL;
-//    }
-//    if (!PyObject_TypeCheck(obj, &CFE_MissionLib_Python_InterfaceType))
-//    {
-//        PyErr_SetObject(PyExc_TypeError, obj);
-//        return NULL;
-//    }
-//
-//    return ((CFE_MissionLib_Python_Interface_t*)obj)->IntfEntry;
-//}
 
 static PyObject *CFE_MissionLib_Python_Interface_new(PyTypeObject *obj, PyObject *args, PyObject *kwds)
 {
@@ -232,10 +235,7 @@ static PyObject *CFE_MissionLib_Python_Interface_new(PyTypeObject *obj, PyObject
     PyObject *arg3 = NULL;
     CFE_MissionLib_Python_Database_t *DbObj = NULL;
 
-    CFE_MissionLib_InterfaceInfo_t IntfInfo;
-    int32_t Status;
-
-    uint16_t InterfaceId = 0;  // 0 is an invalid InterfaceId
+    EdsLib_Id_t DeclEdsId = EDSLIB_ID_INVALID;
 
     PyObject *tempargs = NULL;
     PyObject *result = NULL;
@@ -247,7 +247,7 @@ static PyObject *CFE_MissionLib_Python_Interface_new(PyTypeObject *obj, PyObject
      *   - An EdsDb Python Object (only needed if a string is used as an Interface Database Identifier)
      *
      * Databases are natively of the CFE_MissionLib_Python_Database_t type
-     * Interface Identifiers are indices which are natively unsigned integers (uint16_t specifically)
+     * Interface Identifiers are indices which are natively unsigned integers (EdsLib_Id_t specifically)
      *
      * However, either value can alternatively be supplied as a string,
      * in which case it can be looked up and converted to the native value.
@@ -292,48 +292,13 @@ static PyObject *CFE_MissionLib_Python_Interface_new(PyTypeObject *obj, PyObject
         }
 
         // Set up the Interface Python Object from an Interface Id or Interface Name
-        if (PyNumber_Check(arg2))
+        DeclEdsId = CFE_MissionLib_Python_ConvertArgToEdsId(EdsLib_IntfDB_FindDeclaredInterfaceByFullName, CFE_MissionLib_GetParent(DbObj->IntfDb), arg2);
+
+        /* if the lookup failed it should have already set an exception */
+        if (EdsLib_Is_Valid(DeclEdsId))
         {
-            tempargs = PyNumber_Long(arg2);
-            if (tempargs == NULL)
-            {
-                break;
-            }
-
-            InterfaceId = PyLong_AsUnsignedLong(tempargs);
-            Status = CFE_MissionLib_GetInterfaceInfo(DbObj->IntfDb, InterfaceId, &IntfInfo);
-            if (Status != CFE_MISSIONLIB_SUCCESS)
-            {
-                PyErr_Format(PyExc_RuntimeError, "Invalid Interface Id: %u\tStatus: %d", InterfaceId, Status);
-                break;
-            }
+            result = (PyObject*)CFE_MissionLib_Python_Interface_GetFromDeclEdsId_Impl(&CFE_MissionLib_Python_InterfaceType, (PyObject *)DbObj, DeclEdsId);
         }
-        else
-        {
-            if (PyUnicode_Check(arg2))
-            {
-                tempargs = PyUnicode_AsUTF8String(arg2);
-            }
-            else
-            {
-                tempargs = PyObject_Bytes(arg2);
-            }
-
-            if (tempargs == NULL)
-            {
-                break;
-            }
-
-            Status = CFE_MissionLib_FindInterfaceByName(DbObj->IntfDb, PyBytes_AsString(tempargs), &InterfaceId);
-
-            if (Status != CFE_MISSIONLIB_SUCCESS)
-            {
-                PyErr_Format(PyExc_RuntimeError, "Interface %s undefined\tStatus: %d", PyBytes_AsString(tempargs), Status);
-                break;
-            }
-        }
-
-        result = (PyObject*)CFE_MissionLib_Python_Interface_GetFromInterfaceId_Impl(&CFE_MissionLib_Python_InterfaceType, (PyObject *)DbObj, InterfaceId);
     }
     while(0);
 
@@ -370,46 +335,39 @@ static PyObject *CFE_MissionLib_Python_Interface_gettopic(PyObject *obj, PyObjec
 PyObject *CFE_MissionLib_Python_Interface_GetFromIntfName(CFE_MissionLib_Python_Database_t *obj, PyObject *InterfaceName)
 {
     int32_t status;
-    uint16_t InterfaceId;
+    EdsLib_Id_t DeclEdsId;
 
-    status = CFE_MissionLib_FindInterfaceByName(obj->IntfDb, PyBytes_AsString(InterfaceName), &InterfaceId);
-
-    if (status != CFE_MISSIONLIB_SUCCESS)
+    status = EdsLib_IntfDB_FindDeclaredInterfaceByFullName(CFE_MissionLib_GetParent(obj->IntfDb),
+            PyBytes_AsString(InterfaceName), &DeclEdsId);
+    if (status != EDSLIB_SUCCESS)
     {
         PyErr_Format(PyExc_RuntimeError, "Interface %s undefined", PyBytes_AsString(InterfaceName));
         return NULL;
     }
 
-    return (PyObject*)CFE_MissionLib_Python_Interface_GetFromInterfaceId_Impl(&CFE_MissionLib_Python_InterfaceType, (PyObject *)obj, InterfaceId);
+    return (PyObject*)CFE_MissionLib_Python_Interface_GetFromDeclEdsId_Impl(&CFE_MissionLib_Python_InterfaceType, (PyObject *)obj, DeclEdsId);
 }
 
 static PyObject *  CFE_MissionLib_Python_Interface_iter(PyObject *obj)
 {
-    CFE_MissionLib_Python_Interface_t *Intf = (CFE_MissionLib_Python_Interface_t *) obj;
     CFE_MissionLib_Python_InterfaceIterator_t *IntfIter;
     PyObject *result = NULL;
 
-    if (Intf->IntfInfo.NumTopics != 0)
+    IntfIter = PyObject_GC_New(CFE_MissionLib_Python_InterfaceIterator_t, &CFE_MissionLib_Python_InterfaceIteratorType);
+
+    if (IntfIter == NULL)
     {
-        IntfIter = PyObject_GC_New(CFE_MissionLib_Python_InterfaceIterator_t, &CFE_MissionLib_Python_InterfaceIteratorType);
-
-        if (IntfIter == NULL)
-        {
-            return NULL;
-        }
-
-        IntfIter->Index = 1;
-
-        Py_INCREF(obj);
-        IntfIter->refobj = obj;
-
-        result = (PyObject *)IntfIter;
-        PyObject_GC_Track(result);
+        return NULL;
     }
-    else
-    {
-        PyErr_Format(PyExc_RuntimeError, "Not an iterable interface");
-    }
+
+    IntfIter->TopicId = 0;
+
+    Py_INCREF(obj);
+    IntfIter->refobj = obj;
+
+    result = (PyObject *)IntfIter;
+    PyObject_GC_Track(result);
+
     return result;
 }
 
@@ -439,47 +397,53 @@ static PyObject *CFE_MissionLib_Python_InterfaceIterator_iternext(PyObject *obj)
 {
     CFE_MissionLib_Python_InterfaceIterator_t *self = (CFE_MissionLib_Python_InterfaceIterator_t*)obj;
     CFE_MissionLib_Python_Interface_t *intf = NULL;
-    const char * Label = NULL;
-    uint16_t idx;
+    char Buffer[128];
+    CFE_MissionLib_TopicInfo_t TopicInfo;
+    int32_t Status;
     PyObject *key = NULL;
     PyObject *topicid = NULL;
     PyObject *result = NULL;
 
+    if (self->refobj == NULL)
+    {
+        return NULL;
+    }
+
+    intf = (CFE_MissionLib_Python_Interface_t *)self->refobj;
+
+    memset(&TopicInfo, 0, sizeof(TopicInfo));
+
     do
     {
-    	if (self->refobj == NULL)
+        /* This function will return a unique error code if the topic ID is beyond the valid range */
+        /* it returns success on unused topic IDs, but the ParentInfId will be invalid if unused */
+        ++self->TopicId;
+        Status = CFE_MissionLib_GetTopicInfo(intf->DbObj->IntfDb, self->TopicId, &TopicInfo);
+        if (Status != CFE_MISSIONLIB_SUCCESS)
         {
             break;
         }
 
-        intf = (CFE_MissionLib_Python_Interface_t *)self->refobj;
-        idx = self->Index;
+        /* This fails quickly if passed an invalid identifier - it will not assemble the string */
+        Status = EdsLib_IntfDB_GetFullName(CFE_MissionLib_GetParent(intf->DbObj->IntfDb), TopicInfo.ParentIntfId, Buffer, sizeof(Buffer));
+    }
+    while(Status != EDSLIB_SUCCESS);
 
-        do
+    if (Status == EDSLIB_SUCCESS)
+    {
+        key = PyUnicode_FromString(Buffer);
+
+        if (key == NULL)
         {
-            Label = CFE_MissionLib_GetTopicName(intf->DbObj->IntfDb, intf->InterfaceId, idx);
-            ++idx;
+            /* end */
+            Py_CLEAR(self->refobj);
         }
-        while((Label == NULL) && (idx <= intf->IntfInfo.NumTopics+1));
-
-        if (idx <= intf->IntfInfo.NumTopics+1)
+        else
         {
-            key = PyUnicode_FromString(Label);
-
-            if (key == NULL)
-            {
-            	/* end */
-            	Py_CLEAR(self->refobj);
-            	break;
-            }
-
-            topicid = PyLong_FromLong(idx-1);
-
-            self->Index = idx;
+            topicid = PyLong_FromLong(self->TopicId);
             result = PyTuple_Pack(2, key, topicid);
         }
     }
-    while(0);
 
     Py_XDECREF(key);
     Py_XDECREF(topicid);
@@ -490,4 +454,59 @@ static PyObject *CFE_MissionLib_Python_InterfaceIterator_iternext(PyObject *obj)
 static PyObject *CFE_MissionLib_Python_Interface_GetCmdMessage(PyObject *obj, PyObject *args)
 {
     return PyUnicode_FromFormat("Interface_GetCmdMessage still needs to be implemented");
+}
+
+EdsLib_Id_t CFE_MissionLib_Python_ConvertArgToEdsId(EdsLib_NameLookupFunc_t Func, const EdsLib_DatabaseObject_t *GD, PyObject* arg)
+{
+    EdsLib_Id_t Result;
+    int32_t Status;
+    PyObject *temp_id;
+
+    temp_id = NULL;
+    Result = EDSLIB_ID_INVALID;
+
+    /*
+     * The identifier might come from the python interpreter as a string or number.
+     *  - If it is a number, treat it as an EdsId number (typecast it, basically)
+     *  - If it is a string, it could be unicode or some other nature of bytes object.
+     *
+     * In the latter case we must look up the name in EdsLib, but the names in EdsLib
+     * are only strict ASCII.  (allowing unicode chars might be a future enhancement).
+     * Thus we must make sure that the name is only ASCII before calling the API.
+     */
+    if (PyNumber_Check(arg))
+    {
+        /* Already numeric, assume it is an ID number */
+        temp_id = PyNumber_Long(arg);
+        if (temp_id != NULL)
+        {
+            Result = PyLong_AsUnsignedLong(temp_id);
+        }
+    }
+    else
+    {
+        /* Do a lookup but make sure the string is plain ASCII */
+        if (PyUnicode_Check(arg))
+        {
+            temp_id = PyUnicode_AsASCIIString(arg);
+        }
+        else
+        {
+            temp_id = PyObject_ASCII(arg);
+        }
+
+        if (temp_id != NULL)
+        {
+            Status = Func(GD, PyBytes_AsString(temp_id), &Result);
+            if (Status != EDSLIB_SUCCESS)
+            {
+                PyErr_Format(PyExc_ValueError, "Name lookup on \'%s\' failed with code=%d", PyBytes_AsString(temp_id), (int)Status);
+                Result = EDSLIB_ID_INVALID;
+            }
+        }
+    }
+
+    Py_XDECREF(temp_id);
+
+    return Result;
 }

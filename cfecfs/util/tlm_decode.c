@@ -44,16 +44,19 @@
 #include "cfe_mission_eds_parameters.h"
 #include "cfe_mission_eds_interface_parameters.h"
 #include "edslib_displaydb.h"
+#include "edslib_intfdb.h"
 #include "cfe_missionlib_runtime.h"
 #include "cfe_missionlib_api.h"
 
 
-#define BASE_SERVER_PORT 1235
+#define BASE_SERVER_PORT 2234
 
 EdsNativeBuffer_CFE_HDR_TelemetryHeader_t       LocalBuffer;
 EdsPackedBuffer_CFE_HDR_TelemetryHeader_t NetworkBuffer;
 
 static const char *optString = "c:?";
+
+static const EdsLib_Id_t CFE_SB_TELEMETRY_CMD_ID = EDSLIB_INTF_ID(EDS_INDEX(CFE_SB), EdsCommand_CFE_SB_Telemetry_indication_DECLARATION);
 
 /*
 ** getopts_long long form argument table
@@ -89,8 +92,12 @@ int main(int argc, char *argv[])
   EdsLib_DataTypeDB_TypeInfo_t TypeInfo;
   EdsInterface_CFE_SB_SoftwareBus_PubSub_t PubSubParams;
   EdsComponent_CFE_SB_Publisher_t PublisherParams;
+  CFE_MissionLib_TopicInfo_t TopicInfo;
   char TempBuffer[64];
   int32_t Status;
+
+  EdsDataType_CFE_HDR_Message_t *MessagePtr = (EdsDataType_CFE_HDR_Message_t *)(void *)&LocalBuffer;
+
 
   Port = BASE_SERVER_PORT;
   opt = getopt_long( argc, argv, optString, longOpts, &longIndex );
@@ -171,7 +178,7 @@ int main(int argc, char *argv[])
         EdsLib_Generate_Hexdump(stdout, NetworkBuffer, 0, n);
     }
 
-    EdsId = EDSLIB_MAKE_ID(EDS_INDEX(CFE_HDR), CFE_HDR_TelemetryHeader_DATADICTIONARY);
+    EdsId = EDSLIB_MAKE_ID(EDS_INDEX(CFE_HDR), EdsContainer_CFE_HDR_TelemetryHeader_DATADICTIONARY);
     Status = EdsLib_DataTypeDB_GetTypeInfo(&EDS_DATABASE, EdsId, &TypeInfo);
     if (Status != EDSLIB_SUCCESS)
     {
@@ -185,12 +192,17 @@ int main(int argc, char *argv[])
         return Status;
     }
 
-    CFE_MissionLib_Get_PubSub_Parameters(&PubSubParams, &LocalBuffer.BaseObject.Message);
+    CFE_MissionLib_Get_PubSub_Parameters(&PubSubParams, MessagePtr);
     CFE_MissionLib_UnmapPublisherComponent(&PublisherParams, &PubSubParams);
 
-    Status = CFE_MissionLib_GetArgumentType(&CFE_SOFTWAREBUS_INTERFACE, EDS_INTERFACE_ID(CFE_SB_Telemetry),
-            PublisherParams.Telemetry.TopicId, 1, 1, &EdsId);
+    Status = CFE_MissionLib_GetTopicInfo(&CFE_SOFTWAREBUS_INTERFACE, PublisherParams.Telemetry.TopicId, &TopicInfo);
     if (Status != CFE_MISSIONLIB_SUCCESS)
+    {
+        return Status;
+    }
+    
+    Status = EdsLib_IntfDB_FindAllArgumentTypes(&EDS_DATABASE, CFE_SB_TELEMETRY_CMD_ID, TopicInfo.ParentIntfId, &EdsId, 1);
+    if (Status != EDSLIB_SUCCESS)
     {
         return Status;
     }

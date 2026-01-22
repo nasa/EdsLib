@@ -38,6 +38,9 @@
 #  PYTHON_LIBS = libraries to put on link line (-l switches)
 #
 
+# More fixes needed for 3.13!
+add_definitions(-Wno-deprecated-declarations)
+
 project(EDSLIB_PYTHONBINDINGS C)
 
 if(NOT PYTHON_FOUND)

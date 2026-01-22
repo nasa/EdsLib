@@ -85,17 +85,323 @@ local function do_write_all_fields(output,pfields)
   end
 end
 
+-- -----------------------------------------------------------------------
+-- Writes a single entry in the value table
+-- -----------------------------------------------------------------------
+local function do_write_constraint_valuetable_entry(output, reftype, value)
+
+  local out_fields = {}
+  local compare_style
+  local numeric_style
+  local subfield
+  local enum_label
+
+    -- map subordinate types back to main type
+  while (reftype.entity_type == "SUBRANGE_DATATYPE" or reftype.entity_type == "ALIAS_DATATYPE") do
+    reftype = reftype.type
+  end
+
+  -- Sometimes ranges are whittled down to just a single value
+  -- If that happens, use normal comparison, not range comparison logic
+  if (type(value) == "userdata" and value.is_single_value) then
+    value = value.as_single_value
+  end
+
+  if (reftype.entity_type == "STRING_DATATYPE" or reftype.entity_type == "BINARY_DATATYPE") then
+    subfield = "Ptr"
+  elseif (reftype.entity_type == "FLOAT_DATATYPE") then
+    subfield = "FloatingPt"
+  elseif (reftype.entity_type == "ENUMERATION_DATATYPE") then
+    subfield = "SignedInt"
+  elseif (reftype.entity_type == "BOOLEAN_DATATYPE") then
+    subfield = "UnsignedInt"
+  elseif (reftype.entity_type == "INTEGER_DATATYPE") then
+    subfield = reftype.is_signed and "SignedInt" or "UnsignedInt"
+  end
+
+  if (subfield == nil) then
+    SEDS.error(string.format("Cannot determine matching style for %s", reftype))
+  elseif (subfield == "Ptr") then
+    out_fields["BasicType"] = "EDSLIB_BASICTYPE_BINARY"
+  elseif (subfield == "FloatingPt") then
+    out_fields["BasicType"] = "EDSLIB_BASICTYPE_FLOAT"
+  elseif (subfield == "SignedInt") then
+    out_fields["BasicType"] = "EDSLIB_BASICTYPE_SIGNED_INT"
+  elseif (subfield == "UnsignedInt") then
+    out_fields["BasicType"] = "EDSLIB_BASICTYPE_UNSIGNED_INT"
+  end
+
+  if (type(value) == "userdata") then -- assume range
+    out_fields["ConstraintStyle"] = "EDSLIB_VALUE_CONSTRAINTSTYLE_RANGE_VALUE"
+    out_fields["InclusionStyle"] = SEDS.to_macro_name("EDSLIB_VALUE_INCLUSIONSTYLE_" .. value.type)
+    if (value.min_value ~= nil) then
+      out_fields["RefValue.Pair.Min." .. subfield] = value.min_value
+    end
+    if (value.max_value ~= nil) then
+      out_fields["RefValue.Pair.Max." .. subfield] = value.max_value
+    end
+  else -- single value
+    out_fields["ConstraintStyle"] = "EDSLIB_VALUE_CONSTRAINTSTYLE_SINGLE_VALUE"
+    out_fields["RefValue.Single." .. subfield] = value
+  end
+
+  output:start_group(string.format("{ /* %s */", value))
+  for k in SEDS.sorted_keys(out_fields) do
+    local out_value = out_fields[k]
+    if (string.sub(k,1,8) == "RefValue") then
+      if (subfield == "String") then
+        out_value = string.format("\"%s\"", out_value) -- quote it
+      else
+        -- just convert to a string, the literal should be compatible with C
+        -- note this also applies to booleans, true and false become ints
+        out_value = string.format("%s", out_value)
+      end
+    end
+
+    output:append_previous(",")
+    output:write(string.format(".%s = %s", k, out_value))
+  end
+  output:end_group("}")
+end
+
+-- -----------------------------------------------------------------------
+-- Writes the entity references table for identity checking
+-- -----------------------------------------------------------------------
+local function do_write_constraint_ident_entitylist(output, basename, entitylist)
+
+  local descriptor_fields = {}
+
+  if (#entitylist > 0) then
+    descriptor_fields.ConstraintEntityList = string.format("%s_CONSTRAINT_ENTITY_LIST", basename)
+    output:write(string.format("static const EdsLib_ConstraintEntity_t %s[] =", descriptor_fields.ConstraintEntityList))
+    output:start_group("{")
+
+    for _,ent in ipairs(entitylist) do
+      output:append_previous(",")
+      output:start_group("{")
+      do_write_all_fields(output,ent.fields)
+      output:end_group("}")
+    end
+    output:end_group("};")
+    output:add_whitespace(1)
+    descriptor_fields.ConstraintEntityListSize = #entitylist
+  end
+
+  return descriptor_fields
+end
+
+-- -----------------------------------------------------------------------
+-- Writes the value table for identity checking
+-- -----------------------------------------------------------------------
+local function do_write_constraint_ident_valuelist(output, basename, valuelist)
+
+  local descriptor_fields = {}
+
+  if (#valuelist > 0) then
+    descriptor_fields.ValueList = string.format("%s_VALUE_LIST", basename)
+    output:write(string.format("static const EdsLib_ValueEntry_t %s[] =", descriptor_fields.ValueList))
+    output:start_group("{")
+    for _,vref in ipairs(valuelist) do
+      output:append_previous(",")
+      do_write_constraint_valuetable_entry(output,vref.reftype,vref.val)
+    end
+    output:end_group("};")
+    output:add_whitespace(1)
+
+    descriptor_fields.ValueListSize = #valuelist
+  end
+
+  return descriptor_fields
+end
+
+-- -----------------------------------------------------------------------
+-- Writes a sequence list for identity checking
+-- -----------------------------------------------------------------------
+local function do_write_constraint_ident_seqlist(output, basename, identseq)
+
+  local descriptor_fields = {}
+
+  if (#identseq > 0) then
+    descriptor_fields.SequenceList = string.format("%s_IDENT_SEQUENCE", basename)
+    output:write(string.format("static const EdsLib_IdentSequenceEntry_t %s[] =", descriptor_fields.SequenceList))
+    output:start_group("{")
+    for i,seq in ipairs(identseq) do
+      output:append_previous(",")
+      output:start_group(string.format("[%d] = {",i))
+      for k in SEDS.sorted_keys(seq) do
+        output:append_previous(",")
+        output:write(string.format(".%s = %s",k,seq[k]))
+      end
+      output:end_group("}")
+    end
+    output:end_group("};")
+    output:add_whitespace(1)
+    descriptor_fields.SequenceEntryIdx = #identseq
+  end
+
+  return descriptor_fields
+end
+
+-- -----------------------------------------------------------------------
+-- Writes a complete set of identification tables (check sequence)
+-- -----------------------------------------------------------------------
+local function do_write_constraint_ident_tables(output, basename, entitylist, valuelist, identseq)
+
+  local identcheck_obj_name = basename .. "_CHECK_SEQUENCE"
+  local presence_fields = do_get_fields({
+    function()
+      return do_write_constraint_ident_entitylist(output, basename, entitylist)
+    end,
+    function()
+      return do_write_constraint_ident_valuelist(output, basename, valuelist)
+    end,
+    function()
+      return do_write_constraint_ident_seqlist(output, basename, identseq)
+    end,
+  })
+
+  -- If nothing produced, return nothing
+  if next(presence_fields) == nil then
+    return
+  end
+
+  -- Otherwise make a presence object and return that
+  output:write(string.format("static const EdsLib_IdentityCheckSequence_t %s =", identcheck_obj_name))
+  output:start_group("{")
+  do_write_all_fields(output,presence_fields)
+  output:end_group("};")
+  output:add_whitespace(1);
+
+  return { CheckSequence = "&" .. identcheck_obj_name }
+
+end
+
+-- -----------------------------------------------------------------------
+-- Gets the reference entity for a constraint element
+-- Returns a 3-tuple of the (nominal) bit position, C struct member name, and the type
+-- -----------------------------------------------------------------------
+function do_compute_entity_offset(entref)
+  local bit = 0
+  local cname
+  local reftype
+
+  for _,v in ipairs(entref) do
+    local member = v.node and v.node.name or v.type.name
+    if (cname) then
+      cname = cname .. "." .. member
+    else
+      cname = member
+    end
+    bit = bit + v.offset
+    reftype = v.type
+  end
+
+  return bit, cname, reftype
+
+end
+
+-- -----------------------------------------------------------------------
+-- Gets fields for the reference entity for a constraint element
+-- Returns a table containing initializer fields
+-- -----------------------------------------------------------------------
+function do_get_entityref_fields(node, bit, cname, reftype)
+
+  return {
+    RefObj = reftype.edslib_refobj_typedb_initializer,
+    Offset = string.format("{ .Bits = %d, .Bytes = offsetof(struct %s,%s) }",
+        bit, SEDS.to_safe_identifier(node:get_flattened_name()), cname)
+  }
+
+end
+
+-- -----------------------------------------------------------------------
+-- Write tables for conditional presence of an entry
+-- This uses a simplified form of the same ident sequence as derivative identification
+-- -----------------------------------------------------------------------
+local function do_write_presence_detect(output, parent_container, entity)
+
+  local c_basename = string.format("EDS_%s_%s_ENTRY_PRESENCE",
+    SEDS.to_safe_identifier(parent_container:get_flattened_name()),
+    entity.name
+  )
+  local value_list = {}
+  local entity_list = {}
+  local identseq = {
+  }
+
+  -- This creates an effective "and" of all conditions in the list
+  -- The table does not need jumps because any mismatch means its not present,
+  -- and the order of operations does not really matter either, but they will
+  -- end up being evaluated in the reverse order from how they appear in XML
+  for _,pcond in ipairs(entity.presence_condition_list) do
+
+    local bitpos, membername, reftype = do_compute_entity_offset(pcond.entity)
+
+    table.sort(pcond.value_set,compare_value_keys)
+    for _,value in ipairs(pcond.value_set) do
+      local last_tail = #identseq
+      identseq[1 + #identseq] = {
+        EntryType = "EDSLIB_IDENT_SEQUENCE_BOOLEAN_RESULT",
+        Datum = true
+      }
+      identseq[1 + #identseq] = {
+        EntryType = "EDSLIB_IDENT_SEQUENCE_CHECK_CONDITION",
+        JumpIfLess = last_tail,
+        Datum = string.format("%s /* %s <=> %s */", #value_list, membername, value)
+      }
+      value_list[1 + #value_list] = {
+        val = value,
+        reftype = reftype
+      }
+    end
+
+    identseq[1 + #identseq] = {
+      EntryType = "EDSLIB_IDENT_SEQUENCE_ENTITY_LOCATION",
+      Datum = string.format("%s /* %s */", #entity_list, membername)
+    }
+    entity_list[1 + #entity_list] = {
+      fields = do_get_entityref_fields(parent_container, bitpos, membername, reftype)
+    }
+
+  end
+
+  return do_write_constraint_ident_tables(output, c_basename, entity_list, value_list, identseq)
+
+end
 
 -- -----------------------------------------------------------------------
 -- Get standard fields for a "container entry" in the C DB
 -- -----------------------------------------------------------------------
 local function write_normal_entry_handler(output,ds,parent_name)
-  return {
+
+  local presence_node
+  local out_fields
+
+  out_fields = {
     EntryType = "EDSLIB_ENTRYTYPE_" .. (ds.entry and ds.entry.entity_type or "BASE_TYPE"),
     Offset = string.format("{ .Bits = %d, .Bytes = offsetof(struct %s,%s) }",
         ds.bit, parent_name, ds.name or ds.type.name),
-    RefObj = ds.type and ds.type.edslib_refobj_initializer
+    RefObj = ds.type and ds.type.edslib_refobj_typedb_initializer,
   }
+
+
+  if (ds.entry) then
+    local parent_container = ds.entry:find_parent("CONTAINER_DATATYPE")
+
+    -- The entry may have a "presence_condition_list" if it has conditionals
+    -- to determine if it should be encoded or bypassed
+    if (ds.entry.presence_condition_list) then
+      do_get_fields(
+        function()
+          return do_write_presence_detect(output, parent_container, ds.entry)
+        end,
+        out_fields
+      )
+    end
+
+  end
+
+  return out_fields
 end
 
 
@@ -251,7 +557,7 @@ local function write_length_entry_handler(output,ds,parent_name)
   for caltype in ds.entry:iterate_children({"POLYNOMIAL_CALIBRATOR","SPLINE_CALIBRATOR"}) do
     fields = do_get_fields(write_c_calibrator_code[caltype.entity_type], fields, output, caltype, cal_name)
   end
-  if (not fields["HandlerArg.IntegerCalibrator.Reverse"]) then
+  if (fields ~= nil and not fields["HandlerArg.IntegerCalibrator.Reverse"]) then
     ds.entry:error("Calibration is not reversible as required for a LengthEntry")
   end
   return fields
@@ -317,9 +623,11 @@ local function get_basic_size_fields(output,node)
     if (node.header_data and rsize.bits > 0) then
       objsize = string.format("{ .Bits = %d, .Bytes = sizeof(%s) }",rsize.bits,node.header_data.typedef_name)
     end
-    flags = rsize.is_packed
-    if (flags) then
-      flags = "EDSLIB_DATATYPE_FLAG_PACKED_" .. flags
+    if (rsize.is_variable) then
+      flags = "EDSLIB_DATATYPE_FLAG_VARIABLE_SIZE"
+    else
+      flags = rsize.is_packed
+      flags = flags and ("EDSLIB_DATATYPE_FLAG_PACKED_" .. flags)
     end
   end
   return { SizeInfo = objsize, Checksum = checksum, Flags = flags }
@@ -356,7 +664,7 @@ local function write_c_decode_sequence(output, listnode)
   -- Call handlers to get C DB field values for every entry in the decode sequence
   if (not output.checksum_table[checksum]) then
     output.checksum_table[checksum] = objname
-    local c_type_name = SEDS.to_safe_identifier(listnode:get_qualified_name())
+    local c_type_name = SEDS.to_safe_identifier(listnode:get_flattened_name())
 
     for i,ds in ipairs(listnode.decode_sequence) do
       entrylist[i] = do_get_fields({
@@ -453,17 +761,36 @@ collect_descisiontree_values = function (state, low, high)
     resultmark = nil
   end
 
-
   -- At last, actually add the node for the current value
   state.list[selfidx] = {
     val = value,
-    NextOperationGreater = greatermark,
-    NextOperationLess = lessmark
+    JumpIfGreater = greatermark,
+    JumpIfLess = lessmark
   }
   state.idxset[selfidx] = true
 
 end
 
+
+-- -----------------------------------------------------------------------
+-- Helper function to compare keys in the table, which may be different types
+-- The lua < operator (default sort) does not work when the two objects being
+-- compared are a different type.
+-- -----------------------------------------------------------------------
+local compare_value_keys = function (a, b)
+  if (type(a) == "userdata") then
+    a = a.as_single_value -- gets a comparable integer value
+  end
+  if (type(b) == "userdata") then
+    b = b.as_single_value -- gets a comparable integer value
+  end
+
+  return (a < b) -- simple built-in compare should work
+end
+
+-- -----------------------------------------------------------------------
+-- Helper functions to collect the entities which are constrained in the container
+-- -----------------------------------------------------------------------
 collect_descisiontree_entities = function (list,etree)
   local ostate = { list = list }
   for entity in SEDS.sorted_keys(etree) do
@@ -474,12 +801,13 @@ collect_descisiontree_entities = function (list,etree)
       for value in pairs(ostate.vtree) do
         ostate.valuelist[1 + #ostate.valuelist] = value
       end
-      table.sort(ostate.valuelist)
+      table.sort(ostate.valuelist, compare_value_keys)
       collect_descisiontree_values(ostate,0,#ostate.valuelist)
     end
     list[1 + #list] = { ent = entity }
     for idx in pairs(ostate.idxset) do
       list[idx].ParentOperation = #list
+      list[idx].refent = entity
     end
   end
 end
@@ -497,7 +825,7 @@ local function write_c_derivative_descriptor(output,node)
   local entitylist = {}
   local valuemap = {}
   local valuelist = {}
-  local basename = SEDS.to_safe_identifier(node:get_qualified_name())
+  local basename = SEDS.to_safe_identifier(node:get_flattened_name())
   local is_containment
 
   is_containment = (node.max_size and node.max_size.bits > node.resolved_size.bits)
@@ -519,148 +847,93 @@ local function write_c_derivative_descriptor(output,node)
     -- It is up to the application to identify these types, but the DB
     -- can still enumerate what the options are.
     for _,deriv in ipairs(derivmap.derivatives or {}) do
-      derivset[deriv] = 0
+      derivset[deriv] = false
     end
 
-    collect_descisiontree_entities(identseq, derivmap.entities)
+    if (derivmap.entities) then
+      collect_descisiontree_entities(identseq, derivmap.entities)
+    end
 
     for i,seq in ipairs(identseq) do
       local deriv = seq.result
       local entity = seq.ent
       local value = seq.val
       if (deriv) then
-        derivset[deriv] = i
-        seq.EntryType = "EDSLIB_IDENT_SEQUENCE_RESULT"
+        seq.result = nil
+        local setlist = derivset[deriv] or {}
+        setlist[1 + #setlist] = i
+        derivset[deriv] = setlist
+        seq.EntryType = "EDSLIB_IDENT_SEQUENCE_REFOBJ_RESULT"
       elseif (entity) then
         seq.ent = nil
         if (not entitymap[entity]) then
           local entidx = 1 + #entitylist
-          local ent = {}
+          local bit, cname, reftype = do_compute_entity_offset(node:find_entity(entity))
+
           entitymap[entity] = entidx
-          entitylist[entidx] = ent
-
-          local entnode = node:find_entity(entity)
-          local bit = 0
-          local cname
-          for _,v in ipairs(entnode) do
-            local member = v.node and v.node.name or v.type.name
-            if (cname) then
-              cname = cname .. "." .. member
-            else
-              cname = member
-            end
-            bit = bit + v.offset
-          end
-
-          ent.RefObj = entnode[#entnode].type.edslib_refobj_initializer
-          ent.Offset = string.format("{ .Bits = %d, .Bytes = offsetof(struct %s,%s) }",
-              bit, SEDS.to_safe_identifier(node:get_qualified_name()), cname)
-
+          entitylist[entidx] = {
+            fields = do_get_entityref_fields(node, bit, cname, reftype),
+            reftype = reftype
+          }
         end
-
         seq.EntryType = "EDSLIB_IDENT_SEQUENCE_ENTITY_LOCATION"
-        seq.RefIdx = string.format("%s /* %s */", entitymap[entity] - 1, entity)
-
+        seq.Datum = string.format("%s /* %s */", entitymap[entity] - 1, entity)
       elseif (value) then
-        seq.val = nil
         if (not valuemap[value]) then
           local validx = 1 + #valuelist
-          local ent = {}
           valuemap[value] = validx
-          valuelist[validx] = ent
-
-          if (type(value) == "number" or type(value) == "boolean") then
-            ent["RefValue.Integer"] = value
-          else
-            -- For strings, include quotes, and escape any embedded quotes
-            ent["RefValue.String"] = string.format("\"%s\"", string.gsub(value,"\"", "\\\""))
-          end
+          valuelist[validx] = { val=value, refent=seq.refent }
         end
-
-        seq.EntryType = "EDSLIB_IDENT_SEQUENCE_VALUE_CONDITION"
-        seq.RefIdx = string.format("%s /* %s */", valuemap[value] - 1, value)
+        seq.EntryType = "EDSLIB_IDENT_SEQUENCE_CHECK_CONDITION"
+        seq.Datum = string.format("%s /* %s <=> %s */", valuemap[value] - 1, seq.refent, value)
+        seq.val = nil
+        seq.refent = nil
       end
+    end
+
+    -- Map value reference back to the actual data type
+    for _,vref in ipairs(valuelist) do
+      vref.reftype = entitylist[entitymap[vref.refent]].reftype
     end
 
     descriptor_fields.DerivativeList = string.format("%s_DERIVATIVE_LIST", basename)
     output:write(string.format("static const EdsLib_DerivativeEntry_t %s[] =", descriptor_fields.DerivativeList))
     output:start_group("{")
     local deriviter = SEDS.sorted_keys(derivset, function(a,b)
-      return (a.edslib_refobj_initializer < b.edslib_refobj_initializer)
+      return (a.edslib_refobj_typedb_initializer < b.edslib_refobj_typedb_initializer)
     end)
     for deriv in deriviter do
-      output:append_previous(",")
-      deriv.edslib_basetype_derivtable_idx = #derivlist -- save in DOM for future scripts
-      derivlist[1 + #derivlist] = deriv
-      output:write(string.format("{ .IdentSeqIdx =%4d, .RefObj = %40s }",
-          derivset[deriv],deriv.edslib_refobj_initializer))
+      local setlist = derivset[deriv]
+      if (type(setlist) == "table") then
+        output:append_previous(",")
+        deriv.edslib_basetype_derivtable_idx = #derivlist -- save in DOM for future scripts
+        derivlist[1 + #derivlist] = deriv
+        local _,first_val = next(setlist)
+        output:write(string.format("{ .IdentSeqIdx =%4d, .RefObj = %40s }",
+            first_val or 0,deriv.edslib_refobj_typedb_initializer))
+
+        for _,seqidx in pairs(setlist) do
+          local seq = identseq[seqidx]
+          if (type(seq) == "table") then
+            seq.Datum = string.format("%s /* %s */", deriv.edslib_basetype_derivtable_idx, deriv:get_flattened_name())
+          end
+        end
+      end
     end
     output:end_group("};")
     output:add_whitespace(1)
     node.edslib_derivtable_list = derivlist -- stash flattened list in DOM for future scripts
     descriptor_fields.DerivativeListSize = #derivlist
 
-    if (#entitylist > 0) then
-      descriptor_fields.ConstraintEntityList = string.format("%s_CONSTRAINT_ENTITY_LIST", basename)
-      output:write(string.format("static const EdsLib_ConstraintEntity_t %s[] =", descriptor_fields.ConstraintEntityList))
-      output:start_group("{")
+  end
 
-      for _,ent in ipairs(entitylist) do
-        output:append_previous(",")
-        output:start_group("{")
-        for i in SEDS.sorted_keys(ent) do
-          output:append_previous(",")
-          output:write(string.format(".%s = %s",i,ent[i]))
-        end
-        output:end_group("}")
-      end
-      output:end_group("};")
-      output:add_whitespace(1)
-      descriptor_fields.ConstraintEntityListSize = #entitylist
-    end
-
-    if (#valuelist > 0) then
-      descriptor_fields.ValueList = string.format("%s_VALUE_LIST", basename)
-      output:write(string.format("static const EdsLib_ValueEntry_t %s[] =", descriptor_fields.ValueList))
-      output:start_group("{")
-
-      for _,cond in ipairs(valuelist) do
-        output:append_previous(",")
-        output:start_group("{")
-        for i in SEDS.sorted_keys(cond) do
-          output:append_previous(",")
-          output:write(string.format(".%s = %s",i,cond[i]))
-        end
-        output:end_group("}")
-      end
-      output:end_group("};")
-      output:add_whitespace(1)
-      descriptor_fields.ValueListSize = #valuelist
-    end
-
-
-    if (#identseq > 0) then
-      descriptor_fields.IdentSequenceList = string.format("%s_IDENT_SEQUENCE", basename)
-      output:write(string.format("static const EdsLib_IdentSequenceEntry_t %s[] =", descriptor_fields.IdentSequenceList))
-      output:start_group("{")
-      output:write(string.format("{ .EntryType = %s }","EDSLIB_IDENT_SEQUENCE_INVALID"))
-      for i,seq in ipairs(identseq) do
-        if (seq.result) then
-          seq.RefIdx = string.format("%s /* %s */", seq.result.edslib_basetype_derivtable_idx, seq.result:get_flattened_name())
-          seq.result = nil
-        end
-        output:append_previous(",")
-        output:start_group(string.format("[%d] = {",i))
-        for i in SEDS.sorted_keys(seq) do
-          output:append_previous(",")
-          output:write(string.format(".%s = %s",i,seq[i]))
-        end
-        output:end_group("}")
-      end
-      output:end_group("};")
-      output:add_whitespace(1)
-      descriptor_fields.IdentSequenceBase = #identseq
-    end
+  if (#identseq > 1) then
+    do_get_fields(
+      function()
+        return do_write_constraint_ident_tables(output, basename, entitylist, valuelist, identseq)
+      end,
+      descriptor_fields
+    )
   end
 
   return descriptor_fields
@@ -749,7 +1022,7 @@ local function write_c_array_detail_object(output,node)
   local detail_name = string.format("%s_ARRAY_DETAIL", node:get_flattened_name())
   output:write(string.format("static const EdsLib_ArrayDescriptor_t %s =", detail_name))
   output:start_group("{")
-  output:write(string.format(".ElementRefObj = %s", node.datatyperef.edslib_refobj_initializer))
+  output:write(string.format(".ElementRefObj = %s", node.datatyperef.edslib_refobj_typedb_initializer))
   output:end_group("};")
   output:add_whitespace(1)
 
@@ -757,6 +1030,10 @@ local function write_c_array_detail_object(output,node)
 
 end
 
+-- -----------------------------------------------------------------------
+-- Generate "Detail Object" for a container
+-- This has the info about its members and their respective types
+-- -----------------------------------------------------------------------
 local function write_c_container_detail_object(output,node)
 
   local objname
@@ -776,9 +1053,7 @@ local function write_c_container_detail_object(output,node)
   do_write_field_list(output,detailfields,{
     "MaxSize", "EntryList", "TrailerEntryList",
     "DerivativeList", "DerivativeListSize",
-    "IdentSequenceList", "IdentSequenceBase",
-    "ConstraintEntityList",  "ConstraintEntityListSize",
-    "ValueList", "ValueListSize"}
+    "CheckSequence"}
   )
 
   output:end_group("};")
@@ -788,10 +1063,24 @@ local function write_c_container_detail_object(output,node)
 
 end
 
+-- -----------------------------------------------------------------------
+-- Generate "Detail Object" for an alias
+-- -----------------------------------------------------------------------
 local function write_c_alias_detail_object(output,node)
-  return { ["Detail.Alias"] = "{ .RefObj = " .. node.type.edslib_refobj_initializer .. " }" }
+  return { ["Detail.Alias"] = "{ .RefObj = " .. node.type.edslib_refobj_typedb_initializer .. " }" }
 end
 
+-- -----------------------------------------------------------------------
+-- Generate "Detail Object" for a generic type
+-- This mostly just has to exist as a placeholder, but it may have a base type
+-- -----------------------------------------------------------------------
+local function write_c_generictype_detail_object(output,node)
+  local refobj_initializer
+  if (node.basetype) then
+    refobj_initializer = string.format("{ .BaseObj = %s }", node.basetype.edslib_refobj_typedb_initializer)
+  end
+  return { ["Detail.GenericType"] = refobj_initializer }
+end
 
 -- -----------------------------------------------------------------------
 -- Generate "BasicType" field value for master table
@@ -804,6 +1093,15 @@ local function get_object_detail_fields(output,node)
   if (node.entity_type == "ALIAS_DATATYPE") then
     detailfunc = write_c_alias_detail_object
     typemap = "ALIAS"
+  elseif (node.entity_type == "COMPONENT") then
+    -- components may or may not have members (which are interfaces)
+    if (node.resolved_size and node.resolved_size.bits > 0) then
+      detailfunc = write_c_container_detail_object
+    end
+    typemap = "COMPONENT"
+  elseif (node.entity_type == "GENERIC_TYPE") then
+    detailfunc = write_c_generictype_detail_object
+    typemap = "GENERIC"
   elseif (node.resolved_size) then
     if (node.resolved_size.bits > 0) then
       if (node.entity_type == "INTEGER_DATATYPE" or node.entity_type == "ENUMERATION_DATATYPE") then
@@ -824,8 +1122,7 @@ local function get_object_detail_fields(output,node)
       elseif (node.entity_type == "CONTAINER_DATATYPE" or
               node.entity_type == "PROVIDED_INTERFACE" or
               node.entity_type == "REQUIRED_INTERFACE" or
-              node.entity_type == "DECLARED_INTERFACE" or
-              node.entity_type == "COMPONENT") then
+              node.entity_type == "DECLARED_INTERFACE") then
         detailfunc = write_c_container_detail_object
         typemap = "CONTAINER"
       end
@@ -859,7 +1156,7 @@ local datatype_output_handlers =
   get_object_detail_fields
 }
 
-local global_sym_prefix = SEDS.get_define("MISSION_NAME")
+local global_sym_prefix = SEDS.get_define("EDSTOOL_PROJECT_NAME")
 local global_file_prefix = global_sym_prefix and string.lower(global_sym_prefix) or "eds"
 global_sym_prefix = global_sym_prefix and string.upper(global_sym_prefix) or "EDS"
 
@@ -884,21 +1181,22 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
 
   output:section_marker("Data Type Objects")
   for node in ds:iterate_subtree() do
-    if (node.edslib_refobj_local_index and node.header_data) then
+    if (node.edslib_refobj_typedb_index) then
       datasheet_objs[1 + #datasheet_objs] = do_get_fields(datatype_output_handlers,nil,output,node)
-      refnames[#datasheet_objs] = node:get_qualified_name()
+      refnames[#datasheet_objs] = node:get_flattened_name()
     end
   end
 
   local ds_name = SEDS.to_macro_name(ds.name)
+  local ds_flat_name = SEDS.to_macro_name(ds:get_flattened_name())
 
   output:section_marker("Lookup Table")
-  output:write(string.format("static const EdsLib_DataTypeDB_Entry_t %s_DATADICTIONARY_TABLE[] =", ds_name))
+  output:write(string.format("static const EdsLib_DataTypeDB_Entry_t %s_DATADICTIONARY_TABLE[] =", ds_flat_name))
   output:start_group("{")
   for idx,dsobj in ipairs(datasheet_objs) do
     output:append_previous(",")
     output:start_group(string.format("{ /* %s */", refnames[idx] or "(none)"))
-    for _,key in ipairs({ "Checksum", "BasicType", "Flags", "NumSubElements", "SizeInfo", "Detail.Alias", "Detail.Array", "Detail.Container", "Detail.Number", "Detail.String" }) do
+    for _,key in ipairs({ "Checksum", "BasicType", "Flags", "NumSubElements", "SizeInfo", "Detail.Alias", "Detail.Array", "Detail.Container", "Detail.Number", "Detail.String", "Detail.GenericType" }) do
       if (dsobj[key]) then
         output:append_previous(",")
         output:write(string.format(".%s = %s", key, dsobj[key]))
@@ -911,11 +1209,11 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
   output:section_marker("Database Object")
 
 
-  output:write(string.format("const struct EdsLib_App_DataTypeDB %s_DATATYPE_DB =", ds_name))
+  output:write(string.format("const struct EdsLib_App_DataTypeDB %s_DATATYPE_DB =", ds_flat_name))
   output:start_group("{")
   output:write(string.format(".MissionIdx = %s_INDEX_%s,",global_sym_prefix, ds_name));
   output:write(string.format(".DataTypeTableSize = %d,",#datasheet_objs));
-  output:write(string.format(".DataTypeTable = %s_DATADICTIONARY_TABLE", ds_name));
+  output:write(string.format(".DataTypeTable = %s_DATADICTIONARY_TABLE", ds_flat_name));
   output:end_group("};")
 
   -- Close the output files
@@ -938,12 +1236,13 @@ end
 
 output:add_whitespace(1)
 
-output:write(string.format("const EdsLib_DataTypeDB_t %s_DATATYPEDB_APPTBL[%s_MAX_INDEX] =", global_sym_prefix, global_sym_prefix))
+output:write(string.format("const EdsLib_DataTypeDB_t EDSLIB_%s_DATATYPEDB_APPTBL[%s_MAX_INDEX] =", global_sym_prefix, global_sym_prefix))
 output:start_group("{")
 for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
   local ds_name = SEDS.to_macro_name(ds.name)
+  local ds_flat_name = SEDS.to_macro_name(ds:get_flattened_name())
   output:append_previous(",");
-  output:write(string.format("[%s_INDEX_%s] = &%s_DATATYPE_DB",global_sym_prefix,ds_name,ds_name))
+  output:write(string.format("[%s_INDEX_%s] = &%s_DATATYPE_DB",global_sym_prefix,ds_name,ds_flat_name))
 end
 output:end_group("};")
 

@@ -18,7 +18,7 @@
 # limitations under the License.
 #
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(EDSLIB C)
 
 #
@@ -132,6 +132,13 @@ try_compile(EDSLIB_HAVE_LONG_DOUBLE
     ${CMAKE_CURRENT_BINARY_DIR}/configtest_longdouble
     ${CMAKE_CURRENT_SOURCE_DIR}/configtest/edslib_longdouble.c
     LINK_LIBRARIES m
+)
+
+# Export details about the C build environment - compiler, linker, flags
+# This facilitates running the helper makefiles to compile the generated data
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/edstool-buildenv.mk.in
+    ${CMAKE_BINARY_DIR}/obj/edstool-buildenv.mk
 )
 
 # The "fsw" directory contains the runtime library (edslib)

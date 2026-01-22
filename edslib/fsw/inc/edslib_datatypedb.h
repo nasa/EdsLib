@@ -101,7 +101,10 @@ enum
     EDSLIB_NO_MATCHING_VALUE = -8,      /**< No matching values were found in the DB */
     EDSLIB_ERROR_CONTROL_MISMATCH = -9, /**< Error control field did not match */
     EDSLIB_FIELD_MISMATCH = -10,        /**< Length or Fixed Value field did not match */
-    EDSLIB_INSUFFICIENT_MEMORY = -11    /**< Internal structure sizes were insufficient for operation */
+    EDSLIB_INSUFFICIENT_MEMORY = -11,   /**< Internal structure sizes were insufficient for operation */
+    EDSLIB_TYPE_MAP_FAILED = -12,       /**< Cannot map a generic type to a real type */
+    EDSLIB_INVALID_OFFSET = -13,        /**< Given offset does not exist, exceeds size of object */
+    EDSLIB_NOT_FIXED_SIZE = -14         /**< A variably sized object used with a fixed size API */
 };
 
 /*
@@ -214,6 +217,7 @@ typedef struct
 struct EdsLib_DataTypeDB_TypeInfo
 {
     EdsLib_BasicType_t ElemType;        /**< Type of element */
+    uint16_t Flags;                     /**< Special handling indicators */
     uint16_t NumSubElements;            /**< Number of sub-elements below this (0 for atomic entities) */
     EdsLib_SizeInfo_t Size;             /**< Basic Size of object (base object only - not derived types) */
 };
@@ -251,6 +255,7 @@ typedef struct EdsLib_DataTypeDB_DerivativeObjectInfo EdsLib_DataTypeDB_Derivati
 struct EdsLib_DataTypeDB_EntityInfo
 {
     EdsLib_Id_t EdsId;         /**< The EDS ID value representing the specific type of the data */
+    uint16_t Flags;            /**< Special handling indicators */
     EdsLib_SizeInfo_t Offset;  /**< Absolute Offset of member within the top-level parent structure */
     EdsLib_SizeInfo_t MaxSize; /**< Total allocated space for this object within parent structure */
 };
@@ -368,6 +373,24 @@ int32_t EdsLib_DataTypeDB_GetMemberByIndex(const EdsLib_DatabaseObject_t *GD, Ed
 int32_t EdsLib_DataTypeDB_GetMemberByNativeOffset(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, uint32_t ByteOffset, EdsLib_DataTypeDB_EntityInfo_t *MemberInfo);
 
 /**
+ * Given a type with sub-members (container, array, interface, etc), look up the identification and offset for
+ * the immediate sub-member containing the item at the given bit offset.  This only locates the _immediate_ subelement
+ * containing the offset, which could be another container.  This function may have to be called multiple times
+ * to locate a single item.
+ *
+ * @note This lookup is based on the nominal bit position, which is the position when _all_ fields are present,
+ * even fields that might be exclusive to eachother.  In actual packed objects, the bit position will vary if
+ * a container has conditionally-encoded entities.
+ *
+ * @param GD the runtime database object
+ * @param EdsId the parent message identifier word
+ * @param BitOffset the sub-element bit offset within the parent
+ * @param MemberInfo Buffer to store the Component information
+ * @return EDS_SUCCESS if successful
+ */
+int32_t EdsLib_DataTypeDB_GetMemberByPackedOffset(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, uint32_t BitOffset, EdsLib_DataTypeDB_EntityInfo_t *CompInfo);
+
+/**
  * Look up the derived type of the message identified by EdsId,
  * given a constraint entity and constraint value.
  *
@@ -455,6 +478,11 @@ int32_t EdsLib_DataTypeDB_BaseCheck(const EdsLib_DatabaseObject_t *GD, EdsLib_Id
  * values.  Fixed value fields will be set, and Error control fields and Length fields
  * will be computed and set to the correct values per EDS specifications.
  *
+ * @note This API relies on the packed size as indicated in the Database.
+ * With the addition of variably-sized objects to the EDS specification, the packed
+ * size is no longer fixed.  Thus thus API is only applicable to fixed-size objects,
+ * and will return an error code if used with a variably-sized object.
+ *
  * @param GD the runtime database object
  * @param EdsId Buffer containing identifier for the top level encapsulation.
  *      After encoding, this is set to the final encoded object type.
@@ -465,6 +493,7 @@ int32_t EdsLib_DataTypeDB_BaseCheck(const EdsLib_DatabaseObject_t *GD, EdsLib_Id
  * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
  *
  * \sa EdsLib_DataTypeDB_PackPartialObject()
+ * \sa EdsLib_DataTypeDB_PackPartialObjectVarSize()
  */
 int32_t EdsLib_DataTypeDB_PackCompleteObject(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t *EdsId,
         void *DestBuffer, const void *SourceBuffer, uint32_t MaxPackedBitSize, uint32_t SourceByteSize);
@@ -490,6 +519,11 @@ int32_t EdsLib_DataTypeDB_PackCompleteObject(const EdsLib_DatabaseObject_t *GD, 
  * The EdsLib_DataTypeDB_FinalizePackedObject() API call can be used at a later time
  * to compute the values for special fields within the encoded binary.
  *
+ * @note This API relies on the packed size as indicated in the Database.
+ * With the addition of variably-sized objects to the EDS specification, the packed
+ * size is no longer fixed.  Thus thus API is only applicable to fixed-size objects,
+ * and will return an error code if used with a variably-sized object.
+ *
  * @param GD the runtime database object
  * @param EdsId The identifier for the top level encapsulation
  * @param DestBuffer Pointer to the destination buffer
@@ -499,11 +533,70 @@ int32_t EdsLib_DataTypeDB_PackCompleteObject(const EdsLib_DatabaseObject_t *GD, 
  * @param StartingBit Number of bits that are already encoded (i.e. from previous call)
  * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
  *
- * \sa EdsLib_DataTypeDB_PackCompleteObject()
- * \sa EdsLib_DataTypeDB_FinalizePackedObject()
+ * \sa EdsLib_DataTypeDB_PackPartialObjectVarSize()
  */
 int32_t EdsLib_DataTypeDB_PackPartialObject(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t *EdsId,
         void *DestBuffer, const void *SourceBuffer, uint32_t MaxPackedBitSize, uint32_t SourceByteSize, uint32_t StartingBit);
+
+/**
+ * Perform conversion from a native/unpacked object to an EDS/packed bitstream
+ *
+ * This API is the same as EdsLib_DataTypeDB_PackCompleteObject() except the packed
+ * bit size is passed as an input/output value, because the encoded form may have fewer
+ * bits if the objects are variably sized.
+ *
+ * The PackedSize buffer should initially be set to the maximum size of the
+ * input and output buffers, in bytes and bits, respectively.  After encoding, it
+ * these fields will be set to the actual size of encoded data.
+ *
+ * @param GD the runtime database object
+ * @param EdsId Buffer containing identifier for the top level encapsulation.
+ *      After encoding, this is set to the final encoded object type.
+ * @param DestBuffer Pointer to the destination buffer
+ * @param SourceBuffer Pointer to the source buffer (not modified by this call)
+ * @param PackedSize Size of destination buffer as input, final packed size as output
+ * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
+ *
+ * \sa EdsLib_DataTypeDB_PackPartialObjectVarSize()
+ */
+int32_t EdsLib_DataTypeDB_PackCompleteObjectVarSize(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t *EdsId,
+        void *DestBuffer, const void *SourceBuffer, EdsLib_SizeInfo_t *PackedSize);
+
+/**
+ * Perform conversion from a native/unpacked object to an EDS/packed bitstream in stages
+ *
+ * This packs the output buffer in stages.  The object will be encoded similar to the
+ * EdsLib_DataTypeDB_PackCompleteObject(), with respect to derived object identification
+ * and encoding.  However, the object is not completed in that the values for special fields
+ * (i.e. ErrorControl, Length, Fixed values) are not computed or set in the encoded object.
+ *
+ * This function should be used by applications that need to further process the content
+ * or otherwise customize the procedure during the encoding process.
+ *
+ * To facilitate this, an additional parameter "ProcessedSize" is included, which allows
+ * the application to specify the starting position for encoding.  This allows
+ * encoding to be resumed from a previous call.  Bits prior to this location will
+ * not be re-encoded.  On the first invocation, the ProcessedSize should be set 0.  On
+ * subsequent invocations, the ProcessedSize should be set to the end of the object
+ * from the previous invocation.  ProcessedSize will be updated to the point
+ * where encoding left off in this call.
+ *
+ * The EdsLib_DataTypeDB_FinalizePackedObjectVarSize() API call can be used at a later time
+ * to compute the values for special fields within the encoded binary.
+ *
+ * @param GD the runtime database object
+ * @param EdsId The identifier for the top level encapsulation
+ * @param DestBuffer Pointer to the destination buffer
+ * @param SourceBuffer Pointer to the source buffer (not modified by this call)
+ * @param MaxSize Maximum size of buffers, in bits (dest) and bytes (source)
+ * @param ProcessedSize Number of bits that are already encoded (i.e. from previous call)
+ * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
+ *
+ * \sa EdsLib_DataTypeDB_PackCompleteObject()
+ * \sa EdsLib_DataTypeDB_FinalizePackedObject()
+ */
+int32_t EdsLib_DataTypeDB_PackPartialObjectVarSize(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t *EdsId,
+        void *DestBuffer, const void *SourceBuffer, const EdsLib_SizeInfo_t *MaxSize, EdsLib_SizeInfo_t *ProcessedSize);
 
 /**
  * Perform conversion from an EDS/packed bitstream to a native/unpacked object
@@ -529,7 +622,7 @@ int32_t EdsLib_DataTypeDB_PackPartialObject(const EdsLib_DatabaseObject_t *GD, E
  * @param SourceBitSize Maximum size of source buffer, in bits
  * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
  *
- * \sa EdsLib_DataTypeDB_UnpackPartialObject()
+ * \sa EdsLib_DataTypeDB_UnpackPartialObjectVarSize()
  */
 int32_t EdsLib_DataTypeDB_UnpackCompleteObject(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t *EdsId,
         void *DestBuffer, const void *SourceBuffer, uint32_t MaxNativeByteSize, uint32_t SourceBitSize);
@@ -555,6 +648,11 @@ int32_t EdsLib_DataTypeDB_UnpackCompleteObject(const EdsLib_DatabaseObject_t *GD
  * The EdsLib_DataTypeDB_VerifyUnpackedObject() API call can be used at a later time
  * to check the values for special fields within the decoded structure.
  *
+ * @note This API relies on the packed size as indicated in the Database.
+ * With the addition of variably-sized objects to the EDS specification, the packed
+ * size is no longer fixed.  Thus thus API is only applicable to fixed-size objects,
+ * and will return an error code if used with a variably-sized object.
+ *
  * @param GD the runtime database object
  * @param EdsId The identifier for the top level encapsulation
  * @param DestBuffer Pointer to the destination buffer
@@ -563,11 +661,69 @@ int32_t EdsLib_DataTypeDB_UnpackCompleteObject(const EdsLib_DatabaseObject_t *GD
  * @param SourceBitSize Maximum size of source buffer, in bits
  * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
  *
- * \sa EdsLib_DataTypeDB_UnpackCompleteObject()
- * \sa EdsLib_DataTypeDB_VerifyUnpackedObject()
+ * \sa EdsLib_DataTypeDB_UnpackPartialObjectVarSize()
  */
 int32_t EdsLib_DataTypeDB_UnpackPartialObject(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t *EdsId,
         void *DestBuffer, const void *SourceBuffer, uint32_t MaxNativeByteSize, uint32_t SourceBitSize, uint32_t StartingByte);
+
+/**
+ * Perform conversion from an EDS/packed bitstream to a native/unpacked object in stages.
+ *
+ * This unpacks the output buffer in stages.  The object will be decoded similar to the
+ * EdsLib_DataTypeDB_UnpackCompleteObject(), with respect to derived object identification
+ * and decoding.  However, the object is not verified in that the values for special fields
+ * (i.e. ErrorControl, Length, Fixed values) are passed through and not checked.
+ *
+ * This function should be used by applications that need to further process the content
+ * or otherwise customize the procedure during the decoding process.
+ *
+ * To facilitate this, an additional parameter "ProcessedSize" is included, which allows
+ * the application to specify the starting byte position for decoding.  This allows
+ * decoding to be resumed from a previous call.  Bytes prior to this starting byte will
+ * not be re-decoded.  On the first invocation, the ProcessedSize should be set 0.  On
+ * subsequent invocations, the ProcessedSize should be set to the end of the object
+ * from the previous invocation.
+ *
+ * The EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize() API call can be used at a later time
+ * to check the values for special fields within the decoded structure.
+ *
+ * @param GD the runtime database object
+ * @param EdsId The identifier for the top level encapsulation
+ * @param DestBuffer Pointer to the destination buffer
+ * @param SourceBuffer Pointer to the source buffer (not modified by this call)
+ * @param MaxSize Maximum size of destination buffer (bytes) and source buffer (bits)
+ * @param ProcessedSize Size of processed data
+ * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
+ *
+ * \sa EdsLib_DataTypeDB_UnpackCompleteObject()
+ * \sa EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize()
+ */
+int32_t EdsLib_DataTypeDB_UnpackPartialObjectVarSize(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t *EdsId,
+        void *DestBuffer, const void *SourceBuffer, const EdsLib_SizeInfo_t *MaxSize, EdsLib_SizeInfo_t *ProcessedSize);
+
+/**
+ * Compute values for special fields within a packed object.
+ *
+ * Special fields such as Error Control, Length Entries, and Fixed Values need
+ * to be computed after encoding is complete.  These cannot be computed
+ * on-the-fly during encoding because they require the complete object to known.
+ * For instance, a Length would reflect the complete length of the packet, and
+ * an Error Control such as CRC-16 requires the Length to be set correctly prior
+ * to calculation.  Due to these interdependencies, the computation needs to be
+ * deferred until the entire content is known.
+ *
+ * Note that the EdsLib_DataTypeDB_PackCompleteObject() API invokes this
+ * function automatically.  This only needs to be invoked by the application
+ * when using the EdsLib_DataTypeDB_PackPartialObjectVarSize() API.
+ *
+ * @param GD the runtime database object
+ * @param EdsId The identifier for the top level encapsulation
+ * @param PackedData Pointer to the encoded/packed buffer
+ * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
+ *
+ * \sa EdsLib_DataTypeDB_PackPartialObjectVarSize()
+ */
+int32_t EdsLib_DataTypeDB_FinalizePackedObjectVarSize(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, const void *NativeBuffer, void *PackedBuffer, const EdsLib_SizeInfo_t *ProcessedSize);
 
 /**
  * Compute values for special fields within a packed object.
@@ -584,17 +740,22 @@ int32_t EdsLib_DataTypeDB_UnpackPartialObject(const EdsLib_DatabaseObject_t *GD,
  * function automatically.  This only needs to be invoked by the application
  * when using the EdsLib_DataTypeDB_PackPartialObject() API.
  *
+ * @note This API relies on the packed size as indicated in the Database.
+ * With the addition of variably-sized objects to the EDS specification, the packed
+ * size is no longer fixed.  Thus thus API is only applicable to fixed-size objects,
+ * and will return an error code if used with a variably-sized object.
+ *
  * @param GD the runtime database object
  * @param EdsId The identifier for the top level encapsulation
  * @param PackedData Pointer to the encoded/packed buffer
  * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
  *
- * \sa EdsLib_DataTypeDB_PackPartialObject()
+ * \sa EdsLib_DataTypeDB_FinalizePackedObjectVarSize()
  */
 int32_t EdsLib_DataTypeDB_FinalizePackedObject(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, void *PackedData);
 
 /**
- * Constants for EdsLib_DataTypeDB_VerifyUnpackedObject() "RecomputeFields" parameter.
+ * Constants for EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize() "RecomputeFields" parameter.
  *
  * These are bitmasks that can be OR'ed together to indicate which aspects to recompute
  * during the verification of a decoded object.
@@ -607,6 +768,49 @@ enum
     EDSLIB_DATATYPEDB_RECOMPUTE_FIXEDVALUE   = 0x04, /**< Recompute Fixed Value fields of the native object */
     EDSLIB_DATATYPEDB_RECOMPUTE_ALL          = 0xFF  /**< Recompute all relevant fields */
 };
+
+/**
+ * Verify values for special fields within an unpacked (native) object.
+ *
+ * Special fields such as Error Control, Length Entries, and Fixed Values need
+ * to be verified after decoding is complete.  These cannot be computed
+ * on-the-fly during encoding because they require the complete object to known.
+ * For instance, a Length would reflect the complete length of the packet, and
+ * an Error Control such as CRC-16 requires the entire content to be known
+ * prior to verification.  Due to these interdependencies, the computation needs
+ * to be deferred until the entire content is known.
+ *
+ * Note that the EdsLib_DataTypeDB_UnpackCompleteObject() API invokes this
+ * function automatically.  This only needs to be invoked by the application
+ * when using the EdsLib_DataTypeDB_UnpackPartialObjectVarSize() API.
+ *
+ * Note that in order to calculate an error control field such as a CRC, this
+ * function needs a pointer to the raw (encoded) data in addition to the decoded
+ * data.  If this is set NULL, then the field(s) cannot be checked.
+ *
+ * In addition to verification of the original values from the encoded object,
+ * this function can also update the values to match the decoded object if desired.
+ * For instance, some historical code might assume that an embedded LengthEntry
+ * field will be related to the "sizeof()" operator in C.  However, the size of
+ * an EDS object will not necessarily match the size of the corresponding C structure
+ * due to native representation of values and alignment padding.  To appease
+ * older applications, the value of the Length field can be adjusted to match
+ * the native structure instead of encoded object.
+ *
+ *
+ * @param GD the runtime database object
+ * @param EdsId The identifier for the top level encapsulation
+ * @param UnpackedObj Pointer to the decoded/unpacked buffer which is to be checked.
+ * @param PackedData Pointer to the encoded/packed buffer, for reference when verifying
+ *          fields.  May be set NULL to skip verification (i.e. if recomputing fields).
+ * @param RecomputeFields A bitmask indicating the fields to recompute.  Should be
+ *          a bitwise OR of the flags defined in the respective enumeration.
+ * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
+ *
+ * \sa EDSLIB_DATATYPEDB_RECOMPUTE_NONE
+ * \sa EdsLib_DataTypeDB_UnpackPartialObjectVarSize()
+ */
+int32_t EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, void *NativeBuffer, const void *PackedBuffer, uint32_t RecomputeFields, const EdsLib_SizeInfo_t *ProcessedSize);
 
 /**
  * Verify values for special fields within an unpacked (native) object.
@@ -636,6 +840,10 @@ enum
  * older applications, the value of the Length field can be adjusted to match
  * the native structure instead of encoded object.
  *
+ * @note This API relies on the packed size as indicated in the Database.
+ * With the addition of variably-sized objects to the EDS specification, the packed
+ * size is no longer fixed.  Thus thus API is only applicable to fixed-size objects,
+ * and will return an error code if used with a variably-sized object.
  *
  * @param GD the runtime database object
  * @param EdsId The identifier for the top level encapsulation
@@ -646,8 +854,7 @@ enum
  *          a bitwise OR of the flags defined in the respective enumeration.
  * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
  *
- * \sa EDSLIB_DATATYPEDB_RECOMPUTE_NONE
- * \sa EdsLib_DataTypeDB_UnpackPartialObject()
+ * \sa EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize()
  */
 int32_t EdsLib_DataTypeDB_VerifyUnpackedObject(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId,
         void *UnpackedObj, const void *PackedObj, uint32_t RecomputeFields);
@@ -697,6 +904,26 @@ int32_t EdsLib_DataTypeDB_StoreValue(const EdsLib_DatabaseObject_t *GD, EdsLib_I
  *
  * Reads the necessary field(s) from the encapsulation interface to determine the derived contents
  *
+ * This version will not read fields beyond the given size parameter.  As such it can be used with partial
+ * objects or other buffers that may not be sized as expected.  However, if the size does not
+ * include the field(s) containing the constraints, then identification process will fail.
+ *
+ * @param GD the runtime database object
+ * @param EdsId The ID of the encapsulation interface
+ * @param BufferPtr The message buffer (read-only, not modified by this call)
+ * @param BufferSize The known size of the message buffer (will not read beyond this point)
+ * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
+ */
+int32_t EdsLib_DataTypeDB_IdentifyBufferWithSize(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, const void *BufferPtr, size_t BufferSize, EdsLib_DataTypeDB_DerivativeObjectInfo_t *DerivObjInfo);
+
+/**
+ * Given an unpacked (native byte order) container, identify the derived contents using EDS-specified constraint values
+ *
+ * Reads the necessary field(s) from the encapsulation interface to determine the derived contents
+ *
+ * This version requires that the buffer points to a complete instance of the object, the size of the buffer is
+ * assumed to be equal to or greater than the EDS-defined data type size.
+ *
  * @param GD the runtime database object
  * @param EdsId The ID of the encapsulation interface
  * @param MessageBuffer The message buffer (read-only, not modified by this call)
@@ -722,4 +949,3 @@ void EdsLib_DataTypeConvert(EdsLib_GenericValueBuffer_t *ValueBuff, EdsLib_Basic
 
 
 #endif  /* _EDSLIB_DATATYPEDB_H_ */
-

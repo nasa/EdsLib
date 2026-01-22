@@ -34,7 +34,7 @@ target_link_libraries(eds2cfetbl
     edslib_lua
     cfe_missionlib_lua_softwarebus
     edslib_runtime_static
-    cfe_missionlib_interfacedb_static
+    cfe_missionlib_sb_dispatchdb_static
     cfe_edsdb_static
     dl
 )
@@ -43,12 +43,21 @@ set_target_properties(eds2cfetbl PROPERTIES ENABLE_EXPORTS TRUE)
 # Export relevant information so the parent script can invoke the tool
 set(CFS_TABLETOOL_SCRIPT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts" CACHE INTERNAL "CFS table tool script directory")
 
+set(TBLTOOL_EXTRA_FLAGS)
+if (SIMULATION)
+    string(APPEND TBLTOOL_EXTRA_FLAGS " -e SIMULATION=${SIMULATION}")
+    if (${SIMULATION} STREQUAL "native")
+        string(APPEND TBLTOOL_EXTRA_FLAGS " -p")
+    endif()
+endif()
+
 add_custom_target(tabletool-execute
     COMMAND $(MAKE)
         CC="${CMAKE_C_COMPILER}"
         CFLAGS="${CMAKE_C_FLAGS}"
         AR="${CMAKE_AR}"
         TBLTOOL="$<TARGET_FILE:eds2cfetbl>"
+        TBLTOOL_EXTRA_FLAGS=${TBLTOOL_EXTRA_FLAGS}
         cfetables
     WORKING_DIRECTORY
         "${MISSION_BINARY_DIR}/tables"
