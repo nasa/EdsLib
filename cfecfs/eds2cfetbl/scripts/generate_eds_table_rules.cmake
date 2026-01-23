@@ -28,6 +28,10 @@ set(TABLE_RULES)
 
 foreach(TBL_SRC ${SOURCES})
 
+    if ($ENV{VERBOSE})
+        message(STATUS "Running generate_eds_table_rules on ${TBL_SRC}")
+    endif()
+
     if (TBL_SRC MATCHES "\\.c$")
         # Legacy C source files need a compile step before they can be used
         set(TABLE_LEGACY_FILE "${TMP_DIR}/${APP_NAME}_${TABLE_NAME}")

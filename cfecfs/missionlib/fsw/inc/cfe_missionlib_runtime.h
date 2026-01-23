@@ -62,7 +62,7 @@
  *
  * When used in a numeric context, it resolves to the CCSDS version field +1.
  */
-#define CFE_MISSIONLIB_SELECTED_HDRTYPE CFE_MISSIONLIB_HDRTYPE(CFE_MISSION_MSG_HEADER_TYPE)
+#define CFE_MISSIONLIB_SELECTED_HDRTYPE CFE_MISSIONLIB_HDRTYPE(EdsParam_CFE_MISSION_MSG_HEADER_TYPE)
 
 #ifdef __cplusplus
 extern "C"

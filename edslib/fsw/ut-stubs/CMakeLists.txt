@@ -20,15 +20,22 @@
 
 #
 # Create the generic stubs library
+# This requires ut_assert, so this will not be built if unless ut_assert is available
 #
-add_library(ut_edslib_stubs STATIC
-  edslib_binding_objects_stubs.c
-  edslib_datatypedb_stubs.c
-  edslib_displaydb_stubs.c
-  edslib_init_stubs.c
-)
+if (TARGET ut_assert)
 
-target_link_libraries(ut_edslib_stubs
-  edslib_api
-  ut_assert
-)
+  add_library(ut_edslib_stubs STATIC
+    edslib_binding_objects_stubs.c
+    edslib_datatypedb_stubs.c
+    edslib_displaydb_stubs.c
+    edslib_intfdb_stubs.c
+    edslib_global_stubs.c
+    edslib_init_stubs.c
+  )
+
+  target_link_libraries(ut_edslib_stubs
+    edslib_api
+    ut_assert
+  )
+
+endif()

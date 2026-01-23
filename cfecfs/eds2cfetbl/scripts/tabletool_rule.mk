@@ -1,6 +1,10 @@
 # Makefile for EDS-based CFE table generation
 
-C_INCLUDE_DIRS += $(MISSION_BINARY_DIR)/inc
+# the basic set of flags to pass to the table tool
+TBLTOOL_FLAGS += -e MISSION_DEFS=\"$(MISSION_DEFS)\"
+TBLTOOL_FLAGS += -e CPUNAME=\"$(CFE_TABLE_CPUNAME)\"
+TBLTOOL_FLAGS += -e APPNAME=\"$(CFE_TABLE_APPNAME)\"
+TBLTOOL_FLAGS += -e TABLENAME=\"$(CFE_TABLE_BASENAME)\"
 
 .PHONY: cfetables
 
@@ -15,4 +19,4 @@ cfetables:
 # As a workaround, $CURDIR is used.
 staging/%.tbl:
 	@mkdir -pv "$(dir $(@))"
-	cd "$(dir $(@))" && $(TBLTOOL) $(TBLTOOL_FLAGS) "$(CURDIR)/$(<)"
+	$(TBLTOOL) -e 'OUTPUT_DIR="$(dir $(@))"' $(TBLTOOL_FLAGS) $(TBLTOOL_EXTRA_FLAGS) $(filter-out $(TBLTOOL),$(^))

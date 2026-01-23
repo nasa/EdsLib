@@ -206,6 +206,7 @@ EdsLib_JsonBinding_Object_t *EdsLib_JSON_EdsObjectToJSON(const EdsLib_JsonBindin
         break;
     }
     case EDSLIB_BASICTYPE_CONTAINER:
+    case EDSLIB_BASICTYPE_COMPONENT:
     {
         EdsLib_JsonBinding_ObjectConversion_t SubObject;
 

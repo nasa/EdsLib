@@ -78,7 +78,7 @@ end
 local function write_c_struct_typedef(output,node)
   local checksum = node.resolved_size.checksum
   local struct_flavor = node.is_union and "union" or "struct"
-  local struct_name = string.format("%s %s", struct_flavor, SEDS.to_safe_identifier(node:get_qualified_name()))
+  local struct_name = string.format("%s %s", struct_flavor, SEDS.to_safe_identifier(node:get_flattened_name()))
 
   -- this potentially renders create more than one struct with same checksum.
   -- This just records the first/initial occurrence of this checksum
@@ -214,7 +214,7 @@ end
 -- -------------------------------------------------
 local function write_c_enum_typedef(output,node)
   local list = node:find_first("ENUMERATION_LIST")
-  local enum_name = node:get_ctype_basename()
+  local enum_name = SEDS.to_safe_identifier(node:get_flattened_name())
   local enum_typedef = SEDS.to_ctype_typedef(enum_name)
   local enum_min, enum_max
   enum_name = "enum " .. enum_name
@@ -288,7 +288,7 @@ local datatype_output_handler =
   PROVIDED_INTERFACE = write_c_struct_typedef
 }
 
-local global_sym_prefix = SEDS.get_define("MISSION_NAME")
+local global_sym_prefix = SEDS.get_define("EDSTOOL_PROJECT_NAME")
 local global_file_prefix = global_sym_prefix and string.lower(global_sym_prefix) or "eds"
 global_sym_prefix = global_sym_prefix and string.upper(global_sym_prefix) or "EDS"
 
@@ -296,7 +296,6 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
 
   local output
   local datasheet_basename = ds:get_flattened_name()
-  local enum_basename = datasheet_basename .. "_DATADICTIONARY"
 
   ds.edslib_refobj_global_index = SEDS.to_safe_identifier(string.format("%s_INDEX_%s", global_sym_prefix, SEDS.to_macro_name(ds.name)))
 
@@ -331,13 +330,13 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
     end
     if (node.header_data) then
       if (node.resolved_size) then
-        node.edslib_refobj_local_index = node:get_flattened_name("DATADICTIONARY")
-        node.edslib_refobj_initializer = string.format("{ %s, %s }", ds.edslib_refobj_global_index, node.edslib_refobj_local_index)
+        node.edslib_refobj_typedb_index = node:get_flattened_name("DATADICTIONARY")
+        node.edslib_refobj_typedb_initializer = string.format("EDSLIB_TYPEREF_C(%s, %s)", ds.edslib_refobj_global_index, node.edslib_refobj_typedb_index)
       end
       node.header_data.typedef_name = SEDS.to_ctype_typedef(node)
 
       if (node.implicit_basetype) then
-        output:add_documentation("Implicitly created wrapper for " .. tostring(node.implict_basetype))
+        output:add_documentation("Implicitly created type based on " .. tostring(node.implicit_basetype))
         output:write(string.format("typedef %-50s %s;", node.implicit_basetype.header_data.typedef_name, node.header_data.typedef_name))
       else
         output:add_documentation(node.attributes.shortdescription,
@@ -349,10 +348,15 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
         output:add_whitespace(1)
       end
 
-      if (node.resolved_size) then
+      -- Generate the "PackedBuffer" for storing encoded objects of this type
+      -- However this is not needed for implict types because the packed buffer
+      -- will be that of the parent container, it does not need its own
+      if (node.resolved_size and not node.implicit_basetype) then
         local packedsize = 0
         local unpacked_buffname = node:get_ctype_basename("native")
         if (node.max_size and not node.is_union) then
+          local aligntype = (node.max_size.alignment <= 64) and tostring(node.max_size.alignment) or "max"
+
           output:write("union " .. unpacked_buffname)
           output:start_group("{")
           -- The base object may be empty in EDS, so do not make a C ref to an empty object
@@ -360,8 +364,7 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
             output:write(string.format("%-50s BaseObject;", node.header_data.typedef_name))
           end
           output:write(string.format("%-50s Byte[%d];", "uint8_t", node.max_size.bytes))
-          local aligntype = (node.max_size.alignment <= 64) and tostring(node.max_size.alignment) or "max"
-          output:write(string.format("%-50s Align%d;", "uint" .. aligntype .. "_t", node.max_size.alignment))
+          output:write(string.format("%-50s Align%d;", "uint" .. aligntype .. "_t", aligntype))
           output:end_group("};")
           output:write(string.format("typedef %-50s %s;", "union " .. unpacked_buffname, SEDS.to_ctype_typedef(unpacked_buffname, true)))
           packedsize = node.max_size.bits
@@ -379,18 +382,54 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
     end
   end
 
+  for intf in ds:iterate_subtree(SEDS.declintf_filter) do
+    intf.edslib_refobj_intfdb_index = intf:get_flattened_name("DECLARATION")
+    intf.edslib_refobj_intfdb_initializer = string.format("EDSLIB_INTFREF_C(%s, %s)", ds.edslib_refobj_global_index,
+      intf.edslib_refobj_intfdb_index)
+
+    -- Generic types do not need typedefs, but they are potentially referenced from other nodes,
+    -- so it does need an edslib_refobj_typedb_initializer in the data type db
+    for gt in intf:iterate_subtree(SEDS.generictype_filter) do
+      gt.edslib_refobj_typedb_index = gt:get_flattened_name("DATADICTIONARY")
+      gt.edslib_refobj_typedb_initializer = string.format("EDSLIB_TYPEREF_C(%s, %s)", ds.edslib_refobj_global_index,
+        gt.edslib_refobj_typedb_index)
+    end
+
+    -- Commands within the interface need an initializer for intfdb refs
+    for cmd in intf:iterate_subtree(SEDS.command_filter) do
+      cmd.edslib_refobj_intfdb_index = cmd:get_flattened_name("DECLARATION")
+      cmd.edslib_refobj_intfdb_initializer = string.format("EDSLIB_INTFREF_C(%s, %s)", ds.edslib_refobj_global_index,
+        cmd.edslib_refobj_intfdb_index)
+    end
+  end
+
   output:section_marker("Components")
-  for comp in ds:iterate_subtree("COMPONENT") do
+  for comp in ds:iterate_subtree(SEDS.component_filter) do
+
+    -- Note, components need to exist in both the typedb and intfdb sets
+
+    -- The C struct here is to hold the values of any parameters of the interfaces
     comp.header_data = write_c_struct_typedef(output,comp)
     if (comp.resolved_size and comp.header_data) then
-      comp.edslib_refobj_local_index = comp:get_flattened_name("DATADICTIONARY")
-      comp.edslib_refobj_initializer = string.format("{ %s, %s }", ds.edslib_refobj_global_index,
-        comp.edslib_refobj_local_index)
+      comp.edslib_refobj_typedb_index = comp:get_flattened_name("DATADICTIONARY")
       comp.header_data.typedef_name = SEDS.to_ctype_typedef(comp)
+      comp.edslib_refobj_typedb_initializer = string.format("EDSLIB_TYPEREF_C(%s, %s)", ds.edslib_refobj_global_index,
+        comp.edslib_refobj_typedb_index)
       output:add_documentation(comp.attributes.shortdescription, comp.longdescription)
       output:write(string.format("typedef %-50s %s;", comp.header_data.ctype, comp.header_data.typedef_name))
       output:write(string.format("  /* %s */", tostring(comp.resolved_size)))
       output:add_whitespace(1)
+    end
+
+    -- All components need an entry in the instance db regardless of whether they had parameters
+    -- The provided/required intfs under this also need identifiers
+    comp.edslib_refobj_intfdb_index = comp:get_flattened_name("INSTANCE")
+    comp.edslib_refobj_intfdb_initializer = string.format("EDSLIB_INTFREF_C(%s, %s)", ds.edslib_refobj_global_index,
+        comp.edslib_refobj_intfdb_index)
+    for intf in comp:iterate_subtree(SEDS.referredintf_filter) do
+      intf.edslib_refobj_intfdb_index = intf:get_flattened_name("INSTANCE")
+      intf.edslib_refobj_intfdb_initializer = string.format("EDSLIB_INTFREF_C(%s, %s)", ds.edslib_refobj_global_index,
+        intf.edslib_refobj_intfdb_index)
     end
   end
 
@@ -411,6 +450,13 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
       local typename = node:get_ctype_basename()
       local typesuffix = CTYPEDEF_SUFFIX_TABLE[node.entity_type] or ""
       output:write(string.format("typedef %-50s %s%s_t;", node.header_data.typedef_name, typename, typesuffix))
+
+      -- If its an enum, also need to map the labels
+      if (node.entity_type == "ENUMERATION_DATATYPE") then
+        for label in node:iterate_subtree("ENUMERATION_ENTRY") do
+          output:write(string.format("#define %-50s %s", SEDS.to_safe_identifier(label:get_qualified_name()), label:get_flattened_name()))
+        end
+      end
     end
   end
 
@@ -422,22 +468,53 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
   -- This contains the all #define statements from EDS,
   -- and also the "datadictionary" type enumeration which
   -- has one entry per typedef in the previous file.
+  local symbol_name = SEDS.to_macro_name(datasheet_basename)
   output = SEDS.output_open(SEDS.to_filename("defines.h", ds.name), ds.xml_filename)
   output:section_marker("Defines")
   for def in ds:iterate_subtree("DEFINE") do
     write_c_define(output,def)
   end
 
-  output:section_marker("Dictionary Enumeration")
+  output:section_marker("Data Type DB Indices")
   output:write("enum")
   output:start_group("{")
-  output:write(enum_basename .. "_RESERVED,")
+
+  output:write(symbol_name .. "_DATATYPEDB_RESERVED,")
   for node in ds:iterate_subtree() do
-    if (node.edslib_refobj_local_index) then
-      output:write(node.edslib_refobj_local_index .. ",")
+    if (node.edslib_refobj_typedb_index) then
+      output:write(node.edslib_refobj_typedb_index .. ",")
     end
   end
-  output:write(enum_basename .. "_MAX")
+  output:write(symbol_name .. "_DATATYPEDB_MAX")
+  output:end_group("};")
+
+  output:section_marker("Interface DB Indices")
+  output:write("enum")
+  output:start_group("{")
+  output:write(symbol_name .. "_INTFDB_RESERVED,")
+
+  -- Make sure the declared intfs are written first
+  for node in ds:iterate_subtree(SEDS.declintf_filter) do
+    output:write(node.edslib_refobj_intfdb_index .. ",")
+  end
+  -- Then the components
+  for node in ds:iterate_subtree(SEDS.component_filter) do
+    output:write(node.edslib_refobj_intfdb_index .. ",")
+  end
+
+  output:write(symbol_name .. "_INTFDB_MAX_DIRECT, /* beyond this are virtual indices */")
+
+  -- Then write defs for the commands (this relies on iteration happening in the same order, which it does)
+  for node in ds:iterate_subtree(SEDS.command_filter) do
+    output:write(node.edslib_refobj_intfdb_index .. ",")
+  end
+  -- Then write defs for the prov/req intfs in components (this relies on iteration happening in the same order, which it does)
+  for node in ds:iterate_subtree(SEDS.referredintf_filter) do
+    output:write(node.edslib_refobj_intfdb_index .. ",")
+  end
+
+  output:write(symbol_name .. "_INTFDB_MAX_VIRTUAL")
+
   output:end_group("};")
 
   SEDS.output_close(output)
@@ -447,11 +524,11 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
   -- -----------------------------------------------------
   -- This only contains an "extern" definition for the DB objects that
   -- will be instantiated in the source files (generated in a future script)
-  local symbol_name = SEDS.to_macro_name(datasheet_basename)
 
   output = SEDS.output_open(SEDS.to_filename("dictionary.h", ds.name),ds.xml_filename)
   output:write(string.format("extern const struct EdsLib_App_DataTypeDB %s_DATATYPE_DB;", symbol_name))
   output:write(string.format("extern const struct EdsLib_App_DisplayDB %s_DISPLAY_DB;", symbol_name))
+  output:write(string.format("extern const struct EdsLib_App_IntfDB %s_INTF_DB;", symbol_name))
   SEDS.output_close(output)
 
 end

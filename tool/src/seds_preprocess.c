@@ -272,10 +272,13 @@ static int seds_resolve_luafy_seds_reference(lua_State *lua)
     const char *p, *q;
     seds_boolean_t quoting_required;
 
-    luaL_buffinit(lua, &buffer);
-    luaL_addstring(&buffer, "return ");
     input = lua_tostring(lua, -1);
     quoting_required = seds_resolve_is_lua_quoting_required(input);
+
+    /* Note - As of Lua 5.4, this may push something onto the stack.
+     * Whereas in 5.3 and below, it does not change the stack. */
+    luaL_buffinit(lua, &buffer);
+    luaL_addstring(&buffer, "return ");
 
     if (quoting_required)
     {
@@ -411,26 +414,6 @@ static int seds_resolve_luafy_seds_reference(lua_State *lua)
     return 1;
 }
 
-
-#if (LUA_VERSION_NUM <= 501)
-
-/* in lua <= 5.1, the environment is set after the load */
-static int seds_resolve_load_references(lua_State *lua)
-{
-    seds_resolve_luafy_seds_reference(lua);
-
-    lua_pushnil(lua);
-    if (luaL_loadstring(lua, lua_tostring(lua, -2)) == LUA_OK)
-    {
-        lua_rawgetp(lua, LUA_REGISTRYINDEX, &SEDS_PREPROCESS_ENVIRONMENT);
-        lua_setfenv(lua, -2);
-        lua_pushnil(lua);
-    }
-    return 2;
-}
-
-#else
-
 /* in lua >= 5.2, the environment is set prior to load via LUA_RIDX_GLOBALS */
 static int seds_resolve_load_references(lua_State *lua)
 {
@@ -454,9 +437,6 @@ static int seds_resolve_load_references(lua_State *lua)
 
     return 2;
 }
-
-#endif
-
 
 static int seds_resolve_set_eval_func(lua_State *lua)
 {

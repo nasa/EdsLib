@@ -90,24 +90,6 @@ PyObject* CFE_MissionLib_Python_CreateModule(void)
             }
         }
 
-        if (CFE_MissionLib_Python_InterfaceCache == NULL)
-        {
-            CFE_MissionLib_Python_InterfaceCache = PyDict_New();
-            if (CFE_MissionLib_Python_InterfaceCache == NULL)
-            {
-                break;
-            }
-        }
-
-        if (CFE_MissionLib_Python_TopicCache == NULL)
-        {
-            CFE_MissionLib_Python_TopicCache = PyDict_New();
-            if (CFE_MissionLib_Python_TopicCache == NULL)
-            {
-                break;
-            }
-        }
-
         m = CFE_MissionLib_Python_InstantiateModule();
         if (m == NULL)
         {

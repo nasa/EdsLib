@@ -24,7 +24,7 @@ project(EDSLIB_LUABINDINGS C)
 # This library depends on a Lua library on the system
 if(NOT LUALIB_FOUND)
 
-  # By default, try to find any 5.x version if no version specified...
+  # By default, try to find any 5.3+ version if no version specified...
   #  This simplifies building as a simple local library.
 
   # But do not assume this default when cross-compiling or building CFS,
@@ -39,7 +39,7 @@ if(NOT LUALIB_FOUND)
   if (NOT DEFINED EDSLIB_LUA_SEARCH_VERSION AND
       NOT CMAKE_CROSSCOMPILING AND
       NOT IS_CFS_ARCH_BUILD)
-    set(EDSLIB_LUA_SEARCH_VERSION lua-5.3 lua5.3 lua-5.2 lua5.2 lua-5.1 lua5.1 lua>=5.1)
+    set(EDSLIB_LUA_SEARCH_VERSION lua-5.4 lua5.4 lua-5.3 lua5.3 lua>=5.3)
   endif()
 
   if (EDSLIB_LUA_SEARCH_VERSION)

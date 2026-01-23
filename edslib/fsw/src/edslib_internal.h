@@ -34,8 +34,11 @@
 
 
 #include "edslib_database_types.h"
+#include "edslib_database_ops.h"
+#include "edslib_global.h"
 #include "edslib_datatypedb.h"
 #include "edslib_displaydb.h"
+#include "edslib_intfdb.h"
 #include "edslib_binding_objects.h"
 
 /******************************
@@ -74,6 +77,13 @@
  */
 #define EDSLIB_TYPE_AND_SIZE(x,y)               (((x) << 8) | (y))
 
+/**
+ * Some fields such as error control cannot be calculated immediately, they
+ * must be calculated only after all other encoding is done.  This reflects
+ * the maximum number of fields that can have deferred calculation in a single
+ * encode/decode operation.
+ */
+#define EDSLIB_PACKEDPOSTPROC_MAX_DEFERRED_FIELDS   8
 
 /******************************
  * TYPEDEFS
@@ -133,6 +143,7 @@ typedef enum
 typedef struct
 {
     uint16_t CurrIndex;
+    uint16_t CurrDepth;
     EdsLib_SizeInfo_t StartOffset;
     EdsLib_SizeInfo_t EndOffset;
     EdsLib_FieldDetailEntry_t Details;
@@ -229,43 +240,75 @@ typedef enum
 typedef enum
 {
     EDSLIB_PACKACTION_NONE = 0,
+    EDSLIB_PACKACTION_PREPARE,
     EDSLIB_PACKACTION_BITPACK,
     EDSLIB_PACKACTION_BYTECOPY_INVERT,
     EDSLIB_PACKACTION_BYTECOPY_STRAIGHT,
     EDSLIB_PACKACTION_SUBCOMPONENTS,
+    EDSLIB_PACKACTION_FAULT
 } EdsLib_PackAction_t;
 
 typedef struct
 {
-    const void *SourceBasePtr;
-    void *DestBasePtr;
-    EdsLib_BitPack_OperMode_t OperMode;
+    EdsLib_EntryType_t EntryType;
+    uint32_t PackedBitOffset;
+    EdsLib_HandlerArgument_t HandlerArg;
+    const EdsLib_DataTypeDB_Entry_t *DictPtr;
+} EdsLib_PackedPostProc_DeferredField_t;
+
+typedef struct EdsLib_DataTypePackUnpack_ControlBlock EdsLib_DataTypePackUnpack_ControlBlock_t;
+
+/**
+ * Callback for processing a structure member during pack/unpack operations
+ *
+ * This permits a different function to be used when encoding, decoding, or
+ * populating or verifying error control fields.
+ */
+typedef int32_t (*EdsLib_DataTypePackUnpack_HandleMemberFunc_t)(
+        EdsLib_DataTypePackUnpack_ControlBlock_t *,
+        const EdsLib_DataTypeIterator_StackEntry_t *,
+        uint32_t,
+        EdsLib_PackAction_t);
+
+struct EdsLib_DataTypePackUnpack_ControlBlock
+{
+    const void *NativeBufferPtr;
     EdsLib_DatabaseRef_t RefObj;
-    EdsLib_SizeInfo_t ProcessedSize;
     EdsLib_SizeInfo_t MaxSize;
+    EdsLib_SizeInfo_t LastNominalTail;
+    uint32_t LastActualTailBitPos;
     int32_t Status;
-} EdsLib_DataTypePackUnpack_ControlBlock_t;
+    uint32_t MaxPasses;
+    EdsLib_DataTypePackUnpack_HandleMemberFunc_t HandleMember;
+};
 
 typedef struct
 {
-    void *BasePtr;
-    const EdsLib_DataTypeDB_Entry_t *BaseDictPtr;
-    const EdsLib_DataTypeDB_Entry_t *ErrorCtlDictPtr;
-    EdsLib_ErrorControlType_t ErrorCtlType;
-    int32_t Status;
-    uint32_t ErrorCtlOffsetBits;
+    EdsLib_DataTypePackUnpack_ControlBlock_t Common;
+    const uint8_t *NativeSrcPtr;
+    uint8_t *PackedDstPtr;
+} EdsLib_DataTypePack_State_t;
+
+typedef struct
+{
+    EdsLib_DataTypePackUnpack_ControlBlock_t Common;
+    const uint8_t *PackedSrcPtr;
+    uint8_t *NativeDstPtr;
+} EdsLib_DataTypeUnpack_State_t;
+
+typedef struct
+{
+    EdsLib_DataTypePack_State_t Pack;
+    uint16_t DeferredFieldCount;
+    EdsLib_PackedPostProc_DeferredField_t DeferredFields[EDSLIB_PACKEDPOSTPROC_MAX_DEFERRED_FIELDS];
 } EdsLib_PackedPostProc_ControlBlock_t;
 
 typedef struct
 {
-    const void *PackedPtr;
-    void *NativePtr;
-    const EdsLib_DataTypeDB_Entry_t *BaseDictPtr;
-    int32_t Status;
+    EdsLib_DataTypeUnpack_State_t Unpack;
+    uint32_t CheckFields;
     uint32_t RecomputeFields;
 } EdsLib_NativePostProc_ControlBlock_t;
-
-
 
 typedef struct
 {
@@ -354,7 +397,7 @@ typedef struct
 typedef struct
 {
     uint16_t ScratchOffset;
-    EdsLib_BasicType_t NameStyle;
+    bool HasNamedMembers;
 } EdsLib_DisplayUserIterator_FullName_StackEntry_t;
 
 #define EDSLIB_ITERATOR_NAME_MAX_SIZE              256
@@ -367,6 +410,15 @@ typedef struct
     char ScratchNameBuffer[EDSLIB_ITERATOR_NAME_MAX_SIZE];
 } EdsLib_DisplayUserIterator_FullName_ControlBlock_t;
 
+typedef struct  EdsLib_IntfDB_FullContext
+{
+    EdsLib_IntfDB_t IntfDBPtr;
+    const EdsLib_IntfDB_ComponentEntry_t *CompEntry;
+    const EdsLib_IntfDB_DeclIntfEntry_t *DeclIntfEntry;
+    const EdsLib_IntfDB_InterfaceEntry_t *CompIntfEntry;
+    const EdsLib_IntfDB_CommandEntry_t *CmdEntry;
+} EdsLib_IntfDB_FullContext_t;
+
 /**********************************************************
  * PROTOTYPES - General purpose helper functions
  **********************************************************/
@@ -375,19 +427,6 @@ typedef struct
  * Initialize the error control algorithms
  */
 void EdsLib_ErrorControl_Initialize(void);
-
-/**
- * Converts an external EdsLib_Id_t object into the internal EdsLib_DatabaseRef_t value
- * @sa  EdsLib_Encode_StructId
- */
-void EdsLib_Decode_StructId(EdsLib_DatabaseRef_t *RefObj, EdsLib_Id_t EdsId);
-
-/**
- * Converts an internal EdsLib_DatabaseRef_t object into the external EdsLib_Id_t value
- * @sa  EdsLib_Decode_StructId
- */
-EdsLib_Id_t EdsLib_Encode_StructId(const EdsLib_DatabaseRef_t *RefObj);
-
 
 /**********************************************************
  * PROTOTYPES - DataTypeDB helper functions
@@ -404,26 +443,68 @@ void EdsLib_DataTypeDB_CopyTypeInfo(const EdsLib_DataTypeDB_Entry_t *DataDictEnt
 void EdsLib_DataTypeLoad_Impl(EdsLib_GenericValueBuffer_t *ValueBuff, EdsLib_ConstPtr_t SrcPtr, const EdsLib_DataTypeDB_Entry_t *DictEntryPtr);
 void EdsLib_DataTypeStore_Impl(EdsLib_Ptr_t DstPtr, EdsLib_GenericValueBuffer_t *SrcBuff, const EdsLib_DataTypeDB_Entry_t *DictEntryPtr);
 
+typedef int8_t (*EdsLib_EntryCompareFunc_t)(const void *, const EdsLib_FieldDetailEntry_t *);
+typedef uint16_t (*EdsLib_GetArrayIdxFunc_t)(const void *, const EdsLib_SizeInfo_t *);
+
+int8_t EdsLib_OffsetCompareBits(const void *SubjectPtr, const EdsLib_FieldDetailEntry_t *RefEntry);
+int8_t EdsLib_OffsetCompareBytes(const void *SubjectPtr, const EdsLib_FieldDetailEntry_t *RefEntry);
+
+uint16_t EdsLib_GetArrayIdxFromBits(const void *SubjectPtr, const EdsLib_SizeInfo_t *ElemSize);
+uint16_t EdsLib_GetArrayIdxFromBytes(const void *SubjectPtr, const EdsLib_SizeInfo_t *ElemSize);
+
+int32_t EdsLib_DataTypeDB_FindContainerMember_Impl(const EdsLib_DatabaseObject_t *GD,
+    const EdsLib_DataTypeDB_Entry_t *BaseDict, const void *CompareArg, EdsLib_EntryCompareFunc_t CompFunc, EdsLib_DataTypeDB_EntityInfo_t *CompInfo);
+
+int32_t EdsLib_DataTypeDB_FindArrayMember_Impl(const EdsLib_DatabaseObject_t *GD,
+    const EdsLib_DataTypeDB_Entry_t *BaseDict, const void *GetIdxArg, EdsLib_GetArrayIdxFunc_t GetIdxFunc,
+    EdsLib_DataTypeDB_EntityInfo_t *EntInfo);
+
 int32_t EdsLib_DataTypeIterator_Impl(const EdsLib_DatabaseObject_t *GD,
         EdsLib_DataTypeIterator_ControlBlock_t *StateInfo);
 
 int32_t EdsLib_DataTypeDB_ConstraintIterator_Impl(const EdsLib_DatabaseObject_t *GD, EdsLib_ConstraintIterator_ControlBlock_t *CtlBlock, const EdsLib_DatabaseRef_t *BaseRef);
 int32_t EdsLib_DataTypeDB_ConstraintIterator(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t BaseId, EdsLib_Id_t DerivedId, EdsLib_ConstraintCallback_t Callback, void *CbArg);
+const EdsLib_IdentSequenceEntry_t *EdsLib_DataTypeExecuteConstraintSequence_Impl(const EdsLib_DatabaseObject_t *GD,
+    const EdsLib_IdentityCheckSequence_t *CheckSequence, const void *Buffer, size_t MaxOffset);
+
+int32_t EdsLib_DataTypePack_HandleMember(
+    EdsLib_DataTypePackUnpack_ControlBlock_t *Parent,
+    const EdsLib_DataTypeIterator_StackEntry_t *CbInfo,
+    uint32_t BitPosition,
+    EdsLib_PackAction_t PackAction);
+
+int32_t EdsLib_DataTypeUnpack_HandleMember(
+    EdsLib_DataTypePackUnpack_ControlBlock_t *Parent,
+    const EdsLib_DataTypeIterator_StackEntry_t *CbInfo,
+    uint32_t BitPosition,
+    EdsLib_PackAction_t PackAction);
+
+int32_t EdsLib_DataTypeDB_PackUnpackFindTailEntity(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId,
+    const EdsLib_SizeInfo_t *TargetOffset, EdsLib_DataTypeDB_EntityInfo_t *ResultInfo);
+
+int32_t EdsLib_DataTypeDB_PackUnpackFindTail(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId,
+    const EdsLib_SizeInfo_t *InputPtr, EdsLib_DataTypePackUnpack_ControlBlock_t *CbPtr);
 
 void EdsLib_DataTypePackUnpack_Impl(const EdsLib_DatabaseObject_t *GD, EdsLib_DataTypePackUnpack_ControlBlock_t *PackState);
-int32_t EdsLib_DataTypeIdentifyBuffer_Impl(const EdsLib_DatabaseObject_t *GD, const EdsLib_DataTypeDB_Entry_t *DataDictPtr, const void *Buffer, uint16_t *DerivTableIndex, EdsLib_DatabaseRef_t *ActualObj);
+int32_t EdsLib_DataTypeIdentifyBuffer_Impl(const EdsLib_DatabaseObject_t *GD, const EdsLib_DataTypeDB_Entry_t *DataDictPtr, const void *Buffer, size_t MaxOffset,
+    uint16_t *DerivTableIndex, EdsLib_DatabaseRef_t *ActualObj);
 
 void EdsLib_DataTypeConstraintEntityLookup_Impl(const EdsLib_DataTypeDB_Entry_t *DataDictPtr, uint16_t ConstraintIdx, const EdsLib_DatabaseRef_t **RefObjPtr, EdsLib_SizeInfo_t *Offset);
 
-EdsLib_Iterator_Rc_t EdsLib_NativeObject_PostProc_Callback(const EdsLib_DatabaseObject_t *GD,
-        EdsLib_Iterator_CbType_t CbType,
-        const EdsLib_DataTypeIterator_StackEntry_t *CbInfo,
-        void *OpaqueArg);
+int32_t EdsLib_NativeObject_PostProc_Callback(
+        EdsLib_DataTypePackUnpack_ControlBlock_t *Parent,
+    const EdsLib_DataTypeIterator_StackEntry_t *CbInfo,
+    uint32_t BitPosition,
+    EdsLib_PackAction_t PackAction);
 
-EdsLib_Iterator_Rc_t EdsLib_PackedObject_PostProc_Callback(const EdsLib_DatabaseObject_t *GD,
-        EdsLib_Iterator_CbType_t CbType,
-        const EdsLib_DataTypeIterator_StackEntry_t *CbInfo,
-        void *OpaqueArg);
+int32_t EdsLib_PackedObject_PostProc_Callback(
+        EdsLib_DataTypePackUnpack_ControlBlock_t *Parent,
+    const EdsLib_DataTypeIterator_StackEntry_t *CbInfo,
+    uint32_t BitPosition,
+    EdsLib_PackAction_t PackAction);
+
+void EdsLib_PackedObject_PostProc_Deferred(EdsLib_PackedPostProc_ControlBlock_t *Base);
+
 
 void EdsLib_UpdateErrorControlField(const EdsLib_DataTypeDB_Entry_t *ErrorCtlDictPtr, void *PackedObject,
         uint32_t TotalBitSize, EdsLib_ErrorControlType_t ErrorCtlType, uint32_t ErrorCtlOffsetBits);
@@ -464,8 +545,30 @@ int32_t EdsLib_DisplayScalarConv_FromString_Impl(const EdsLib_DataTypeDB_Entry_t
         void *DestPtr, const char *SrcString);
 
 
-uintmax_t EdsLib_ErrorControlCompute(EdsLib_ErrorControlType_t Algorithm, const void *Buffer, uint32_t BufferSizeBytes, uint32_t ErrCtlBitPos);
+uintmax_t EdsLib_ErrorControlCompute(EdsLib_ErrorControlType_t Algorithm, const void *Buffer, uint32_t BufferSizeBits, uint32_t ErrCtlBitPos);
 
+
+/**********************************************************
+ * PROTOTYPES - IntfDB lookup helper functions
+ *
+ * These are internal helper/utility functions implemented as part of the
+ * Interface DB.  These are NOT part of the public API.
+ *
+ **********************************************************/
+
+EdsLib_IntfDB_t EdsLib_IntfDB_GetTopLevel(const EdsLib_DatabaseObject_t *GD, uint16_t AppIdx);
+const EdsLib_IntfDB_ComponentEntry_t *EdsLib_IntfDB_GetComponentEntry(const EdsLib_DatabaseObject_t *GD, const EdsLib_DatabaseRef_t *RefObj);
+const EdsLib_IntfDB_DeclIntfEntry_t *EdsLib_IntfDB_GetDeclIntfEntry(const EdsLib_DatabaseObject_t *GD, const EdsLib_DatabaseRef_t *RefObj);
+const EdsLib_IntfDB_InterfaceEntry_t *EdsLib_IntfDB_GetInterfaceEntryFromCompIdx(const EdsLib_IntfDB_ComponentEntry_t *CompEntry, uint16_t CompIdx);
+const EdsLib_IntfDB_CommandEntry_t *EdsLib_IntfDB_GetCommandEntryFromIntfIdx(const EdsLib_IntfDB_DeclIntfEntry_t *IntfEntry, uint16_t IntfIdx);
+const EdsLib_IntfDB_InterfaceEntry_t *EdsLib_IntfDB_GetComponentInterfaceEntry(const EdsLib_DatabaseObject_t *GD, const EdsLib_DatabaseRef_t *RefObj, const EdsLib_IntfDB_ComponentEntry_t **CompEntryOut);
+const EdsLib_IntfDB_CommandEntry_t *EdsLib_IntfDB_GetDeclIntfCommandEntry(const EdsLib_DatabaseObject_t *GD, const EdsLib_DatabaseRef_t *RefObj, const EdsLib_IntfDB_DeclIntfEntry_t **DeclIntfOut);
+
+int32_t EdsLib_IntfDB_FindComponentBySubstring(EdsLib_IntfDB_t IntfDBPtr, const char *CompName, size_t MatchLen, uint16_t *IdxOut);
+int32_t EdsLib_IntfDB_FindDeclIntfBySubstring(EdsLib_IntfDB_t IntfDBPtr, const char *IntfName, size_t MatchLen, uint16_t *IdxOut);
+int32_t EdsLib_IntfDB_FindComponentInterfaceBySubstring(const EdsLib_IntfDB_ComponentEntry_t *CompEntry, const char *IntfName, size_t MatchLen, uint16_t *IdxOut);
+int32_t EdsLib_IntfDB_FindComponentByQualifiedName(const EdsLib_DatabaseObject_t *GD, const char *CompName, size_t MatchLen, EdsLib_DatabaseRef_t *RefObj);
+int32_t EdsLib_IntfDB_FindDeclIntfByQualifiedName(const EdsLib_DatabaseObject_t *GD, const char *IntfName, size_t MatchLen, EdsLib_DatabaseRef_t *RefObj);
+int32_t EdsLib_IntfDB_FindFullContext(const EdsLib_DatabaseObject_t *GD, const EdsLib_DatabaseRef_t *RefObj, EdsLib_IntfDB_FullContext_t *CtxtOut);
 
 #endif  /* _EDSLIB_INTERNAL_H_ */
-

@@ -91,6 +91,7 @@ PyTypeObject EdsLib_Python_DatabaseEntryType =
     .tp_base = &PyType_Type,
     .tp_iter = EdsLib_Python_DatabaseEntry_iter,
     .tp_flags = Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_GC,
+    .tp_weaklistoffset = offsetof(EdsLib_Python_DatabaseEntry_t, WeakRefList),
     .tp_doc = PyDoc_STR("EDS database entry")
 };
 
@@ -285,14 +286,8 @@ PyTypeObject *EdsLib_Python_DatabaseEntry_GetFromEdsId(PyObject *obj, EdsLib_Id_
 
 PyTypeObject *EdsLib_Python_DatabaseEntry_GetFromEdsId_Impl(EdsLib_Python_Database_t *refdb, EdsLib_Id_t EdsId)
 {
-    union obj
-    {
-        EdsLib_Python_DatabaseEntry_t dbent;
-        PyTypeObject typeobj;
-        PyObject pyobj;
-    } *selfptr = NULL;
+    EdsLib_Python_DatabaseEntry_t *self = NULL;
     EdsLib_DataTypeDB_TypeInfo_t TypeInfo;
-    PyObject *weakref = NULL;
     PyObject *edsidval = NULL;
     PyObject *tempargs = NULL;
     PyObject *typename = NULL;
@@ -311,19 +306,11 @@ PyTypeObject *EdsLib_Python_DatabaseEntry_GetFromEdsId_Impl(EdsLib_Python_Databa
         /*
          * To avoid wasting resources, type objects are only created on demand.
          * First check if the db cache object already contains an instance for this ID
-         * note: PyDict_GetItem returns borrowed reference
          */
-        weakref = PyDict_GetItem(refdb->TypeCache, edsidval);
-        if (weakref != NULL)
+        self = (EdsLib_Python_DatabaseEntry_t *)EdsLib_Python_GetFromCache(refdb->TypeCache, edsidval, &EdsLib_Python_DatabaseEntryType);
+        if (self != NULL)
         {
-            selfptr = (union obj*)PyWeakref_GetObject(weakref); /* borrowed ref */
-            if (Py_TYPE(selfptr) == &EdsLib_Python_DatabaseEntryType)
-            {
-                Py_INCREF(selfptr);
-                break;
-            }
-            /* weakref expired, needs to be recreated */
-            selfptr = NULL;
+            break;
         }
 
         /*
@@ -343,7 +330,7 @@ PyTypeObject *EdsLib_Python_DatabaseEntry_GetFromEdsId_Impl(EdsLib_Python_Databa
         {
             basetype = &EdsLib_Python_ObjectArrayType;
         }
-        else if (TypeInfo.ElemType == EDSLIB_BASICTYPE_CONTAINER)
+        else if (TypeInfo.ElemType == EDSLIB_BASICTYPE_CONTAINER || TypeInfo.ElemType == EDSLIB_BASICTYPE_COMPONENT)
         {
             basetype = &EdsLib_Python_ObjectContainerType;
         }
@@ -400,9 +387,9 @@ PyTypeObject *EdsLib_Python_DatabaseEntry_GetFromEdsId_Impl(EdsLib_Python_Databa
          * only uses dot separators.  This is because Python internally
          * expects certain constraints regarding a type name.
          */
-        typename = PyUnicode_FromFormat("%s.%U.%s.%s",
+        typename = PyUnicode_FromFormat("%s.%s.%s.%s",
                 EdsLib_Python_DatabaseEntryType.tp_name,
-                refdb->DbName,
+                PyBytes_AsString(refdb->DbName),
                 EdsLib_DisplayDB_GetNamespace(refdb->GD, EdsId),
                 EdsLib_DisplayDB_GetBaseName(refdb->GD, EdsId));
 
@@ -434,42 +421,36 @@ PyTypeObject *EdsLib_Python_DatabaseEntry_GetFromEdsId_Impl(EdsLib_Python_Databa
          * Call the "new" function from the base type to properly
          * create a heaptype object (it is complicated)
          */
-        selfptr = (union obj*)EdsLib_Python_DatabaseEntryType.tp_base->tp_new(&EdsLib_Python_DatabaseEntryType, tempargs, NULL);
+        self = (EdsLib_Python_DatabaseEntry_t *)EdsLib_Python_DatabaseEntryType.tp_base->tp_new(&EdsLib_Python_DatabaseEntryType, tempargs, NULL);
         Py_DECREF(tempargs);
         tempargs = NULL;
-        if (selfptr == NULL)
+        if (self == NULL)
         {
             break;
         }
 
         Py_INCREF(refdb);
-        selfptr->dbent.EdsDb = refdb;
-        selfptr->dbent.EdsId = EdsId;
-        selfptr->dbent.BaseName = PyUnicode_FromFormat("%s", EdsLib_DisplayDB_GetBaseName(refdb->GD, EdsId));
-        selfptr->dbent.EdsTypeName = PyUnicode_FromFormat("%s/%s",
+        self->EdsDb = refdb;
+        self->EdsId = EdsId;
+        self->BaseName = PyUnicode_FromFormat("%s", EdsLib_DisplayDB_GetBaseName(refdb->GD, EdsId));
+        self->EdsTypeName = PyUnicode_FromFormat("%s/%s",
                 EdsLib_DisplayDB_GetNamespace(refdb->GD, EdsId),
                 EdsLib_DisplayDB_GetBaseName(refdb->GD, EdsId));
 
-        EdsLib_Python_DatabaseEntry_GetFormatCodes(selfptr->dbent.FormatInfo, refdb, EdsId);
+        EdsLib_Python_DatabaseEntry_GetFormatCodes(self->FormatInfo, refdb, EdsId);
 
         /* "steal" the reference to typelist, if valid */
-        selfptr->dbent.SubEntityList = typelist;
+        self->SubEntityList = typelist;
         typelist = NULL;
 
         /* Create a weak reference to store in the local cache in case this
          * type is needed again. */
-        weakref = PyWeakref_NewRef(&selfptr->pyobj, NULL);
-        if (weakref == NULL)
+        if (EdsLib_Python_SaveToCache(refdb->TypeCache, edsidval, (PyObject*)self) < 0)
         {
-            Py_DECREF(selfptr);
-            selfptr = NULL;
-            break;
+            /* if something went wrong this raises an error and must return NULL */
+            Py_DECREF(self);
+            self = NULL;
         }
-
-        PyDict_SetItem(refdb->TypeCache, edsidval, weakref);
-        Py_DECREF(weakref);
-        weakref = NULL;
-
     }
     while(0);
 
@@ -480,7 +461,7 @@ PyTypeObject *EdsLib_Python_DatabaseEntry_GetFromEdsId_Impl(EdsLib_Python_Databa
     Py_XDECREF(typelist);
     Py_XDECREF(tempargs);
 
-    return &selfptr->typeobj;
+    return (PyTypeObject *)self;
 }
 
 static int EdsLib_Python_DatabaseEntry_traverse(PyObject *obj, visitproc visit, void *arg)
@@ -554,40 +535,13 @@ static PyObject *EdsLib_Python_DatabaseEntry_new(PyTypeObject *obj, PyObject *ar
             break;
         }
 
-        if (PyNumber_Check(arg2))
+        EdsId = EdsLib_Python_ConvertArgToEdsId(refdb->GD, arg2);
+
+        /* if not valid this should have raised an exception */
+        if (EdsLib_Is_Valid(EdsId))
         {
-            tempargs = PyNumber_Long(arg2);
-            if (tempargs == NULL)
-            {
-                break;
-            }
-
-            EdsId = PyLong_AsUnsignedLong(tempargs);
-            Py_DECREF(tempargs);
-            tempargs = NULL;
+            result = (PyObject*)EdsLib_Python_DatabaseEntry_GetFromEdsId_Impl(refdb, EdsId);
         }
-        else
-        {
-            if (PyUnicode_Check(arg2))
-            {
-                tempargs = PyUnicode_AsUTF8String(arg2);
-            }
-            else
-            {
-                tempargs = PyObject_Bytes(arg2);
-            }
-
-            if (tempargs == NULL)
-            {
-                break;
-            }
-
-            EdsId = EdsLib_DisplayDB_LookupTypeName(refdb->GD, PyBytes_AsString(tempargs));
-            Py_DECREF(tempargs);
-            tempargs = NULL;
-        }
-
-        result = (PyObject*)EdsLib_Python_DatabaseEntry_GetFromEdsId_Impl(refdb, EdsId);
     }
     while(0);
 
@@ -636,7 +590,7 @@ static Py_ssize_t EdsLib_Python_DatabaseEntry_len(PyObject *obj)
     Py_ssize_t result;
     EdsLib_DataTypeDB_TypeInfo_t TypeInfo;
     EdsLib_DataTypeDB_GetTypeInfo(self->EdsDb->GD, self->EdsId, &TypeInfo);
-    if (TypeInfo.ElemType == EDSLIB_BASICTYPE_CONTAINER &&
+    if ((TypeInfo.ElemType == EDSLIB_BASICTYPE_CONTAINER || TypeInfo.ElemType == EDSLIB_BASICTYPE_COMPONENT) &&
             self->SubEntityList != NULL)
     {
         /*
@@ -674,7 +628,7 @@ static PyObject *EdsLib_Python_DatabaseEntry_seq_item(PyObject *obj, Py_ssize_t 
         PyErr_Format(PyExc_TypeError, "Attempt to index \'%s\' which is not an EDS sequence type",
                 self->type_base.ht_type.tp_name);
     }
-    else if (TypeInfo.ElemType == EDSLIB_BASICTYPE_CONTAINER &&
+    else if ((TypeInfo.ElemType == EDSLIB_BASICTYPE_CONTAINER || TypeInfo.ElemType == EDSLIB_BASICTYPE_COMPONENT) &&
             self->SubEntityList != NULL)
     {
         attribute = PyList_GetItem(self->SubEntityList, idx);

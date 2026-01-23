@@ -235,6 +235,11 @@ static const seds_stringmap_t XML_SEDS_STARTTAG_MAP[] =
         { .tag_name = XML_CHAR_C("ProvidedInterface"),      .tag_id = SEDS_NODETYPE_PROVIDED_INTERFACE      },
         { .tag_name = XML_CHAR_C("RequiredInterface"),      .tag_id = SEDS_NODETYPE_REQUIRED_INTERFACE      },
 
+        /* these are variations of the constraint elements that appear within PresentWhen elements */
+        { .tag_name = XML_CHAR_C("PresenceTypeConstraint"),   .tag_id = SEDS_NODETYPE_PRESENCE_TYPE_CONSTRAINT  },
+        { .tag_name = XML_CHAR_C("PresenceRangeConstraint"),  .tag_id = SEDS_NODETYPE_PRESENCE_RANGE_CONSTRAINT },
+        { .tag_name = XML_CHAR_C("PresenceValueConstraint"),  .tag_id = SEDS_NODETYPE_PRESENCE_VALUE_CONSTRAINT },
+
         /* Keep NULL tag last - absolute end of list marker */
         { .tag_name = NULL,                                 .tag_id = SEDS_NODETYPE_UNKNOWN                 }
 };
@@ -328,6 +333,29 @@ static seds_nodetype_t seds_xmlparser_identify_element(seds_nodetype_t parent_no
             break;
         case SEDS_NODETYPE_BASE_INTERFACE_SET:
             node_type = SEDS_NODETYPE_BASE_INTERFACE;
+            break;
+        default:
+            break;
+        }
+    }
+
+    /* 
+     * The same constraint XML elements are also used within PresentWhen, but these
+     * need to be handled differently from other constraint elements because they are
+     * used for a different purpose in this context 
+     */
+    if (parent_node_type == SEDS_NODETYPE_PRESENT_WHEN)
+    {
+        switch(node_type)
+        {
+        case SEDS_NODETYPE_VALUE_CONSTRAINT:
+            node_type = SEDS_NODETYPE_PRESENCE_VALUE_CONSTRAINT;
+            break;
+        case SEDS_NODETYPE_TYPE_CONSTRAINT:
+            node_type = SEDS_NODETYPE_PRESENCE_TYPE_CONSTRAINT;
+            break;
+        case SEDS_NODETYPE_RANGE_CONSTRAINT:
+            node_type = SEDS_NODETYPE_PRESENCE_RANGE_CONSTRAINT;
             break;
         default:
             break;

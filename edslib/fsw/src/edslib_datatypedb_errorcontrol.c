@@ -83,7 +83,11 @@ static uint16_t EDSLIB_CRC16_CCITT_TABLE[256];
 static uint8_t  EDSLIB_CRC8_TABLE[256];
 
 
-/*
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
  * This function serves two purposes:
  *  1) A place to put initialization code for all error control algorithms, such
  *     as generating a lookup table for CRCs or whatever else needs to be done
@@ -91,7 +95,8 @@ static uint8_t  EDSLIB_CRC8_TABLE[256];
  *     is included in the link.  In general the algorithms in here are only referenced
  *     by dynamically loaded code, so having this init function ensures that this code
  *     will be pulled into the final executable.
- */
+ *
+ *-----------------------------------------------------------------*/
 void EdsLib_ErrorControl_Initialize(void)
 {
     uint16_t i;
@@ -139,12 +144,22 @@ void EdsLib_ErrorControl_Initialize(void)
     }
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib local helper function
+ *
+ *-----------------------------------------------------------------*/
 uintmax_t EdsLib_ErrorControlAlgorithm_ZERO(const void *Base, uint32_t TotalBitSize, uint32_t ErrCtlBitPos)
 {
     return 0;
 }
 
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib local helper function
+ *
+ *-----------------------------------------------------------------*/
 uintmax_t EdsLib_ErrorControlAlgorithm_CHECKSUM_LONGITUDINAL(const void *Base, uint32_t TotalBitSize, uint32_t ErrCtlBitPos)
 {
     const uint8_t *SrcPtr;
@@ -184,6 +199,11 @@ uintmax_t EdsLib_ErrorControlAlgorithm_CHECKSUM_LONGITUDINAL(const void *Base, u
     return Checksum;
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib local helper function
+ *
+ *-----------------------------------------------------------------*/
 uintmax_t EdsLib_ErrorControlAlgorithm_CRC16_CCITT(const void *Base, uint32_t TotalBitSize, uint32_t ErrCtlBitPos)
 {
     const uint8_t *SrcPtr;
@@ -252,6 +272,11 @@ uintmax_t EdsLib_ErrorControlAlgorithm_CRC16_CCITT(const void *Base, uint32_t To
     return crc;
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib local helper function
+ *
+ *-----------------------------------------------------------------*/
 uintmax_t EdsLib_ErrorControlAlgorithm_CRC8(const void *Base, uint32_t TotalBitSize, uint32_t ErrCtlBitPos)
 {
     const uint8_t *SrcPtr;
@@ -318,10 +343,15 @@ uintmax_t EdsLib_ErrorControlAlgorithm_CRC8(const void *Base, uint32_t TotalBitS
     return crc;
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib local helper function
+ *
+ *-----------------------------------------------------------------*/
 uintmax_t EdsLib_ErrorControlAlgorithm_CHECKSUM(const void *Base, uint32_t TotalBitSize, uint32_t ErrCtlBitPos)
 {
     const uint8_t *SrcPtr;
-    uintmax_t sum = 0;
+    uint32_t sum = 0;
     uint32_t NextMask = 0xFFFFFFFF;
     uint32_t offset = 0;
     uint32_t intermediate = 0;
@@ -363,7 +393,7 @@ uintmax_t EdsLib_ErrorControlAlgorithm_CHECKSUM(const void *Base, uint32_t Total
 /*******************************************************
  * MAIN ERROR CONTROL IMPLEMENTATION FUNCTION
  *******************************************************/
-uintmax_t EdsLib_ErrorControlCompute(EdsLib_ErrorControlType_t Algorithm, const void *Buffer, uint32_t BufferSizeBytes, uint32_t ErrCtlBitPos)
+uintmax_t EdsLib_ErrorControlCompute(EdsLib_ErrorControlType_t Algorithm, const void *Buffer, uint32_t BufferSizeBits, uint32_t ErrCtlBitPos)
 {
     uint32_t Idx;
 
@@ -373,7 +403,5 @@ uintmax_t EdsLib_ErrorControlCompute(EdsLib_ErrorControlType_t Algorithm, const 
         Idx = EdsLib_ErrorControlType_INVALID;
     }
 
-    return (EDSLIB_ERRCTL_DISPATCH[Idx])(Buffer, BufferSizeBytes, ErrCtlBitPos);
+    return (EDSLIB_ERRCTL_DISPATCH[Idx])(Buffer, BufferSizeBits, ErrCtlBitPos);
 }
-
-

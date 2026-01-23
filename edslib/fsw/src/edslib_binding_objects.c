@@ -83,12 +83,12 @@ void EdsLib_Binding_Initialize(void)
 {
 }
 
-
-
-/*************************************************************
- * Constructors and Destructors for EdsLib binding objects
- */
-
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 void EdsLib_Binding_SetDescBuffer(EdsLib_Binding_DescriptorObject_t *DescrObj, EdsLib_Binding_Buffer_Content_t *TargetBuffer)
 {
     EdsLib_Binding_Buffer_Content_t *PrevContentPtr = DescrObj->BufferPtr;
@@ -120,6 +120,12 @@ void EdsLib_Binding_SetDescBuffer(EdsLib_Binding_DescriptorObject_t *DescrObj, E
     }
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 EdsLib_Binding_Buffer_Content_t *EdsLib_Binding_AllocManagedBuffer(size_t MaxContentSize)
 {
     EdsLib_Binding_AllocBuf_t *BufPtr;
@@ -145,6 +151,12 @@ EdsLib_Binding_Buffer_Content_t *EdsLib_Binding_AllocManagedBuffer(size_t MaxCon
     return ContentPtr;
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 EdsLib_Binding_Buffer_Content_t *EdsLib_Binding_InitUnmanagedBuffer(EdsLib_Binding_Buffer_Content_t *ContentPtr, void *DataPtr, size_t MaxContentSize)
 {
     ContentPtr->Data = DataPtr;
@@ -155,6 +167,12 @@ EdsLib_Binding_Buffer_Content_t *EdsLib_Binding_InitUnmanagedBuffer(EdsLib_Bindi
     return ContentPtr;
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 void EdsLib_Binding_InitDescriptor(EdsLib_Binding_DescriptorObject_t *ObjectUserData,
         const EdsLib_DatabaseObject_t *EdsDB,
         EdsLib_Id_t EdsId)
@@ -169,6 +187,12 @@ void EdsLib_Binding_InitDescriptor(EdsLib_Binding_DescriptorObject_t *ObjectUser
     EdsLib_DataTypeDB_GetTypeInfo(EdsDB, EdsId, &ObjectUserData->TypeInfo);
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 void EdsLib_Binding_InitSubObject(EdsLib_Binding_DescriptorObject_t *SubObject, const EdsLib_Binding_DescriptorObject_t *ParentObj, const EdsLib_DataTypeDB_EntityInfo_t *Component)
 {
     memset(SubObject,0,sizeof(*SubObject));
@@ -180,6 +204,12 @@ void EdsLib_Binding_InitSubObject(EdsLib_Binding_DescriptorObject_t *SubObject, 
     EdsLib_DataTypeDB_GetTypeInfo(SubObject->GD, SubObject->EdsId, &SubObject->TypeInfo);
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 EdsLib_Binding_Compatibility_t EdsLib_Binding_CheckEdsObjectsCompatible(
         EdsLib_Binding_DescriptorObject_t *DestObject,
         EdsLib_Binding_DescriptorObject_t *SrcObject)
@@ -228,6 +258,12 @@ EdsLib_Binding_Compatibility_t EdsLib_Binding_CheckEdsObjectsCompatible(
     return result;
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 void *EdsLib_Binding_GetNativeObject(const EdsLib_Binding_DescriptorObject_t *ObjectUserData)
 {
     uint8_t *DataPtr;
@@ -249,6 +285,12 @@ void *EdsLib_Binding_GetNativeObject(const EdsLib_Binding_DescriptorObject_t *Ob
     return DataPtr;
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 size_t EdsLib_Binding_GetBufferMaxSize(const EdsLib_Binding_DescriptorObject_t *ObjectUserData)
 {
     size_t Result;
@@ -265,6 +307,12 @@ size_t EdsLib_Binding_GetBufferMaxSize(const EdsLib_Binding_DescriptorObject_t *
     return Result;
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 size_t EdsLib_Binding_GetNativeSize(const EdsLib_Binding_DescriptorObject_t *ObjectUserData)
 {
     size_t Result = EdsLib_Binding_GetBufferMaxSize(ObjectUserData);
@@ -277,6 +325,12 @@ size_t EdsLib_Binding_GetNativeSize(const EdsLib_Binding_DescriptorObject_t *Obj
     return Result;
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 void EdsLib_Binding_InitStaticFields(EdsLib_Binding_DescriptorObject_t *ObjectUserData)
 {
     void *ObjData = EdsLib_Binding_GetNativeObject(ObjectUserData);
@@ -288,6 +342,12 @@ void EdsLib_Binding_InitStaticFields(EdsLib_Binding_DescriptorObject_t *ObjectUs
     }
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 int32_t EdsLib_Binding_InitFromPackedBuffer(EdsLib_Binding_DescriptorObject_t *ObjectUserData, const void *PackedData, size_t PackedDataSize)
 {
     int32_t Status = EdsLib_DataTypeDB_UnpackCompleteObject(
@@ -304,6 +364,12 @@ int32_t EdsLib_Binding_InitFromPackedBuffer(EdsLib_Binding_DescriptorObject_t *O
     return Status;
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 int32_t EdsLib_Binding_ExportToPackedBuffer(EdsLib_Binding_DescriptorObject_t *ObjectUserData, void *PackedData, size_t PackedDataSize)
 {
     int32_t Status = EdsLib_DataTypeDB_PackCompleteObject(
@@ -321,15 +387,26 @@ int32_t EdsLib_Binding_ExportToPackedBuffer(EdsLib_Binding_DescriptorObject_t *O
 }
 
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 int32_t EdsLib_Binding_LoadValue(const EdsLib_Binding_DescriptorObject_t *ObjectUserData, EdsLib_GenericValueBuffer_t *ValBuf)
 {
     return EdsLib_DataTypeDB_LoadValue(ObjectUserData->GD, ObjectUserData->EdsId,
             ValBuf, EdsLib_Binding_GetNativeObject(ObjectUserData));
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 int32_t EdsLib_Binding_StoreValue(const EdsLib_Binding_DescriptorObject_t *ObjectUserData, EdsLib_GenericValueBuffer_t *ValBuf)
 {
     return EdsLib_DataTypeDB_StoreValue(ObjectUserData->GD, ObjectUserData->EdsId,
             EdsLib_Binding_GetNativeObject(ObjectUserData), ValBuf);
 }
-

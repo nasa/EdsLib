@@ -61,11 +61,14 @@ typedef int socklen_t;
 #include "cfe_mission_eds_parameters.h"
 #include "cfe_mission_eds_interface_parameters.h"
 #include "edslib_displaydb.h"
+#include "edslib_intfdb.h"
 #include "cfe_missionlib_api.h"
 #include "cfe_missionlib_runtime.h"
 #include "cfe_hdr_eds_datatypes.h"
 
 const char DEFAULT_COMPONENT[] = "Application";
+
+static const EdsLib_Id_t CFE_SB_TELECOMMAND_CMD_ID = EDSLIB_INTF_ID(EDS_INDEX(CFE_SB), EdsCommand_CFE_SB_Telecommand_indication_DECLARATION);
 
 /*
 ** SendUdp
@@ -175,10 +178,13 @@ typedef struct {
     int  GotDestInfo;
     int  GotUsageReq;
 
+    EdsLib_Id_t IntfEdsId;
+    EdsLib_Id_t CmdEdsId;
+
     EdsLib_Id_t IntfArg;
     EdsLib_Id_t ActualArg;
     EdsComponent_CFE_SB_Listener_t Params;
-    CFE_MissionLib_InterfaceInfo_t IntfInfo;
+    EdsLib_IntfDB_InterfaceInfo_t IntfInfo;
     EdsInterface_CFE_SB_SoftwareBus_PubSub_t PubSub;
     uint16_t CommandCodeConstrIdx;
     EdsLib_DataTypeDB_EntityInfo_t CommandCodeInfo;
@@ -275,11 +281,17 @@ void ProcessParameterArgument(char *optarg, CommandData_t *CommandData)
    }
 }
 
-static void Enumerate_Topics_Usage_Callback(void *Arg, uint16_t TopicId, const char *TopicName)
+static void Enumerate_Topics_Usage_Callback(void *Arg, uint16_t TopicId, EdsLib_Id_t IntfEdsId)
 {
-    if (TopicName != NULL)
+    char NameBuffer[128];
+    int32_t Status;
+
+    /* JPHFIX - check type */
+
+    Status = EdsLib_IntfDB_GetFullName(&EDS_DATABASE, IntfEdsId, NameBuffer, sizeof(NameBuffer));
+    if (Status == EDSLIB_SUCCESS)
     {
-        printf("   %s\n", TopicName);
+        printf("   %s\n", NameBuffer);
     }
 }
 
@@ -361,6 +373,8 @@ int main(int argc, char *argv[]) {
     char *Separator;
     char ConstraintBuffer[CONSTRAINT_BUFSIZE];
 
+    EdsDataType_CFE_HDR_Message_t *MessagePtr = (EdsDataType_CFE_HDR_Message_t *)(void *)&CommandBuffer;
+
     /*
     ** Initialize the CommandData struct
     */
@@ -414,7 +428,7 @@ int main(int argc, char *argv[]) {
     }
 
     EdsRc = EdsLib_DataTypeDB_GetTypeInfo(&EDS_DATABASE,
-            EDSLIB_MAKE_ID(EDS_INDEX(CFE_HDR), CFE_HDR_CommandHeader_DATADICTIONARY),
+            EDSLIB_MAKE_ID(EDS_INDEX(CFE_HDR), EdsContainer_CFE_HDR_CommandHeader_DATADICTIONARY),
             &CommandData.EdsHeaderInfo);
     if (EdsRc != EDSLIB_SUCCESS)
     {
@@ -453,9 +467,9 @@ int main(int argc, char *argv[]) {
         strcpy(CommandData.CmdName, Separator + 1);
     }
 
-    EdsRc = CFE_MissionLib_FindTopicByName(&CFE_SOFTWAREBUS_INTERFACE, EDS_INTERFACE_ID(CFE_SB_Telecommand),
-            CommandData.DestIntf, &CommandData.Params.Telecommand.TopicId);
-    if (EdsRc != CFE_MISSIONLIB_SUCCESS)
+    EdsRc = EdsLib_IntfDB_FindComponentInterfaceByFullName(&EDS_DATABASE, CommandData.DestIntf, 
+            &CommandData.IntfEdsId);
+    if (EdsRc != EDSLIB_SUCCESS)
     {
         /*
          * Try adding an implicit "Application" component designator --
@@ -470,9 +484,14 @@ int main(int argc, char *argv[]) {
             memmove(Separator + sizeof(DEFAULT_COMPONENT), Separator, 1 + FullLen - (Separator - CommandData.DestIntf));
             memcpy(Separator+1, DEFAULT_COMPONENT, sizeof(DEFAULT_COMPONENT) - 1);
             Separator[0] = '/';
-            EdsRc = CFE_MissionLib_FindTopicByName(&CFE_SOFTWAREBUS_INTERFACE, EDS_INTERFACE_ID(CFE_SB_Telecommand),
-                    CommandData.DestIntf, &CommandData.Params.Telecommand.TopicId);
+            EdsRc = EdsLib_IntfDB_FindComponentInterfaceByFullName(&EDS_DATABASE, CommandData.DestIntf, 
+                    &CommandData.IntfEdsId);
         }
+    }
+    if (EdsRc == EDSLIB_SUCCESS)
+    {
+        EdsRc = CFE_MissionLib_FindTopicIdFromIntfId(&CFE_SOFTWAREBUS_INTERFACE, CommandData.IntfEdsId,
+                &CommandData.Params.Telecommand.TopicId);
     }
     if (EdsRc != CFE_MISSIONLIB_SUCCESS)
     {
@@ -483,34 +502,27 @@ int main(int argc, char *argv[]) {
         if (CommandData.GotUsageReq)
         {
             printf("EDS-defined Telecommand Interfaces:\n");
-            CFE_MissionLib_EnumerateTopics(&CFE_SOFTWAREBUS_INTERFACE, EDS_INTERFACE_ID(CFE_SB_Telecommand), Enumerate_Topics_Usage_Callback, NULL);
+            CFE_MissionLib_EnumerateTopics(&CFE_SOFTWAREBUS_INTERFACE, Enumerate_Topics_Usage_Callback, NULL);
             printf("\n");
         }
         return EXIT_FAILURE;
     }
 
-    EdsRc = CFE_MissionLib_GetInterfaceInfo(&CFE_SOFTWAREBUS_INTERFACE, EDS_INTERFACE_ID(CFE_SB_Telecommand), &CommandData.IntfInfo);
-    if (EdsRc != CFE_MISSIONLIB_SUCCESS)
+    EdsRc = EdsLib_IntfDB_GetComponentInterfaceInfo(&EDS_DATABASE, CommandData.IntfEdsId, &CommandData.IntfInfo);
+    if (EdsRc != EDSLIB_SUCCESS)
     {
         fprintf(stderr,"Cannot lookup interface info for: '%s'\n", CommandData.DestIntf);
         return EXIT_FAILURE;
     }
 
-    if (CommandData.IntfInfo.NumCommands != 1)
-    {
-        fprintf(stderr,"Interface \'%s\' has multiple commands: %u\n", CommandData.DestIntf, (unsigned int)CommandData.IntfInfo.NumCommands);
-        return EXIT_FAILURE;
-    }
-
     CFE_MissionLib_MapListenerComponent(&CommandData.PubSub, &CommandData.Params);
 
-    CFE_MissionLib_Set_PubSub_Parameters(&CommandBuffer.BaseObject.Message, &CommandData.PubSub);
+    CFE_MissionLib_Set_PubSub_Parameters(MessagePtr, &CommandData.PubSub);
 
-    EdsRc = CFE_MissionLib_GetArgumentType(&CFE_SOFTWAREBUS_INTERFACE, EDS_INTERFACE_ID(CFE_SB_Telecommand),
-            CommandData.Params.Telecommand.TopicId, 1, 1, &CommandData.IntfArg);
-    if (EdsRc != CFE_MISSIONLIB_SUCCESS)
+    EdsRc = EdsLib_IntfDB_FindAllArgumentTypes(&EDS_DATABASE, CFE_SB_TELECOMMAND_CMD_ID, CommandData.IntfEdsId, &CommandData.IntfArg, 1);
+    if (EdsRc != EDSLIB_SUCCESS)
     {
-        fprintf(stderr,"Cannot lookup argument type for: '%s'\n", CommandData.DestIntf);
+        fprintf(stderr,"Cannot lookup argument type for: '%s', rc=%d\n", CommandData.DestIntf, (int)EdsRc);
         return EXIT_FAILURE;
     }
 
@@ -626,7 +638,7 @@ int main(int argc, char *argv[]) {
      * Note for the length field, the size of the primary header must be subtracted.
      * Hardcoding the sequence number / flags field for now.
      */
-    CommandBuffer.BaseObject.Message.CCSDS.CommonHdr.SeqFlag = 0x3;
+    MessagePtr->CCSDS.CommonHdr.SeqFlag = 0x3;
     EdsLib_DataTypeDB_PackCompleteObject(&EDS_DATABASE, &CommandData.ActualArg,
             PackedCommand, CommandBuffer.Byte,
             sizeof(PackedCommand) * 8, CommandData.EdsTypeInfo.Size.Bytes);

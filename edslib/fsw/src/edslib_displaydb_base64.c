@@ -65,6 +65,12 @@ static const uint8_t EdsLib_BASE64_REVERSE[128] =
 };
 
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 void EdsLib_DisplayDB_Base64Encode(char *Out, uint32_t OutputLenBytes, const uint8_t *In, uint32_t InputLenBits)
 {
     uint32_t ShiftReg;
@@ -141,6 +147,12 @@ void EdsLib_DisplayDB_Base64Encode(char *Out, uint32_t OutputLenBytes, const uin
     }
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 void EdsLib_DisplayDB_Base64Decode(uint8_t *Out, uint32_t OutputLenBits, const char *In)
 {
     uint32_t ActualLen;
@@ -150,7 +162,7 @@ void EdsLib_DisplayDB_Base64Decode(uint8_t *Out, uint32_t OutputLenBits, const c
 
     /* the native buffer is always a multiple of 8 bits,
      * even if the packed EDS size is not */
-    ActualLen = (OutputLenBits + 7) / 8;
+    ActualLen = EdsLib_BITS_TO_OCTETS(OutputLenBits);
     ShiftReg = 0;
     NumBits = 0;
 
@@ -189,4 +201,3 @@ void EdsLib_DisplayDB_Base64Decode(uint8_t *Out, uint32_t OutputLenBits, const c
         }
     }
 }
-

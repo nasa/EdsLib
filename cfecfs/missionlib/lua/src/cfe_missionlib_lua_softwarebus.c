@@ -38,12 +38,11 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
-/* compatibility shim to support compilation with Lua5.1 */
-#include "edslib_lua51_compatibility.h"
-
 #include "edslib_id.h"
+#include "edslib_global.h"
 #include "edslib_datatypedb.h"
 #include "edslib_displaydb.h"
+#include "edslib_intfdb.h"
 #include "edslib_binding_objects.h"
 #include "edslib_lua_objects.h"
 #include "cfe_missionlib_lua_softwarebus.h"
@@ -53,63 +52,53 @@
 
 static const char CFE_MISSIONLIB_INTFDB_KEY;
 
+static const EdsLib_Id_t CFE_SB_TELECOMMAND_INTF_ID = EDSLIB_INTF_ID(EDS_INDEX(CFE_SB), EdsInterface_CFE_SB_Telecommand_DECLARATION);
+static const EdsLib_Id_t CFE_SB_TELEMETRY_INTF_ID = EDSLIB_INTF_ID(EDS_INDEX(CFE_SB), EdsInterface_CFE_SB_Telemetry_DECLARATION);
+
 void CFE_MissionLib_Lua_MapPubSubParams(EdsInterface_CFE_SB_SoftwareBus_PubSub_t *PubSub, const CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj)
 {
-    switch (IntfObj->IntfId)
-    {
-    case EDS_INTERFACE_ID(CFE_SB_Telecommand):
+    if (IntfObj->IsTelecommand)
     {
         EdsComponent_CFE_SB_Listener_t Params;
         Params.Telecommand.InstanceNumber = IntfObj->InstanceNumber;
         Params.Telecommand.TopicId = IntfObj->TopicId;
         CFE_MissionLib_MapListenerComponent(PubSub, &Params);
-        break;
     }
-    case EDS_INTERFACE_ID(CFE_SB_Telemetry):
+    else if (IntfObj->IsTelemetry)
     {
         EdsComponent_CFE_SB_Publisher_t Params;
         Params.Telemetry.InstanceNumber = IntfObj->InstanceNumber;
         Params.Telemetry.TopicId = IntfObj->TopicId;
         CFE_MissionLib_MapPublisherComponent(PubSub, &Params);
-        break;
     }
-    default:
+    else
     {
         memset(PubSub, 0, sizeof(*PubSub));
-        break;
-    }
     }
 }
 
 void CFE_MissionLib_Lua_UnmapPubSubParams(CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj, const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *PubSub)
 {
-    switch(IntfObj->IntfId)
-    {
-    case EDS_INTERFACE_ID(CFE_SB_Telecommand):
+    if (IntfObj->IsTelecommand)
     {
         EdsComponent_CFE_SB_Listener_t Result;
         CFE_MissionLib_UnmapListenerComponent(&Result, PubSub);
         IntfObj->TopicId = Result.Telecommand.TopicId;
         IntfObj->InstanceNumber = Result.Telecommand.InstanceNumber;
-        break;
     }
-    case EDS_INTERFACE_ID(CFE_SB_Telemetry):
+    else if (IntfObj->IsTelemetry)
     {
         EdsComponent_CFE_SB_Publisher_t Result;
         CFE_MissionLib_UnmapPublisherComponent(&Result, PubSub);
         IntfObj->TopicId = Result.Telemetry.TopicId;
         IntfObj->InstanceNumber = Result.Telemetry.InstanceNumber;
-        break;
     }
-    default:
+    else
     {
         IntfObj->TopicId = 0;
         IntfObj->InstanceNumber = 0;
-        break;
-    }
     }
 }
-
 
 CFE_MissionLib_Lua_Interface_Userdata_t *CFE_MissionLib_Lua_NewInterfaceObject(lua_State *lua, int dbobj_idx)
 {
@@ -137,7 +126,8 @@ static int CFE_MissionLib_Lua_GetInterface(lua_State *lua)
     const char *DestName = luaL_checkstring(lua, 1);
     const char *IndicationName = luaL_optstring(lua, 3, "indication");
     CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj;
-    CFE_MissionLib_InterfaceInfo_t IntfInfo;
+    const EdsLib_DatabaseObject_t *GD;
+    EdsLib_IntfDB_InterfaceInfo_t IntfInfo;
     int32_t Status;
 
     lua_settop(lua, 3);
@@ -157,67 +147,62 @@ static int CFE_MissionLib_Lua_GetInterface(lua_State *lua)
         IntfObj->InstanceNumber = 1;
     }
 
-    while (1)
+    GD = CFE_MissionLib_GetParent(IntfObj->IntfDB);
+    Status = EdsLib_IntfDB_FindComponentInterfaceByFullName(GD, DestName, &IntfObj->IntfEdsId);
+    if (Status != EDSLIB_SUCCESS)
     {
-        ++IntfObj->IntfId;
-        Status = CFE_MissionLib_GetInterfaceInfo(IntfObj->IntfDB, IntfObj->IntfId, &IntfInfo);
-        if (Status != CFE_MISSIONLIB_SUCCESS)
-        {
-            break;
-        }
-
-        Status = CFE_MissionLib_FindCommandByName(IntfObj->IntfDB, IntfObj->IntfId, IndicationName, &IntfObj->IndicationId);
-        if (Status != CFE_MISSIONLIB_SUCCESS)
-        {
-            continue;
-        }
-
-        Status = CFE_MissionLib_FindTopicByName(IntfObj->IntfDB, IntfObj->IntfId, DestName, &IntfObj->TopicId);
-        if (Status != CFE_MISSIONLIB_SUCCESS)
-        {
-            continue;
-        }
-
-        /*
-         * Currently all software bus interfaces have only one command with one argument,
-         * and the argument is the actual message sent on the bus.
-         *
-         * Obtaining the EdsId for argument=1 should always be the correct type.
-         *
-         * If this fails it suggests a bug in the database object, as the topic ID was
-         * just obtained from the same DB it should be valid.
-         */
-        Status = CFE_MissionLib_GetArgumentType(IntfObj->IntfDB, IntfObj->IntfId, IntfObj->TopicId,
-                IntfObj->IndicationId, 1, &IntfObj->IndicationBaseArg);
-        if (Status == CFE_MISSIONLIB_SUCCESS)
-        {
-            break;
-        }
+        return 0;
     }
 
+    Status = CFE_MissionLib_FindTopicIdFromIntfId(IntfObj->IntfDB, IntfObj->IntfEdsId, &IntfObj->TopicId);
     if (Status != CFE_MISSIONLIB_SUCCESS)
     {
         return 0;
     }
 
-    return 1;
+    /* Now figure out what the indication (aka command) ID is */
+    Status = EdsLib_IntfDB_GetComponentInterfaceInfo(GD, IntfObj->IntfEdsId, &IntfInfo);
+    if (Status != EDSLIB_SUCCESS)
+    {
+        return 0;
+    }
 
+    IntfObj->IsTelecommand = EdsLib_Is_Similar(IntfInfo.IntfTypeEdsId, CFE_SB_TELECOMMAND_INTF_ID);
+    IntfObj->IsTelemetry = EdsLib_Is_Similar(IntfInfo.IntfTypeEdsId, CFE_SB_TELEMETRY_INTF_ID);
+
+    Status = EdsLib_IntfDB_FindCommandByLocalName(GD, IntfInfo.IntfTypeEdsId, IndicationName, &IntfObj->IndicationEdsId);
+    if (Status != EDSLIB_SUCCESS)
+    {
+        return 0;
+    }
+
+    /* Now we can finally determine the argument type */
+    Status = EdsLib_IntfDB_FindAllArgumentTypes(GD, IntfObj->IndicationEdsId, IntfObj->IntfEdsId, &IntfObj->IndicationBaseArg, 1);
+    if (Status != EDSLIB_SUCCESS)
+    {
+        return 0;
+    }
+
+    return 1;
 }
 
 static int CFE_MissionLib_Lua_InterfaceObjectGetProperty(lua_State *lua)
 {
     CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj =
             luaL_checkudata(lua, 1, "CFE_MissionLib_Lua_Interface");
+    EdsLib_IntfDB_InterfaceInfo_t IntfInfo;
+    int32_t Status;
     const char *Str;
+    char StringBuffer[256];
     int retval = 0;
 
     if (lua_type(lua, 2) == LUA_TSTRING)
     {
         const char *PropName = lua_tostring(lua, 2);
 
-        if (strcmp(PropName, "IntfId") == 0)
+        if (strcmp(PropName, "IntfEdsId") == 0)
         {
-            lua_pushinteger(lua, IntfObj->IntfId);
+            lua_pushinteger(lua, IntfObj->IntfEdsId);
             retval = 1;
         }
         else if (strcmp(PropName, "TopicId") == 0)
@@ -225,9 +210,9 @@ static int CFE_MissionLib_Lua_InterfaceObjectGetProperty(lua_State *lua)
             lua_pushinteger(lua, IntfObj->TopicId);
             retval = 1;
         }
-        else if (strcmp(PropName, "IndicationId") == 0)
+        else if (strcmp(PropName, "IndicationEdsId") == 0)
         {
-            lua_pushinteger(lua, IntfObj->IndicationId);
+            lua_pushinteger(lua, IntfObj->IndicationEdsId);
             retval = 1;
         }
         else if (strcmp(PropName, "InstanceNumber") == 0)
@@ -237,35 +222,40 @@ static int CFE_MissionLib_Lua_InterfaceObjectGetProperty(lua_State *lua)
         }
         else if (strcmp(PropName, "IntfName") == 0)
         {
-            Str = CFE_MissionLib_GetInterfaceName(IntfObj->IntfDB, IntfObj->IntfId);
-            if (Str != NULL && Str[0] != 0)
+            /* This is really the interface type name */
+            Status = EdsLib_IntfDB_GetComponentInterfaceInfo(CFE_MissionLib_GetParent(IntfObj->IntfDB), IntfObj->IntfEdsId, &IntfInfo);
+            if (Status == EDSLIB_SUCCESS)
             {
-                lua_pushstring(lua, Str);
+                Status = EdsLib_IntfDB_GetFullName(CFE_MissionLib_GetParent(IntfObj->IntfDB), IntfInfo.IntfTypeEdsId, StringBuffer, sizeof(StringBuffer));
+            }
+
+            if (Status == EDSLIB_SUCCESS)
+            {
+                lua_pushstring(lua, StringBuffer);
                 retval = 1;
             }
         }
         else if (strcmp(PropName, "TopicName") == 0)
         {
-            Str = CFE_MissionLib_GetTopicName(IntfObj->IntfDB, IntfObj->IntfId, IntfObj->TopicId);
-            if (Str != NULL && Str[0] != 0)
+            Status = EdsLib_IntfDB_GetFullName(CFE_MissionLib_GetParent(IntfObj->IntfDB), IntfObj->IntfEdsId, StringBuffer, sizeof(StringBuffer));
+            if (Status == EDSLIB_SUCCESS)
             {
-                lua_pushstring(lua, Str);
+                lua_pushstring(lua, StringBuffer);
                 retval = 1;
             }
         }
         else if (strcmp(PropName, "IndicationName") == 0)
         {
-            Str = CFE_MissionLib_GetCommandName(IntfObj->IntfDB, IntfObj->IntfId, IntfObj->IndicationId);
-            if (Str != NULL && Str[0] != 0)
+            Status = EdsLib_IntfDB_GetFullName(CFE_MissionLib_GetParent(IntfObj->IntfDB), IntfObj->IndicationEdsId, StringBuffer, sizeof(StringBuffer));
+            if (Status == EDSLIB_SUCCESS)
             {
-                lua_pushstring(lua, Str);
+                lua_pushstring(lua, StringBuffer);
                 retval = 1;
             }
         }
         else if (strcmp(PropName, "InstanceName") == 0)
         {
-            char StringBuffer[256];
-            Str = CFE_MissionLib_GetInstanceName(IntfObj->IntfDB, IntfObj->InstanceNumber, StringBuffer, sizeof(StringBuffer));
+            Str = CFE_MissionLib_GetInstanceNameOrNull(IntfObj->IntfDB, IntfObj->InstanceNumber);
             if (Str != NULL && Str[0] != 0)
             {
                 lua_pushstring(lua, Str);
@@ -296,10 +286,10 @@ static int CFE_MissionLib_Lua_InterfaceObjectEqual(lua_State *lua)
         lua_pushboolean(lua, 0);
     }
     else if (IntfObj1->IntfDB != IntfObj2->IntfDB ||
-            IntfObj1->IntfId != IntfObj2->IntfId ||
+            EdsLib_Is_Match(IntfObj1->IntfEdsId, IntfObj2->IntfEdsId) ||
+            EdsLib_Is_Match(IntfObj1->IndicationEdsId, IntfObj2->IndicationEdsId) ||
             IntfObj1->TopicId != IntfObj2->TopicId ||
-            IntfObj1->InstanceNumber != IntfObj2->InstanceNumber ||
-            IntfObj1->IndicationId != IntfObj2->IndicationId)
+            IntfObj1->InstanceNumber != IntfObj2->InstanceNumber)
     {
         lua_pushboolean(lua, 0);
     }
@@ -315,37 +305,30 @@ static int CFE_MissionLib_Lua_InterfaceObjectToString(lua_State *lua)
 {
     char StringBuffer[128];
     const char *Str;
-    int top_start = lua_gettop(lua);
-    int top_end;
-
+    int32_t Status;
     CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj =
             luaL_checkudata(lua, 1, "CFE_MissionLib_Lua_Interface");
 
-    Str = CFE_MissionLib_GetInstanceName(IntfObj->IntfDB, IntfObj->InstanceNumber, StringBuffer, sizeof(StringBuffer));
+    int top_start = lua_gettop(lua);
+    int top_end;
+
+    Str = CFE_MissionLib_GetInstanceNameOrNull(IntfObj->IntfDB, IntfObj->InstanceNumber);
     if (Str != NULL && Str[0] != 0)
     {
         lua_pushstring(lua, Str);
         lua_pushstring(lua, ":");
     }
-
-    Str = CFE_MissionLib_GetInterfaceName(IntfObj->IntfDB, IntfObj->IntfId);
-    if (Str != NULL && Str[0] != 0)
+    else
     {
-        lua_pushstring(lua, Str);
+        lua_pushnumber(lua, IntfObj->InstanceNumber);
+        lua_tostring(lua, -1);
         lua_pushstring(lua, ":");
     }
 
-    Str = CFE_MissionLib_GetTopicName(IntfObj->IntfDB, IntfObj->IntfId, IntfObj->TopicId);
-    if (Str != NULL && Str[0] != 0)
+    Status = EdsLib_IntfDB_GetFullName(CFE_MissionLib_GetParent(IntfObj->IntfDB), IntfObj->IntfEdsId, StringBuffer, sizeof(StringBuffer));
+    if (Status == EDSLIB_SUCCESS)
     {
-        lua_pushstring(lua, Str);
-        lua_pushstring(lua, ":");
-    }
-
-    Str = CFE_MissionLib_GetCommandName(IntfObj->IntfDB, IntfObj->IntfId, IntfObj->IndicationId);
-    if (Str != NULL && Str[0] != 0)
-    {
-        lua_pushstring(lua, Str);
+        lua_pushstring(lua, StringBuffer);
         lua_pushstring(lua, ":");
     }
 
@@ -437,102 +420,107 @@ static int CFE_MissionLib_Lua_IdentifyMessage(lua_State *lua)
     CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj;
     EdsInterface_CFE_SB_SoftwareBus_PubSub_t PubSub;
     EdsLib_DataTypeDB_DerivedTypeInfo_t DerivInfo;
-    CFE_MissionLib_InterfaceInfo_t IntfInfo;
+    EdsLib_IntfDB_InterfaceInfo_t IntfInfo;
+    EdsLib_SizeInfo_t MaxSize;
+    EdsLib_SizeInfo_t DecodeSize;
+    CFE_MissionLib_TopicInfo_t TopicInfo;
+    const EdsLib_DatabaseObject_t *GD;
     EdsLib_Id_t EdsId;
     int32_t Status;
 
-    EdsId = EDSLIB_MAKE_ID(EDS_INDEX(CFE_HDR), CFE_HDR_Message_DATADICTIONARY);
+    EdsId = EDSLIB_MAKE_ID(EDS_INDEX(CFE_HDR), EdsContainer_CFE_HDR_Message_DATADICTIONARY);
     Status = EdsLib_DataTypeDB_GetDerivedInfo(DbObj->GD, EdsId, &DerivInfo);
     if (Status != EDSLIB_SUCCESS)
     {
         return 0;
     }
 
+    memset(&DecodeSize, 0, sizeof(DecodeSize));
+
     ObjectUserData = EdsLib_LuaBinding_CreateEmptyObject(lua, DerivInfo.MaxSize.Bytes);
     ObjectUserData->GD = DbObj->GD;
     ObjectUserData->EdsId = EdsId;
 
-    Status = EdsLib_DataTypeDB_UnpackPartialObject(DbObj->GD, &EdsId, EdsLib_Binding_GetNativeObject(ObjectUserData),
-            SourceBuffer, DerivInfo.MaxSize.Bytes, 8 * SourceBufferSize, 0);
+    MaxSize.Bytes = DerivInfo.MaxSize.Bytes;
+    MaxSize.Bits = EdsLib_OCTETS_TO_BITS(SourceBufferSize);
+
+    Status = EdsLib_DataTypeDB_UnpackPartialObjectVarSize(DbObj->GD, &EdsId, EdsLib_Binding_GetNativeObject(ObjectUserData),
+            SourceBuffer, &MaxSize, &DecodeSize);
     if (Status != EDSLIB_SUCCESS)
     {
         return 0;
     }
 
     ObjectUserData->EdsId = EdsId;
-    EdsLib_DataTypeDB_GetTypeInfo(DbObj->GD, EdsId, &ObjectUserData->TypeInfo);
-
     CFE_MissionLib_Get_PubSub_Parameters(&PubSub, EdsLib_Binding_GetNativeObject(ObjectUserData));
 
     IntfObj = CFE_MissionLib_Lua_NewInterfaceObject(lua, lua_upvalueindex(1));
+    GD = CFE_MissionLib_GetParent(IntfObj->IntfDB);
 
-    /*
-     * JPHFIX:
-     * This needs some sort of lookup function to positively identify
-     * whether the message is CMD or TLM.  This needs to come from EDS without
-     * relying on an assumption of CCSDS primary header bits.
-     *
-     * For now, just try both.  A mismatch should produce a topic ID of zero
-     * which is invalid.  This is less efficient of course but it will work
-     * for now and it has no reliance on CCSDS framing bits.
-     */
-    while (1)
+    /* It is not clear if this is a TLM or CMD, so need to try both, only one will work */
+    if (IntfObj->TopicId == 0)
     {
-        ++IntfObj->IntfId;
-        Status = CFE_MissionLib_GetInterfaceInfo(IntfObj->IntfDB, IntfObj->IntfId, &IntfInfo);
-        if (Status != CFE_MISSIONLIB_SUCCESS)
-        {
-            break;
-        }
-
-        Status = CFE_MissionLib_FindCommandByName(IntfObj->IntfDB, IntfObj->IntfId, IndicationName, &IntfObj->IndicationId);
-        if (Status != CFE_MISSIONLIB_SUCCESS)
-        {
-            continue;
-        }
-
-        CFE_MissionLib_Lua_UnmapPubSubParams(IntfObj, &PubSub);
-
-        /*
-         * Currently all software bus interfaces have only one command with one argument,
-         * and the argument is the actual message sent on the bus.
-         *
-         * Obtaining the EdsId for argument=1 should always be the correct type.
-         *
-         * If this fails it suggests a bug in the database object, as the topic ID was
-         * just obtained from the same DB it should be valid.
-         */
-        Status = CFE_MissionLib_GetArgumentType(IntfObj->IntfDB, IntfObj->IntfId, IntfObj->TopicId,
-                IntfObj->IndicationId, 1, &IntfObj->IndicationBaseArg);
-        if (Status == CFE_MISSIONLIB_SUCCESS)
-        {
-            break;
-        }
+        EdsComponent_CFE_SB_Listener_t Result;
+        CFE_MissionLib_UnmapListenerComponent(&Result, &PubSub);
+        IntfObj->TopicId = Result.Telecommand.TopicId;
+        IntfObj->InstanceNumber = Result.Telecommand.InstanceNumber;
+        IntfObj->IsTelecommand = true;
+    }
+    if (IntfObj->TopicId == 0)
+    {
+        EdsComponent_CFE_SB_Publisher_t Result;
+        CFE_MissionLib_UnmapPublisherComponent(&Result, &PubSub);
+        IntfObj->TopicId = Result.Telemetry.TopicId;
+        IntfObj->InstanceNumber = Result.Telemetry.InstanceNumber;
+        IntfObj->IsTelemetry = true;
     }
 
+    Status = CFE_MissionLib_GetTopicInfo(IntfObj->IntfDB, IntfObj->TopicId, &TopicInfo);
     if (Status != CFE_MISSIONLIB_SUCCESS)
     {
-        return 1;
+        return 0;
     }
 
+    IntfObj->IntfEdsId = TopicInfo.ParentIntfId;
 
+    /* Now figure out what the indication (aka command) ID is */
+    Status = EdsLib_IntfDB_GetComponentInterfaceInfo(GD, IntfObj->IntfEdsId, &IntfInfo);
+    if (Status != EDSLIB_SUCCESS)
+    {
+        return 0;
+    }
+
+    Status = EdsLib_IntfDB_FindCommandByLocalName(GD, IntfInfo.IntfTypeEdsId, IndicationName, &IntfObj->IndicationEdsId);
+    if (Status != EDSLIB_SUCCESS)
+    {
+        return 0;
+    }
+
+    /* Now we can finally determine the argument type */
+    Status = EdsLib_IntfDB_FindAllArgumentTypes(GD, IntfObj->IndicationEdsId, IntfObj->IntfEdsId, &IntfObj->IndicationBaseArg, 1);
+    if (Status != EDSLIB_SUCCESS)
+    {
+        return 0;
+    }
+
+    /* Beyond this, the IntfObj is considered OK so return 1 */
     EdsId = IntfObj->IndicationBaseArg;
-    Status = EdsLib_DataTypeDB_UnpackPartialObject(DbObj->GD, &EdsId, EdsLib_Binding_GetNativeObject(ObjectUserData),
-            SourceBuffer, DerivInfo.MaxSize.Bytes, 8 * SourceBufferSize, ObjectUserData->TypeInfo.Size.Bytes);
+    Status = EdsLib_DataTypeDB_UnpackPartialObjectVarSize(DbObj->GD, &EdsId, EdsLib_Binding_GetNativeObject(ObjectUserData),
+            SourceBuffer, &MaxSize, &DecodeSize);
     if (Status != EDSLIB_SUCCESS)
     {
         return 1;
     }
 
-    Status = EdsLib_DataTypeDB_VerifyUnpackedObject(DbObj->GD, EdsId, EdsLib_Binding_GetNativeObject(ObjectUserData),
-            SourceBuffer, EDSLIB_DATATYPEDB_RECOMPUTE_NONE);
-    if (Status != EDSLIB_SUCCESS)
+    Status = EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize(DbObj->GD, EdsId, EdsLib_Binding_GetNativeObject(ObjectUserData),
+            SourceBuffer, EDSLIB_DATATYPEDB_RECOMPUTE_NONE, &DecodeSize);
+    if (Status == EDSLIB_SUCCESS)
     {
         return 1;
     }
 
     ObjectUserData->EdsId = EdsId;
-    EdsLib_DataTypeDB_GetTypeInfo(DbObj->GD, EdsId, &ObjectUserData->TypeInfo);
+    EdsLib_DataTypeDB_GetTypeInfo(DbObj->GD, ObjectUserData->EdsId, &ObjectUserData->TypeInfo);
 
     return 2;
 }

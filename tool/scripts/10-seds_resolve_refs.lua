@@ -89,95 +89,80 @@ end
 
 -- Helper function to determine the minimum and maximum value of an Enum
 local function resolve_enum_range(node,attr)
-  local rmin
-  local rmax
+
+  local erange = SEDS.new_rangesegment()
   for ent in node:iterate_subtree("ENUMERATION_ENTRY") do
     if (not ent.value) then
       ent:error("Enum missing value")
     else
-      if (not rmin or not rmin.value) then
-        rmin = { value = ent.value, inclusive = true }
-      elseif(ent.value < rmin.value) then
-        rmin.value = ent.value
+      if (not erange.min_value) then
+        erange.min_value = ent.value
+        erange.min_inclusive = true
+      elseif(ent.value < erange.min_value) then
+        erange.min_value = ent.value
       end
-      if (not rmax or not rmax.value) then
-        rmax = { value = ent.value, inclusive = true }
-      elseif(ent.value > rmax.value) then
-        rmax.value = ent.value
+
+      if (not erange.max_value) then
+        erange.max_value = ent.value
+        erange.max_inclusive = true
+      elseif(ent.value > erange.max_value) then
+        erange.max_value = ent.value
       end
     end
   end
 
-  return { min = rmin, max = rmax }
+  if (erange.min_value == nil or erange.max_value == nil) then
+    ent:error("Enum data type has undefined range")
+  end
+
+  return erange
 end
 
 -- Helper function to determine the possible range of an
 -- element where minimum and maximum are specified
 local function resolve_minmax_range(rangedef)
 
-  local rmin = rangedef.attributes.min
-  local rmax = rangedef.attributes.max
-  local subrange = { }
+  local subrange = SEDS.new_rangesegment(
+      rangedef.attributes.min,
+      rangedef.attributes.max,
+      rangedef.attributes.rangetype
+    )
 
-  if (rangedef.attributes.rangetype) then
-    local resolved_text = string.lower(rangedef.attributes.rangetype)
-    if (resolved_text == "exclusiveminexclusivemax") then
-      subrange.min = { value = rmin, inclusive = false }
-      subrange.max = { value = rmax, inclusive = false }
-    elseif(resolved_text == "inclusivemininclusivemax") then
-      subrange.min = { value = rmin, inclusive = true }
-      subrange.max = { value = rmax, inclusive = true }
-    elseif(resolved_text == "inclusiveminexclusivemax") then
-      subrange.min = { value = rmin, inclusive = true }
-      subrange.max = { value = rmax, inclusive = false }
-    elseif (resolved_text == "exclusivemininclusivemax") then
-      subrange.min = { value = rmin, inclusive = false }
-      subrange.max = { value = rmax, inclusive = true }
-    elseif (resolved_text == "greaterthan") then
-      subrange.min = { value = rmin, inclusive = false }
-    elseif (resolved_text == "atleast") then
-      subrange.min = { value = rmin, inclusive = true }
-    elseif (resolved_text == "lessthan") then
-      subrange.max = { value = rmax, inclusive = false }
-    elseif (resolved_text == "atmost") then
-      subrange.max = { value = rmax, inclusive = true }
-    end
+  return subrange
+end
+
+local function resolve_enumerated_range(rangedef)
+
+  local subrange = SEDS.new_range_empty()
+
+  for n in rangedef:iterate_subtree("LABEL") do
+    subrange = subrange:union(n.xml_cdata)
   end
 
   return subrange
 end
 
 -- Helper function to calculate the absolute/final range
--- of a range EDS element.  This is basically the union
+-- of a range EDS element.  This is basically the intersection
 -- of all limiting elements beneath it.
 local function resolve_range(rangenode)
 
-  local subrange = {}
+  local subrange = SEDS.new_range_infinite()
 
   -- merge all the range definitions into a single one
   for n in rangenode:iterate_subtree() do
     if (n.resolved_range) then
-      if (not subrange.min or not subrange.min.value) then
-        subrange.min = n.resolved_range.min
-      elseif(n.resolved_range.min and n.resolved_range.min.value) then
-        if (n.resolved_range.min.value > subrange.min.value) then
-          subrange.min = n.resolved_range.min
-        elseif (n.resolved_range.min.value == subrange.min.value) then
-          subrange.min.inclusive = n.resolved_range.min.inclusive and subrange.min.inclusive
-        end
-      end
-      if (not subrange.max or not subrange.max.value) then
-        subrange.max = n.resolved_range.max
-      elseif(n.resolved_range.max and n.resolved_range.max.value) then
-        if (n.resolved_range.max.value < subrange.max.value) then
-          subrange.max = n.resolved_range.max
-        elseif (n.resolved_range.max.value == subrange.max.value) then
-          subrange.max.inclusive = n.resolved_range.max.inclusive and subrange.max.inclusive
-        end
-      end
+      subrange = subrange:intersection(n.resolved_range)
     end
   end
 
+  return subrange
+end
+
+-- Helper function to initialize a singleton range from a "value" attribute
+local function resolve_range_from_valueattr(node)
+
+  local subrange = node.attributes.value
   return subrange
 end
 
@@ -190,6 +175,23 @@ local function resolve_datasheet_basename(node)
   basename = string.match(node.xml_filename, "/([^/]+)$") or basename
   basename = string.match(basename, "(%S+)%.[^%.]*") or basename
   return basename
+end
+
+-- Helper function to determine the generic type reference
+local function resolve_generictype_ref(node)
+  local result
+  local parent_intf = node:find_parent(SEDS.referredintf_filter)
+
+  if (parent_intf.type) then
+    for gt in parent_intf.type:iterate_subtree(SEDS.generictype_filter) do
+      if (gt.name == node.name) then
+        result = gt
+        break
+      end
+    end
+  end
+
+  return result
 end
 
 -- -------------------------------------------------------------------------
@@ -316,10 +318,25 @@ local SEDS_ATTRIBUTE_TABLE =
   {
     resolved_range = { impl=resolve_minmax_range },
   },
+  ENUMERATED_RANGE =
+  {
+    resolved_range = { impl=resolve_enumerated_range },
+  },
   RANGE_CONSTRAINT =
   {
-    min = { style="integer" },
-    max = { style="integer" }
+    resolved_range = { impl=resolve_range },
+  },
+  PRESENCE_RANGE_CONSTRAINT =
+  {
+    resolved_range = { impl=resolve_range },
+  },
+  VALUE_CONSTRAINT =
+  {
+    resolved_range = { impl=resolve_range_from_valueattr },
+  },
+  PRESENCE_VALUE_CONSTRAINT =
+  {
+    resolved_range = { impl=resolve_range_from_valueattr },
   },
   BINARY_DATATYPE =
   {
@@ -339,7 +356,8 @@ local SEDS_ATTRIBUTE_TABLE =
   },
   GENERIC_TYPE_MAP =
   {
-    type = { style="link", filter=SEDS.any_datatype_filter, required = true }
+    type = { style="link", filter=SEDS.concrete_datatype_filter, required = true },
+    ref = { impl=resolve_generictype_ref, required = true }
   },
   ARGUMENT =
   {
@@ -373,7 +391,7 @@ local SEDS_ATTRIBUTE_TABLE =
   },
   INSTANCE_RULE =
   {
-    component = { style="link", filter=SEDS.component_filter }
+    component = { style="link", filter=SEDS.component_filter, required = false }
   },
   INTERFACE_MAP =
   {
@@ -436,7 +454,7 @@ local function resolve_attribs(node)
           result = string.lower(tostring(result or resolve.default))
         end
 
-        if(result == nil and (resolve.required or node.xml_attrs[attr])) then
+        if(result == nil and (resolve.required == nil and node.xml_attrs[attr] ~= nil)) then
           node:error(string.format("attribute \'%s\' could not be resolved",attr),node.attributes[attr])
         end
 
@@ -466,7 +484,7 @@ for node in SEDS.root:iterate_subtree() do
             link:mark_reference(node,resolve.mark_reference)
           end
           node[attr] = link
-        elseif(resolve.required or node.xml_attrs[attr]) then
+        elseif(resolve.required or (resolve.required == nil and node.xml_attrs[attr] ~= nil)) then
           node:error(string.format("attribute \'%s\' could not be resolved",attr),node.attributes[attr])
         end
       end
@@ -479,4 +497,4 @@ end
 -- This will resolve the remainder of attributes that was not done during pass 1.
 resolve_attribs(SEDS.root)
 
-SEDS.info ("SEDS resolve refs START")
+SEDS.info ("SEDS resolve refs END")

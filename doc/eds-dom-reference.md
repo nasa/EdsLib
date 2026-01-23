@@ -503,7 +503,6 @@ provided to simplify the process of creating new filters which match any arbitra
 | `numeric_datatype_filter`  | Matches any numeric data type (integer or floating point)       |
 | `concrete_datatype_filter` | Matches any non-abstract data type                              |
 | `subentity_filter`         | Matches any data type which "contains" other entities           |
-| `intf_entry_filter`        | Matches parameters or arguments                                 |
 
 
 ### Low level DOM manipulation and debug functions
@@ -590,7 +589,7 @@ A number of other properties are identified here, which only apply to certain ty
 
 | Property Name    | Type      | Applies to   | Purpose                                                        |
 |------------------|-----------|--------------|----------------------------------------------------------------|
-| `resolved_range` | multipart | ranges       | The minimum and maximum of the discrete value type or range    |
+| `resolved_range` | range     | ranges       | The minimum and maximum of the discrete value type or range    |
 | `last_value`     | integer   | enumerations | The final value of an enumerated type                          |
 | `export`         | boolean   | defines      | Whether the definition should be exported from the tool        |
 | `size`           | integer   | dimensions   | The dimension size corresponding to the `size` attribute       |
@@ -626,7 +625,8 @@ Properties of `memreq` objects are:
 | `bits`         | integer  | Total number of bits occupied by the object, per EDS-specified encoding          |
 | `bytes`        | integer  | Estimated number of bytes for typical native encoding in C                       |
 | `alignment`    | integer  | Estimated alignment requirement for typical native encoding in C                 |
-| `is_packed`    | boolean  | Set to "true" in cases where the object EDS and native representations may match |
+| `is_packed`    | string   | Set to "LE" or "BE" in cases where the EDS and native representations may match  |
+| `is_variable`  | boolean  | Set to "true" in cases where the object is not a fixed size                      |
 | `checksum`     | string   | The 64-bit checksum represented as an ASCII-encoded hexadecimal number           |
 
 Methods on `memreq` objects are:
@@ -644,7 +644,7 @@ Methods on `memreq` objects are:
 1) all properties are read-only, at least directly.  They are only modified via method calls above.
 2) the "checksum" is a 64-bit integer value.  This exceeds the quantity which can be reliably stored in a Lua number,
    so it is represented as a hexadecimal ASCII string instead.  The string is always 16 characters long.
-   
+
 
 ## Properties added during constraint resolution
 
@@ -657,5 +657,3 @@ to locate a specific entity.
 | Property Name     | Type     | Purpose                                                                     |
 |-------------------|----------|-----------------------------------------------------------------------------|
 | `resolved_entry`  | treenode | Contains reference corresponding to the `entry` XML attribute               |
-
-

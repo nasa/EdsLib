@@ -38,27 +38,11 @@
 # subdirectory.  The contents of this directory should be included on the sedstool command
 # line which is handled outside of this script.
 #
-cmake_minimum_required(VERSION 3.5)
 project(EDS_CFECFS_MISSIONLIB C)
 
 
 # When the EDS toolchain executes it produces a number of files based on the mission name
-# By convention, the filenames will be all lowercase, and global symbols within those files
-# will be all UPPERCASE.  The mission name is used to generate a unique prefix.
 string(TOLOWER ${MISSION_NAME}_eds EDS_FILE_PREFIX)
-string(TOUPPER ${MISSION_NAME} EDS_SYMBOL_PREFIX)
-file(RELATIVE_PATH ARCH_BINARY_SUBDIR ${MISSION_BINARY_DIR} ${CMAKE_BINARY_DIR})
-if ("${ARCH_BINARY_SUBDIR}" STREQUAL "")
-    # Directory ref should not be empty, use local dir if they are the same
-    set(ARCH_BINARY_SUBDIR .)
-endif()
-
-# Capture critical cache variables from the build environment so they can be
-# used in custom makefiles that are invoked from here as custom targets
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/edstool-buildenv.d.in
-    ${CMAKE_BINARY_DIR}/obj/edstool-buildenv.d
-)
 
 # The EDS toolchain generates several outputs, C headers
 # as well as C libraries.  Scripts are included to not only
@@ -82,9 +66,9 @@ set_target_properties(cfe_edsdb_static PROPERTIES
 # depends on the EDS datasheets in use, so as a result the scripts also generate a
 # makefile fragment which has the appropriate list of files to build.  Back in this
 # cmake world this is treated as an imported target so it can be referenced like any other.
-add_library(cfe_missionlib_interfacedb_static STATIC IMPORTED GLOBAL)
-set_target_properties(cfe_missionlib_interfacedb_static PROPERTIES
-    IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/obj/${EDS_FILE_PREFIX}_interfacedb${CMAKE_STATIC_LIBRARY_SUFFIX}"
+add_library(cfe_missionlib_sb_dispatchdb_static STATIC IMPORTED GLOBAL)
+set_target_properties(cfe_missionlib_sb_dispatchdb_static PROPERTIES
+    IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/obj/${EDS_FILE_PREFIX}_sb_dispatchdb${CMAKE_STATIC_LIBRARY_SUFFIX}"
 )
 
 # The missionlib runtime contains the code that converts TopicID (functional level identifier)
@@ -97,7 +81,7 @@ set_target_properties(cfe_missionlib_runtime_static PROPERTIES
 
 # All of the imported libraries are products of the EDS tool
 add_dependencies(cfe_edsdb_static edstool-execute)
-add_dependencies(cfe_missionlib_interfacedb_static edstool-execute)
+add_dependencies(cfe_missionlib_sb_dispatchdb_static edstool-execute)
 add_dependencies(cfe_missionlib_runtime_static edstool-execute)
 
 
@@ -113,9 +97,9 @@ if (SUPPORTS_SHARED_LIBS)
     set_target_properties(cfe_edsdb_shared PROPERTIES
         IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/obj/${EDS_FILE_PREFIX}_db${CMAKE_SHARED_LIBRARY_SUFFIX}"
     )
-    add_library(cfe_missionlib_interfacedb_shared STATIC IMPORTED GLOBAL)
-    set_target_properties(cfe_missionlib_interfacedb_shared PROPERTIES
-        IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/obj/${EDS_FILE_PREFIX}_interfacedb${CMAKE_SHARED_LIBRARY_SUFFIX}"
+    add_library(cfe_missionlib_sb_dispatchdb_shared STATIC IMPORTED GLOBAL)
+    set_target_properties(cfe_missionlib_sb_dispatchdb_shared PROPERTIES
+        IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/obj/${EDS_FILE_PREFIX}_sb_dispatchdb${CMAKE_SHARED_LIBRARY_SUFFIX}"
     )
     add_library(cfe_missionlib_runtime_shared SHARED IMPORTED GLOBAL)
     set_target_properties(cfe_missionlib_runtime_shared PROPERTIES
@@ -123,7 +107,7 @@ if (SUPPORTS_SHARED_LIBS)
     )
 
     add_dependencies(cfe_edsdb_shared edstool-execute)
-    add_dependencies(cfe_missionlib_interfacedb_shared edstool-execute)
+    add_dependencies(cfe_missionlib_sb_dispatchdb_shared edstool-execute)
     add_dependencies(cfe_missionlib_runtime_shared edstool-execute)
 
     # Install the EDS missionlib library objects --
@@ -131,7 +115,7 @@ if (SUPPORTS_SHARED_LIBS)
     # For CFE itself it is statically linked if necessary.
     if(IS_CFS_MISSION_BUILD)
         install(FILES
-                "${CMAKE_BINARY_DIR}/obj/${EDS_FILE_PREFIX}_interfacedb${CMAKE_SHARED_LIBRARY_SUFFIX}"
+                "${CMAKE_BINARY_DIR}/obj/${EDS_FILE_PREFIX}_sb_dispatchdb${CMAKE_SHARED_LIBRARY_SUFFIX}"
                 "${CMAKE_BINARY_DIR}/obj/${EDS_FILE_PREFIX}_db${CMAKE_SHARED_LIBRARY_SUFFIX}"
             DESTINATION
                 lib)
@@ -148,3 +132,14 @@ add_subdirectory(python)
 # target names do not exactly match CFE expectations.
 add_library(edslib ALIAS edslib_minimal)
 add_library(missionlib ALIAS cfe_missionlib)
+
+if (ENABLE_UNIT_TESTS)
+
+  add_library(ut_eds_db STATIC IMPORTED GLOBAL)
+  set_target_properties(ut_eds_db PROPERTIES
+        IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/obj/ut_eds_db${CMAKE_SHARED_LIBRARY_SUFFIX}"
+  )
+
+  add_dependencies(ut_eds_db edstool-execute-ut)
+  
+endif()

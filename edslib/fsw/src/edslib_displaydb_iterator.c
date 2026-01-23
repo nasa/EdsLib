@@ -41,6 +41,12 @@
 #include "edslib_displaydb.h"
 #include "edslib_internal.h"
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 EdsLib_Iterator_Rc_t EdsLib_DisplayIterator_Wrapper(const EdsLib_DatabaseObject_t *GD,
         EdsLib_Iterator_CbType_t CbType,
         const EdsLib_DataTypeIterator_StackEntry_t *EntityInfo,
@@ -130,6 +136,12 @@ EdsLib_Iterator_Rc_t EdsLib_DisplayIterator_Wrapper(const EdsLib_DatabaseObject_
    return RetCode;
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 EdsLib_Iterator_Rc_t EdsLib_DisplayUserIterator_BaseName_Callback(const EdsLib_DatabaseObject_t *GD,
         EdsLib_Iterator_CbType_t CbType,
         const EdsLib_DataTypeIterator_StackEntry_t *EntityInfo,
@@ -155,6 +167,12 @@ EdsLib_Iterator_Rc_t EdsLib_DisplayUserIterator_BaseName_Callback(const EdsLib_D
     return EDSLIB_ITERATOR_RC_CONTINUE;
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 EdsLib_Iterator_Rc_t EdsLib_DisplayUserIterator_FullName_Callback(const EdsLib_DatabaseObject_t *GD,
         EdsLib_Iterator_CbType_t CbType,
         const EdsLib_DataTypeIterator_StackEntry_t *EntityInfo,
@@ -174,8 +192,9 @@ EdsLib_Iterator_Rc_t EdsLib_DisplayUserIterator_FullName_Callback(const EdsLib_D
         TopEnt = CtrlBlock->NextEntry;
         ++CtrlBlock->NextEntry;
         TopEnt->ScratchOffset = strlen(CtrlBlock->ScratchNameBuffer);
-        TopEnt->NameStyle = EntityInfo->DataDictPtr->BasicType;
-        if (TopEnt->NameStyle == EDSLIB_BASICTYPE_CONTAINER && TopEnt->ScratchOffset > 0 &&
+        TopEnt->HasNamedMembers = (EntityInfo->DataDictPtr->BasicType == EDSLIB_BASICTYPE_CONTAINER ||
+                                   EntityInfo->DataDictPtr->BasicType == EDSLIB_BASICTYPE_COMPONENT);
+        if (TopEnt->HasNamedMembers && TopEnt->ScratchOffset > 0 &&
                 TopEnt->ScratchOffset < (sizeof(CtrlBlock->ScratchNameBuffer) - 1))
         {
             CtrlBlock->ScratchNameBuffer[TopEnt->ScratchOffset] = '.';
@@ -240,5 +259,3 @@ EdsLib_Iterator_Rc_t EdsLib_DisplayUserIterator_FullName_Callback(const EdsLib_D
 
     return RetCode;
 }
-
-

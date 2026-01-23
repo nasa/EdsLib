@@ -1,5 +1,6 @@
 /*
  * LEW-19710-1, CCSDS SOIS Electronic Data Sheet Implementation
+ * LEW-20211-1, Python Bindings for the Core Flight Executive Mission Library
  *
  * Copyright (c) 2020 United States Government as represented by
  * the Administrator of the National Aeronautics and Space Administration.
@@ -128,6 +129,27 @@ const char *EdsLib_DisplayDB_GetEnumLabel(const EdsLib_DatabaseObject_t *GD, Eds
 
 /*
  * ----------------------------------------------------
+ * Generated stub function for EdsLib_DisplayDB_GetEnumLabelByIndex()
+ * ----------------------------------------------------
+ */
+const char *EdsLib_DisplayDB_GetEnumLabelByIndex(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, uint16_t Index,
+                                                 char *Buffer, uint32_t BufferSize)
+{
+    UT_GenStub_SetupReturnBuffer(EdsLib_DisplayDB_GetEnumLabelByIndex, const char *);
+
+    UT_GenStub_AddParam(EdsLib_DisplayDB_GetEnumLabelByIndex, const EdsLib_DatabaseObject_t *, GD);
+    UT_GenStub_AddParam(EdsLib_DisplayDB_GetEnumLabelByIndex, EdsLib_Id_t, EdsId);
+    UT_GenStub_AddParam(EdsLib_DisplayDB_GetEnumLabelByIndex, uint16_t, Index);
+    UT_GenStub_AddParam(EdsLib_DisplayDB_GetEnumLabelByIndex, char *, Buffer);
+    UT_GenStub_AddParam(EdsLib_DisplayDB_GetEnumLabelByIndex, uint32_t, BufferSize);
+
+    UT_GenStub_Execute(EdsLib_DisplayDB_GetEnumLabelByIndex, Basic, NULL);
+
+    return UT_GenStub_GetReturnValue(EdsLib_DisplayDB_GetEnumLabelByIndex, const char *);
+}
+
+/*
+ * ----------------------------------------------------
  * Generated stub function for EdsLib_DisplayDB_GetEnumValue()
  * ----------------------------------------------------
  */
@@ -140,6 +162,24 @@ void EdsLib_DisplayDB_GetEnumValue(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_
     UT_GenStub_AddParam(EdsLib_DisplayDB_GetEnumValue, EdsLib_GenericValueBuffer_t *, ValueBuffer);
 
     UT_GenStub_Execute(EdsLib_DisplayDB_GetEnumValue, Basic, NULL);
+}
+
+/*
+ * ----------------------------------------------------
+ * Generated stub function for EdsLib_DisplayDB_GetEnumValueByIndex()
+ * ----------------------------------------------------
+ */
+intmax_t EdsLib_DisplayDB_GetEnumValueByIndex(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, uint16_t Index)
+{
+    UT_GenStub_SetupReturnBuffer(EdsLib_DisplayDB_GetEnumValueByIndex, intmax_t);
+
+    UT_GenStub_AddParam(EdsLib_DisplayDB_GetEnumValueByIndex, const EdsLib_DatabaseObject_t *, GD);
+    UT_GenStub_AddParam(EdsLib_DisplayDB_GetEnumValueByIndex, EdsLib_Id_t, EdsId);
+    UT_GenStub_AddParam(EdsLib_DisplayDB_GetEnumValueByIndex, uint16_t, Index);
+
+    UT_GenStub_Execute(EdsLib_DisplayDB_GetEnumValueByIndex, Basic, NULL);
+
+    return UT_GenStub_GetReturnValue(EdsLib_DisplayDB_GetEnumValueByIndex, intmax_t);
 }
 
 /*

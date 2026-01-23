@@ -33,7 +33,7 @@ else
   ccsds_append = "" -- This must _not_ put a redundant BIG_ENDIAN flag on the ccsds header, it confuses cosmos
 end
 
-local global_fsw_title = SEDS.to_macro_name(SEDS.get_define("MISSION_NAME") or "fsw")
+local global_fsw_title = SEDS.to_macro_name(SEDS.get_define("EDSTOOL_PROJECT_NAME") or "fsw")
 
 -- -------------------------------------------------------------------------
 -- Helper function: assemble the combined element name
@@ -355,35 +355,38 @@ for _,instance in ipairs(SEDS.highlevel_interfaces) do
   -- The various interfaces should be attached under required_links
   for _,binding in ipairs(instance.required_links) do
     local reqintf = binding.reqintf
-    local cmd = reqintf.intf_commands and reqintf.intf_commands[1]
+    local intf_type_str = reqintf.type:get_qualified_name() 
+    if (intf_type_str == "CFE_SB/Telemetry" or intf_type_str == "CFE_SB/Telecommand") then
+      local cmd = reqintf.intf_commands and reqintf.intf_commands[1]
 
-    -- SB interfaces should only have one "command" of the indication type (i.e. message appears on the bus)
-    -- Note "command" here is the EDS terminology, not CFE - the CFE intf is referred to as "telecommand"
-    -- The indication has one argument, which is the data associated with the message
-    if (cmd.refnode.name == "indication") then
-      local sb_params = binding.provinst:find_param_of_type("CFE_SB/SoftwareBusRouting")
-      local argtype = cmd.args[1].type
+      -- SB interfaces should only have one "command" of the indication type (i.e. message appears on the bus)
+      -- Note "command" here is the EDS terminology, not CFE - the CFE intf is referred to as "telecommand"
+      -- The indication has one argument, which is the data associated with the message
+      if (cmd.refnode.name == "indication") then
+        local sb_params = binding.provinst:find_param_of_type("CFE_SB/SoftwareBusRouting")
+        local argtype = cmd.args[1].type
 
-      if (sb_params) then
-        local file = "cosmos/" .. SEDS.to_filename(reqintf.name .. "_cosmos_intf.txt", ds.name)
-        local msgid = sb_params.PubSub.MsgId -- This is the actual hex msgid value
-        local output
+        if (sb_params) then
+          local file = "cosmos/" .. SEDS.to_filename(reqintf.name .. "_cosmos_intf.txt", ds.name)
+          local msgid = sb_params.PubSub.MsgId -- This is the actual hex msgid value
+          local output
 
-        if (reqintf.type.name == "Telecommand") then
-          if (cmd.cc_list) then
-            output = SEDS.output_open(file)
-            for _,cc in ipairs(cmd.cc_list) do
-              write_cmd_intf_params(output,ds,reqintf,msgid,cc)
-              output:add_whitespace(1)
+          if (reqintf.type.name == "Telecommand") then
+            if (cmd.cc_list) then
+              output = SEDS.output_open(file)
+              for _,cc in ipairs(cmd.cc_list) do
+                write_cmd_intf_params(output,ds,reqintf,msgid,cc)
+                output:add_whitespace(1)
+              end
+              SEDS.output_close(output)
             end
+          elseif (reqintf.type.name == "Telemetry") then
+            output = SEDS.output_open(file)
+            write_tlm_intf_items(output,ds,reqintf,msgid,argtype)
             SEDS.output_close(output)
           end
-        elseif (reqintf.type.name == "Telemetry") then
-          output = SEDS.output_open(file)
-          write_tlm_intf_items(output,ds,reqintf,msgid,argtype)
-          SEDS.output_close(output)
-        end
 
+        end
       end
     end
   end

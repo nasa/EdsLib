@@ -40,7 +40,12 @@
 #include <stdint.h>
 #include "edslib_internal.h"
 
-
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 const EdsLib_SymbolTableEntry_t *EdsLib_DisplaySymbolLookup_GetByName(const EdsLib_SymbolTableEntry_t *SymbolDict, uint16_t TableSize, const char *String, uint32_t StringLen)
 {
     const EdsLib_SymbolTableEntry_t *Sym;
@@ -49,6 +54,7 @@ const EdsLib_SymbolTableEntry_t *EdsLib_DisplaySymbolLookup_GetByName(const EdsL
     uint32_t HighIndex;
     uint32_t SearchIndex;
 
+    Sym = NULL;
     LowIndex = 0;
     HighIndex = TableSize;
     while (true)
@@ -81,6 +87,12 @@ const EdsLib_SymbolTableEntry_t *EdsLib_DisplaySymbolLookup_GetByName(const EdsL
     return Sym;
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 const EdsLib_SymbolTableEntry_t *EdsLib_DisplaySymbolLookup_GetByValue(const EdsLib_SymbolTableEntry_t *SymbolDict, uint16_t TableSize, intmax_t Value)
 {
     const EdsLib_SymbolTableEntry_t *Result;
@@ -110,6 +122,12 @@ const EdsLib_SymbolTableEntry_t *EdsLib_DisplaySymbolLookup_GetByValue(const Eds
 }
 
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 int32_t EdsLib_DisplayScalarConv_ToString_Impl(const EdsLib_DataTypeDB_Entry_t *DictEntryPtr, const EdsLib_DisplayDB_Entry_t *DisplayInfoPtr,
         char *OutputBuffer, uint32_t BufferSize, const void *SourcePtr)
 {
@@ -133,9 +151,19 @@ int32_t EdsLib_DisplayScalarConv_ToString_Impl(const EdsLib_DataTypeDB_Entry_t *
         snprintf(OutputBuffer,BufferSize,"<ContainerDataType>");
         Status = EDSLIB_SUCCESS;
     }
+    else if (DictEntryPtr->BasicType == EDSLIB_BASICTYPE_COMPONENT)
+    {
+        snprintf(OutputBuffer,BufferSize,"<Component>");
+        Status = EDSLIB_SUCCESS;
+    }
     else if (DictEntryPtr->BasicType == EDSLIB_BASICTYPE_ARRAY)
     {
         snprintf(OutputBuffer,BufferSize,"<ArrayDataType>");
+        Status = EDSLIB_SUCCESS;
+    }
+    else if (DictEntryPtr->BasicType == EDSLIB_BASICTYPE_GENERIC)
+    {
+        snprintf(OutputBuffer,BufferSize,"<GenericType>");
         Status = EDSLIB_SUCCESS;
     }
     else
@@ -284,6 +312,12 @@ int32_t EdsLib_DisplayScalarConv_ToString_Impl(const EdsLib_DataTypeDB_Entry_t *
     return Status;
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 int32_t EdsLib_DisplayScalarConv_FromString_Impl(const EdsLib_DataTypeDB_Entry_t *DictEntryPtr, const EdsLib_DisplayDB_Entry_t *DisplayInfoPtr,
         void *DestPtr, const char *SrcString)
 {
@@ -298,9 +332,9 @@ int32_t EdsLib_DisplayScalarConv_FromString_Impl(const EdsLib_DataTypeDB_Entry_t
     {
         Status = EDSLIB_INVALID_SIZE_OR_TYPE;
     }
-    else if (DictEntryPtr->BasicType == EDSLIB_BASICTYPE_CONTAINER ||
-            DictEntryPtr->BasicType == EDSLIB_BASICTYPE_ARRAY)
+    else if (DictEntryPtr->NumSubElements > 0)
     {
+        /* Cannot convert compound values using this routine */
         Status = EDSLIB_NOT_IMPLEMENTED;
     }
     else
@@ -474,5 +508,3 @@ int32_t EdsLib_DisplayScalarConv_FromString_Impl(const EdsLib_DataTypeDB_Entry_t
 
     return Status;
 }
-
-

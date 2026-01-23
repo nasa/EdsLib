@@ -70,6 +70,7 @@ typedef struct
     EdsLib_Id_t EdsId;
     char FormatInfo[EDSLIB_PYTHON_FORMATCODE_LEN];
     PyObject* SubEntityList;
+    PyObject* WeakRefList;
 } EdsLib_Python_DatabaseEntry_t;
 
 typedef struct
@@ -128,10 +129,16 @@ typedef struct
 
 extern PyObject *EdsLib_Python_DatabaseCache;
 
+
+PyObject *EdsLib_Python_GetFromCache(PyObject *cachedict, PyObject *idxval, PyTypeObject *reqtype);
+int EdsLib_Python_SaveToCache(PyObject *cachedict, PyObject *idxval, PyObject *saveobj);
+
 bool            EdsLib_Python_ConvertPythonToEdsScalar(EdsLib_Binding_DescriptorObject_t *edsobj, PyObject *pyobj);
 bool            EdsLib_Python_ConvertPythonToEdsObject(EdsLib_Python_ObjectBase_t *self, PyObject *pyobj);
 PyObject *      EdsLib_Python_ConvertEdsScalarToPython(EdsLib_Binding_DescriptorObject_t *edsobj);
 PyObject *      EdsLib_Python_ConvertEdsObjectToPython(EdsLib_Python_ObjectBase_t *self);
+
+EdsLib_Id_t EdsLib_Python_ConvertArgToEdsId(const EdsLib_DatabaseObject_t *GD, PyObject* arg);
 
 PyTypeObject* EdsLib_Python_DatabaseEntry_GetFromEdsId_Impl(EdsLib_Python_Database_t *EdsDb, EdsLib_Id_t EdsId);
 PyObject *EdsLib_Python_ElementAccessor_CreateFromOffsetSize(EdsLib_Id_t EdsId, Py_ssize_t Offset, Py_ssize_t Length);
@@ -194,4 +201,3 @@ extern PyTypeObject EdsLib_Python_DynamicArrayType;
 
 
 #endif  /* _EDSLIB_PYTHON_INTERNAL_H_ */
-

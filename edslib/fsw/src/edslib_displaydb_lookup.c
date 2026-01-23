@@ -40,6 +40,12 @@
 
 #include "edslib_internal.h"
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 EdsLib_DisplayDB_t EdsLib_DisplayDB_GetTopLevel(const EdsLib_DatabaseObject_t *GD, uint16_t AppIdx)
 {
    /*
@@ -58,12 +64,18 @@ EdsLib_DisplayDB_t EdsLib_DisplayDB_GetTopLevel(const EdsLib_DatabaseObject_t *G
    return GD->DisplayDB_Table[AppIdx];
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 const EdsLib_DisplayDB_Entry_t *EdsLib_DisplayDB_GetEntry(const EdsLib_DatabaseObject_t *GD, const EdsLib_DatabaseRef_t *RefObj)
 {
    EdsLib_DisplayDB_t NameDict;
    EdsLib_DataTypeDB_t DataDict;
 
-   if (RefObj == NULL)
+   if (RefObj == NULL || RefObj->Qualifier != EdsLib_DbRef_Qualifier_DATATYPE)
    {
        return NULL;
    }
@@ -81,11 +93,11 @@ const EdsLib_DisplayDB_Entry_t *EdsLib_DisplayDB_GetEntry(const EdsLib_DatabaseO
    }
 
    if (NameDict->DisplayInfoTable == NULL ||
-           RefObj->TypeIndex >= DataDict->DataTypeTableSize)
+           RefObj->SubIndex >= DataDict->DataTypeTableSize)
    {
        return NULL;
    }
 
-   return &NameDict->DisplayInfoTable[RefObj->TypeIndex];
+   return &NameDict->DisplayInfoTable[RefObj->SubIndex];
 }
 

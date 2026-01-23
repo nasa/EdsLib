@@ -65,6 +65,14 @@ typedef const struct EdsLib_App_DataTypeDB *    EdsLib_DataTypeDB_t;
 typedef const struct EdsLib_App_DisplayDB *     EdsLib_DisplayDB_t;
 
 /**
+ * Abstract pointer to a EDS object with interface information
+ *
+ * Note that these objects are always constant; the database objects are generated
+ * from the toolchain, compiled in and should never be modified at runtime.
+ */
+typedef const struct EdsLib_App_IntfDB *     EdsLib_IntfDB_t;
+
+/**
  * An EDS runtime database object
  *
  * Also known as a "global dictionary" (GD), this is the main top-level object
@@ -77,9 +85,11 @@ typedef const struct EdsLib_App_DisplayDB *     EdsLib_DisplayDB_t;
  */
 struct EdsLib_DatabaseObject
 {
-   uint16_t AppTableSize;           /**< Length of the "DataTypeDB_Table" and "DataDisplayDB_Table" arrays */
+   uint16_t AppTableSize;           /**< Length of all the arrays (they should all match) */
+   const char * const *AppName_Table;
    EdsLib_DataTypeDB_t *DataTypeDB_Table;
    EdsLib_DisplayDB_t *DisplayDB_Table;
+   EdsLib_IntfDB_t *IntfDB_Table;
 };
 
 typedef struct EdsLib_DatabaseObject            EdsLib_DatabaseObject_t;
@@ -98,7 +108,8 @@ typedef enum
     EDSLIB_BASICTYPE_CONTAINER,       /**< References to multiple other data blobs of heterogeneous types */
     EDSLIB_BASICTYPE_ARRAY,           /**< References to multiple other data blobs of homogeneous type */
     EDSLIB_BASICTYPE_COMPONENT,       /**< References to component entities */
-    EDSLIB_BASICTYPE_ALIAS,           /**< References to component entities */
+    EDSLIB_BASICTYPE_ALIAS,           /**< References to another EDS defined type */
+    EDSLIB_BASICTYPE_GENERIC,         /**< A generic type in an declared interface */
     EDSLIB_BASICTYPE_MAX              /**< Reserved value, should always be last */
 } EdsLib_BasicType_t;
 
@@ -115,14 +126,49 @@ typedef enum
    EDSLIB_DISPLAYHINT_MAX
 } EdsLib_DisplayHint_t;
 
+/*
+ * Definitions of flag values that may appear in the "Flags" member of 
+ * type and entity information structures.
+ *
+ * Note: The Packing Flags here correlate with the byte order check values
+ * in edslib_datatypedb_pack_unpack.c
+ */
+#define EDSLIB_DATATYPE_FLAG_NONE               0x00
+
+#define EDSLIB_DATATYPE_FLAG_PACKED_BE          0x01 /**< Matches typical "big-endian" native representation */
+#define EDSLIB_DATATYPE_FLAG_PACKED_LE          0x02 /**< Matches typical "little-endian" native representation */
+#define EDSLIB_DATATYPE_FLAG_PACKED             0x03 /**< Mask indicating optimized packing characteristics */
+
+#define EDSLIB_DATATYPE_FLAG_VARIABLE_SIZE      0x10 /**< Item can vary in its packed size */
+#define EDSLIB_DATATYPE_FLAG_VARIABLE_LOCATION  0x20 /**< Item can vary in its packed location */
+#define EDSLIB_DATATYPE_FLAG_VARIABLE           0x30 /**< Mask indicating variable packing characteristics */
+
+/**
+ * Structure for size and/or offset information
+ * 
+ * Sizes and offsets are given in both bits and bytes, where bits
+ * indicates the position or size in a packed representation and bytes
+ * indicates the position or size in a native representation, respectively.
+ *
+ * Note that with the addition of variable size entities in packed structures,
+ * the "Bits" value is only nominal in nature.  One must check the VARIABLE
+ * flag bits (#EDSLIB_DATATYPE_FLAG_VARIABLE) and if these flags are set, then
+ * the Bits value is only accurate when all fields are present.  The real bit
+ * position or offset must be calculated by looking at the actual object, it
+ * cannot be determined by database query.
+ *
+ * The "Bytes" value, on the other hand, is always fixed as these represent
+ * offsets or sizes of the C structure representation, which is fixed at 
+ * compile time.  However this size is platform-dependent and may not be the
+ * same on other systems.
+ */
 struct EdsLib_SizeInfo
 {
-    uint32_t Bits;
-    uint32_t Bytes;
+    uint32_t Bits;   /**< Offset/Size in packed structure (nominal, may vary) */
+    uint32_t Bytes;  /**< Offset/Size in native structure (fixed but platform-dependent) */
 };
 
 typedef struct EdsLib_SizeInfo EdsLib_SizeInfo_t;
 
 
 #endif  /* _EDSLIB_API_TYPES_H_ */
-

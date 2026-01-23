@@ -28,7 +28,7 @@
 -- messages from the software bus to the local application.
 -- -------------------------------------------------------------------------
 
-local global_sym_prefix = SEDS.get_define("MISSION_NAME")
+local global_sym_prefix = SEDS.get_define("EDSTOOL_PROJECT_NAME")
 global_sym_prefix = global_sym_prefix and string.upper(global_sym_prefix) or "EDS"
 
 local components = SEDS.mts_info.component_set
@@ -169,30 +169,33 @@ local function write_interface_header(hdrout,comp)
   local desc = comp:get_flattened_name()
   for reqintf in comp:iterate_subtree("REQUIRED_INTERFACE") do
 
-    -- Export information by saving in the DOM tree
-    reqintf.mapping_info = get_mapping_info(desc, reqintf.type)
+    -- Only do this on SB functional interfaces
+    local intf_type_str = reqintf.type:get_qualified_name()
+    if (intf_type_str == "CFE_SB/Telemetry" or intf_type_str == "CFE_SB/Telecommand") then
+      -- Export information by saving in the DOM tree
+      reqintf.mapping_info = get_mapping_info(desc, reqintf.type)
 
-    -- This adds an "intf_commands" member that is a list of descriptors for the commands on this intf
-    -- The descriptor has the following info in it:
-    --  refnode : points to the cmd node in the DOM tree
-    --  args : a list of arguments to that command (generally always length of 1 in CFE)
-    --  subcommand_arg : the index of the argument that has subcommands (derivatives).  Should be 1 for CFE ground commands, nil on everything else.
-    write_reqintf_data(hdrout,reqintf)
+      -- This adds an "intf_commands" member that is a list of descriptors for the commands on this intf
+      -- The descriptor has the following info in it:
+      --  refnode : points to the cmd node in the DOM tree
+      --  args : a list of arguments to that command (generally always length of 1 in CFE)
+      --  subcommand_arg : the index of the argument that has subcommands (derivatives).  Should be 1 for CFE ground commands, nil on everything else.
+      write_reqintf_data(hdrout,reqintf)
 
-    -- If this yielded a non-empty list, then merge it with the component_intftypes
-    -- This builds the complete set of interface types within this component
-    if (#reqintf.intf_commands > 0) then
-      local compcmds = component_intftypes[reqintf.type]
+      -- If this yielded a non-empty list, then merge it with the component_intftypes
+      -- This builds the complete set of interface types within this component
+      if (#reqintf.intf_commands > 0) then
+        local compcmds = component_intftypes[reqintf.type]
 
-      if (not compcmds) then
-        compcmds = {}
-        component_intftypes[reqintf.type] = compcmds
+        if (not compcmds) then
+          compcmds = {}
+          component_intftypes[reqintf.type] = compcmds
+        end
+
+        -- Append this set of commands to the
+        append_list(compcmds, reqintf.intf_commands)
       end
-
-      -- Append this set of commands to the
-      append_list(compcmds, reqintf.intf_commands)
     end
-
   end
 
   -- This gets the complete set of interface types in this component in a sorted order
@@ -229,6 +232,8 @@ local function write_dispatch_header(hdrout,entry)
   -- there is just a single one.
 
   local command_count = SEDS.count_results(entry.intftype:iterate_subtree("COMMAND"))
+  local basenode_comp = entry.component:find_parent(SEDS.namespace_filter)
+  local basenode_declintf = entry.intftype:find_parent(SEDS.namespace_filter)
 
   hdrout:start_group(string.format("static inline int32_t EdsDispatch_%s(",entry.dispatchid))
   hdrout:write(string.format("%-65s *Message,", "const CFE_SB_Buffer_t"))
@@ -240,14 +245,13 @@ local function write_dispatch_header(hdrout,entry)
   end
   hdrout:end_group(")")
   hdrout:start_group("{")
-  hdrout:start_group("return CFE_MSG_EdsDispatch(")
-  hdrout:write(string.format("%s_InterfaceId_%s,", global_sym_prefix, entry.intftype:get_ctype_basename()))
-  if (command_count > 1) then
-    hdrout:write(string.format("IndicationId - %s_%s,", global_sym_prefix, entry.intftype:get_ctype_basename("IndicationId") .. "_BASE"))
-  else
-    hdrout:write("1,")
-  end
-  hdrout:write(string.format("%s_DispatchTableId_%s,", global_sym_prefix, entry.dispatchid))
+  hdrout:start_group("return CFE_EDSMSG_Dispatch(")
+  hdrout:write(string.format("EDSLIB_INTF_ID(%s_INDEX_%s, %s),", 
+    global_sym_prefix, SEDS.to_macro_name(basenode_declintf.name),
+    entry.intftype:get_flattened_name("DECLARATION")))
+  hdrout:write(string.format("EDSLIB_INTF_ID(%s_INDEX_%s, %s),", 
+    global_sym_prefix, SEDS.to_macro_name(basenode_comp.name),
+    entry.component:get_flattened_name("INSTANCE")))
   hdrout:write("Message,")
   hdrout:write("DispatchTable")
   hdrout:end_group(");")
@@ -282,8 +286,8 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
 
   hdrout = SEDS.output_open(SEDS.to_filename("dispatcher.h", ds.name), ds.xml_filename)
 
-  hdrout:write(string.format("#include \"cfe_msg_dispatcher.h\""))
-  hdrout:write(string.format("#include \"%s\"", SEDS.to_filename("interfacedb.h", global_sym_prefix)))
+  hdrout:write(string.format("#include \"edsmsg_dispatcher.h\""))
+  hdrout:write(string.format("#include \"edslib_id.h\""))
   hdrout:write(string.format("#include \"%s\"", SEDS.to_filename("interface.h", ds.name)))
   hdrout:add_whitespace(1)
 

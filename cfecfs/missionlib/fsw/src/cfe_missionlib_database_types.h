@@ -25,11 +25,13 @@
  *
  */
 
-#ifndef _CFE_MISSIONLIB_DATABASE_TYPES_H_
-#define _CFE_MISSIONLIB_DATABASE_TYPES_H_
+#ifndef CFE_MISSIONLIB_DATABASE_TYPES_H
+#define CFE_MISSIONLIB_DATABASE_TYPES_H
 
 #include <stdint.h>
 #include <stddef.h>
+
+#include "edslib_database_types.h"
 
 /*
  * Caution about #include'ing additional files here ---
@@ -37,66 +39,32 @@
  * System headers are OK (as above) but locally-defined files should be avoided.
  */
 
-struct CFE_MissionLib_Argument_Entry
-{
-    uint16_t AppIndex;
-    uint16_t TypeIndex;
-};
-
-typedef struct CFE_MissionLib_Argument_Entry CFE_MissionLib_Argument_Entry_t;
-
-struct CFE_MissionLib_Subcommand_Entry
+struct CFE_MissionLib_DispatchTable_Entry
 {
     uint16_t DispatchOffset;
 };
 
-typedef struct CFE_MissionLib_Subcommand_Entry CFE_MissionLib_Subcommand_Entry_t;
-
-struct CFE_MissionLib_Command_Definition_Entry
-{
-    uint16_t                                      SubcommandArg;
-    uint16_t                                      SubcommandCount;
-    const struct CFE_MissionLib_Argument_Entry *  ArgumentList;
-    const struct CFE_MissionLib_Subcommand_Entry *SubcommandList;
-};
-
-typedef struct CFE_MissionLib_Command_Definition_Entry CFE_MissionLib_Command_Definition_Entry_t;
+typedef struct CFE_MissionLib_DispatchTable_Entry CFE_MissionLib_DispatchTable_Entry_t;
 
 struct CFE_MissionLib_TopicId_Entry
 {
-    uint16_t                                         DispatchTableId;
-    uint16_t                                         DispatchStartOffset;
-    uint16_t                                         InterfaceId;
-    const char *                                     TopicName;
-    const CFE_MissionLib_Command_Definition_Entry_t *CommandList;
+    uint16_t             LocalDispatchSize;
+    uint16_t             DispatchStartOffset;
+    EdsLib_DatabaseRef_t InterfaceRefObj;
+
+    const struct CFE_MissionLib_DispatchTable_Entry *LocalDispatchTable;
 };
 
 typedef struct CFE_MissionLib_TopicId_Entry CFE_MissionLib_TopicId_Entry_t;
 
-struct CFE_MissionLib_Command_Prototype_Entry
-{
-    uint16_t    NumArguments;
-    const char *CommandName;
-};
-
-typedef struct CFE_MissionLib_Command_Prototype_Entry CFE_MissionLib_Command_Prototype_Entry_t;
-
-struct CFE_MissionLib_InterfaceId_Entry
-{
-    uint16_t                                        NumCommands;
-    uint16_t                                        NumTopics;
-    const char *                                    InterfaceName;
-    const CFE_MissionLib_Command_Prototype_Entry_t *CommandList;
-    const CFE_MissionLib_TopicId_Entry_t *          TopicList;
-};
-
-typedef struct CFE_MissionLib_InterfaceId_Entry CFE_MissionLib_InterfaceId_Entry_t;
-
 struct CFE_MissionLib_SoftwareBus_Interface
 {
-    uint16_t                                  NumInterfaces;
-    const CFE_MissionLib_InterfaceId_Entry_t *InterfaceList;
-    const char *const *                       InstanceList;
+    const EdsLib_DatabaseObject_t        *ParentGD;
+    const CFE_MissionLib_TopicId_Entry_t *TopicList;
+    const char *const                    *InstanceList;
+
+    uint16_t NumInstances;
+    uint16_t NumTopics;
 };
 
 #endif /* _CFE_MISSIONLIB_DATABASE_TYPES_H_ */

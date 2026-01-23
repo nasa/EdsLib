@@ -168,54 +168,58 @@ for _,instance in ipairs(SEDS.highlevel_interfaces) do
   -- The various interfaces should be attached under required_links
   for _,binding in ipairs(instance.required_links) do
     local reqintf = binding.reqintf
-    local cmd = reqintf.intf_commands and reqintf.intf_commands[1]
+    local intf_type_str = reqintf.type:get_qualified_name() 
+    if (intf_type_str == "CFE_SB/Telemetry" or intf_type_str == "CFE_SB/Telecommand") then
+      local cmd = reqintf.intf_commands and reqintf.intf_commands[1]
 
-    -- SB interfaces should only have one "command" of the indication type (i.e. message appears on the bus)
-    -- Note "command" here is the EDS terminology, not CFE - the CFE intf is referred to as "telecommand"
-    -- The indication has one argument, which is the data associated with the message
-    if (cmd.refnode.name == "indication") then
-      local sb_params = find_param_of_type(binding.provinst,"CFE_SB/SoftwareBusRouting")
-      local argtype = cmd.args[1].type
-      local prefix
+      -- SB interfaces should only have one "command" of the indication type (i.e. message appears on the bus)
+      -- Note "command" here is the EDS terminology, not CFE - the CFE intf is referred to as "telecommand"
+      -- The indication has one argument, which is the data associated with the message
+      if (cmd.refnode.name == "indication") then
+        local sb_params = find_param_of_type(binding.provinst,"CFE_SB/SoftwareBusRouting")
+        local argtype = cmd.args[1].type
+        local prefix
 
-      if (reqintf.type.name == "Telecommand") then
-        prefix = "cmd_"
-      elseif (reqintf.type.name == "Telemetry") then
-        prefix = "tlm_"
-      else
-        prefix = ""
-      end
-
-      if (sb_params) then
-        local output = SEDS.output_open("json/" .. SEDS.to_filename(reqintf.name .. "_interface.json", ds.name));
-        local msgid
-
-        -- For now, just make up a symbolic name according to typical CFE patterns
-        msgid = SEDS.to_macro_name(ds.name .. "_" .. reqintf.name .. "_MID")
-        --msgid = sb_params.PubSub.MsgId -- This would be the actual hex msgid value
-
-        output:start_group("{")
-        output:write(string.format("\"%smid_name\": \"%s\",", prefix, msgid))
-        output:write(string.format("\"%sdescription\": \"%s\",", prefix, reqintf.attributes.shortdescription or ""))
-        if (cmd.cc_list) then
-          output:start_group("\"cmd_codes\": [")
-          for _,cc in ipairs(cmd.cc_list) do
-            output:append_previous(",")
-            output:start_group("{")
-            write_cc_json_parameters(output, cc)
-            output:end_group("}")
-          end
-          output:end_group("]")
+        if (reqintf.type.name == "Telecommand") then
+          prefix = "cmd_"
+        elseif (reqintf.type.name == "Telemetry") then
+          prefix = "tlm_"
         else
-          local ctype = argtype.header_data and argtype.header_data.typedef_name or argtype:get_flattened_name()
-          output:write(string.format("\"%sdata_type\": \"%s\",", prefix, ctype))
-          output:start_group(string.format("\"%sparameters\": [", prefix, ctype))
-          write_json_container_members(output, argtype)
-          output:end_group("]")
+          prefix = ""
         end
-        output:end_group("}")
 
-        SEDS.output_close(output)
+        if (sb_params) then
+          local output = SEDS.output_open("json/" .. SEDS.to_filename(reqintf.name .. "_interface.json", ds.name));
+          local msgid
+
+          -- For now, just make up a symbolic name according to typical CFE patterns
+          msgid = SEDS.to_macro_name(ds.name .. "_" .. reqintf.name .. "_MID")
+          --msgid = sb_params.PubSub.MsgId -- This would be the actual hex msgid value
+
+          output:start_group("{")
+          output:write(string.format("\"%smid_name\": \"%s\",", prefix, msgid))
+          output:write(string.format("\"%sdescription\": \"%s\",", prefix, reqintf.attributes.shortdescription or ""))
+          if (cmd.cc_list) then
+            output:start_group("\"cmd_codes\": [")
+            for _,cc in ipairs(cmd.cc_list) do
+              output:append_previous(",")
+              output:start_group("{")
+              write_cc_json_parameters(output, cc)
+              output:end_group("}")
+            end
+            output:end_group("]")
+          else
+            local ctype = argtype.header_data and argtype.header_data.typedef_name or argtype:get_flattened_name()
+            output:write(string.format("\"%sdata_type\": \"%s\",", prefix, ctype))
+            output:start_group(string.format("\"%sparameters\": [", prefix, ctype))
+            write_json_container_members(output, argtype)
+            output:end_group("]")
+          end
+          output:end_group("}")
+
+          SEDS.output_close(output)
+        end
+
       end
 
     end

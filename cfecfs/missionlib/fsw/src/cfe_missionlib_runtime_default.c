@@ -127,16 +127,16 @@ static const CFE_MissionLib_TopicId_Limits_t CFE_MISSIONLIB_GLOBAL_TLM_LIMITS = 
         (CFE_MISSIONLIB_MSGID_TYPE_MASK << CFE_MISSIONLIB_MSGID_TYPE_SHIFT) | CFE_MISSIONLIB_MSGID_GLOBAL_MASK,
     .CheckBitsValue =
         (CFE_MISSIONLIB_MSGID_TELEMETRY_BITS << CFE_MISSIONLIB_MSGID_TYPE_SHIFT) | CFE_MISSIONLIB_MSGID_GLOBAL_BITS,
-    .TopicBase    = CFE_MISSION_GLOBAL_TLM_BASE_TOPICID,
-    .TopicMax     = CFE_MISSION_GLOBAL_TLM_MAX_TOPICID,
+    .TopicBase    = EdsParam_CFE_MISSION_GLOBAL_TLM_BASE_TOPICID,
+    .TopicMax     = EdsParam_CFE_MISSION_GLOBAL_TLM_MAX_TOPICID,
     .InstanceBase = 0,
     .InstanceMax  = 1};
 
 static const CFE_MissionLib_TopicId_Limits_t CFE_MISSIONLIB_LOCAL_TLM_LIMITS = {
     .CheckBitsMask  = (CFE_MISSIONLIB_MSGID_TYPE_MASK << CFE_MISSIONLIB_MSGID_TYPE_SHIFT),
     .CheckBitsValue = (CFE_MISSIONLIB_MSGID_TELEMETRY_BITS << CFE_MISSIONLIB_MSGID_TYPE_SHIFT),
-    .TopicBase      = CFE_MISSION_TELEMETRY_BASE_TOPICID,
-    .TopicMax       = CFE_MISSION_TELEMETRY_MAX_TOPICID,
+    .TopicBase      = EdsParam_CFE_MISSION_TELEMETRY_BASE_TOPICID,
+    .TopicMax       = EdsParam_CFE_MISSION_TELEMETRY_MAX_TOPICID,
     .InstanceBase   = 1,
     .InstanceMax    = 1 + CFE_MISSIONLIB_MSGID_SUBSYS_MASK};
 
@@ -145,16 +145,16 @@ static const CFE_MissionLib_TopicId_Limits_t CFE_MISSIONLIB_GLOBAL_CMD_LIMITS = 
         (CFE_MISSIONLIB_MSGID_TYPE_MASK << CFE_MISSIONLIB_MSGID_TYPE_SHIFT) | CFE_MISSIONLIB_MSGID_GLOBAL_MASK,
     .CheckBitsValue =
         (CFE_MISSIONLIB_MSGID_TELECOMMAND_BITS << CFE_MISSIONLIB_MSGID_TYPE_SHIFT) | CFE_MISSIONLIB_MSGID_GLOBAL_BITS,
-    .TopicBase    = CFE_MISSION_GLOBAL_CMD_BASE_TOPICID,
-    .TopicMax     = CFE_MISSION_GLOBAL_CMD_MAX_TOPICID,
+    .TopicBase    = EdsParam_CFE_MISSION_GLOBAL_CMD_BASE_TOPICID,
+    .TopicMax     = EdsParam_CFE_MISSION_GLOBAL_CMD_MAX_TOPICID,
     .InstanceBase = 0,
     .InstanceMax  = 1};
 
 static const CFE_MissionLib_TopicId_Limits_t CFE_MISSIONLIB_LOCAL_CMD_LIMITS = {
     .CheckBitsMask  = (CFE_MISSIONLIB_MSGID_TYPE_MASK << CFE_MISSIONLIB_MSGID_TYPE_SHIFT),
     .CheckBitsValue = (CFE_MISSIONLIB_MSGID_TELECOMMAND_BITS << CFE_MISSIONLIB_MSGID_TYPE_SHIFT),
-    .TopicBase      = CFE_MISSION_TELECOMMAND_BASE_TOPICID,
-    .TopicMax       = CFE_MISSION_TELECOMMAND_MAX_TOPICID,
+    .TopicBase      = EdsParam_CFE_MISSION_TELECOMMAND_BASE_TOPICID,
+    .TopicMax       = EdsParam_CFE_MISSION_TELECOMMAND_MAX_TOPICID,
     .InstanceBase   = 1,
     .InstanceMax    = 1 + CFE_MISSIONLIB_MSGID_SUBSYS_MASK};
 
@@ -357,11 +357,11 @@ void CFE_MissionLib_Get_PubSub_Parameters(EdsInterface_CFE_SB_SoftwareBus_PubSub
                                           const EdsDataType_CFE_HDR_Message_t *     Packet)
 {
     memset(Params, 0, sizeof(*Params));
-    CFE_MISSIONLIB_GET_MSGID_BITS(CFE_MISSION_MSG_HEADER_TYPE, &Params->MsgId, &Packet->CCSDS);
+    CFE_MISSIONLIB_GET_MSGID_BITS(EdsParam_CFE_MISSION_MSG_HEADER_TYPE, &Params->MsgId, &Packet->CCSDS);
 }
 
 void CFE_MissionLib_Set_PubSub_Parameters(EdsDataType_CFE_HDR_Message_t *                 Packet,
                                           const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Params)
 {
-    CFE_MISSIONLIB_SET_MSGID_BITS(CFE_MISSION_MSG_HEADER_TYPE, &Packet->CCSDS, &Params->MsgId);
+    CFE_MISSIONLIB_SET_MSGID_BITS(EdsParam_CFE_MISSION_MSG_HEADER_TYPE, &Packet->CCSDS, &Params->MsgId);
 }

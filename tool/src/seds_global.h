@@ -32,7 +32,7 @@
  *
  * That being said, this should still be portable to any other system out there
  * that implements basic POSIX/XOpen standards (Cygwin, OSX, BSD) and has a Lua
- * version 5.2 interpreter available.
+ * version 5.3 interpreter available.
  */
 
 #ifndef _SEDS_GLOBAL_H_
@@ -56,10 +56,6 @@
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
-
-/* compatibility shim to support compilation with Lua5.1 */
-#include "edslib_lua51_compatibility.h"
-
 
 /*
  * When using GNU C, it can give helpful warnings about mismatched arguments to printf-style calls.
@@ -153,4 +149,3 @@ extern seds_toplevel_t sedstool;
 
 
 #endif  /* _SEDS_GLOBAL_H_ */
-

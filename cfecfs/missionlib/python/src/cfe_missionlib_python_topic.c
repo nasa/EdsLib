@@ -34,11 +34,10 @@
 ******************************************************************************/
 
 #include "cfe_missionlib_python_internal.h"
+#include "cfe_hdr_eds_datatypes.h"
 #include <dlfcn.h>
 #include <structmember.h>
 #include "edslib_id.h"
-
-PyObject *CFE_MissionLib_Python_TopicCache = NULL;
 
 static void         CFE_MissionLib_Python_Topic_dealloc(PyObject * obj);
 static PyObject *   CFE_MissionLib_Python_Topic_new(PyTypeObject *obj, PyObject *args, PyObject *kwds);
@@ -77,7 +76,7 @@ static struct PyMemberDef CFE_MissionLib_Python_Topic_members[] =
 {
         {"Name", T_OBJECT_EX, offsetof(CFE_MissionLib_Python_Topic_t, TopicName), READONLY, "Topic Name" },
         {"TopicId", T_SHORT, offsetof(CFE_MissionLib_Python_Topic_t, TopicId), READONLY, "Topic ID" },
-        {"EdsId", T_INT, offsetof(CFE_MissionLib_Python_Topic_t, EdsId), READONLY, "EDS ID" },
+        {"EdsId", T_INT, offsetof(CFE_MissionLib_Python_Topic_t, DataEdsId), READONLY, "EDS ID" },
         {NULL}  /* Sentinel */
 };
 
@@ -120,8 +119,6 @@ static int CFE_MissionLib_Python_Topic_traverse(PyObject *obj, visitproc visit, 
     CFE_MissionLib_Python_Topic_t *self = (CFE_MissionLib_Python_Topic_t *)obj;
     Py_VISIT(self->IntfObj);
     Py_VISIT(self->TopicName);
-    Py_VISIT(self->TypeCache);
-
     return 0;
 }
 
@@ -130,8 +127,6 @@ static int CFE_MissionLib_Python_Topic_clear(PyObject *obj)
     CFE_MissionLib_Python_Topic_t *self = (CFE_MissionLib_Python_Topic_t *)obj;
     Py_CLEAR(self->IntfObj);
     Py_CLEAR(self->TopicName);
-    Py_CLEAR(self->TypeCache);
-
     return 0;
 }
 
@@ -139,7 +134,6 @@ static void CFE_MissionLib_Python_Topic_dealloc(PyObject * obj)
 {
     CFE_MissionLib_Python_Topic_t *self = (CFE_MissionLib_Python_Topic_t *)obj;
     Py_CLEAR(self->IntfObj);
-    Py_CLEAR(self->TypeCache);
     Py_CLEAR(self->TopicName);
 
     if (self->WeakRefList != NULL)
@@ -154,10 +148,10 @@ static void CFE_MissionLib_Python_Topic_dealloc(PyObject * obj)
 static CFE_MissionLib_Python_Topic_t *CFE_MissionLib_Python_Topic_GetFromTopicId_Impl(PyTypeObject *obj, PyObject *intfobj, uint16_t TopicId)
 {
     CFE_MissionLib_Python_Interface_t *IntfObj = (CFE_MissionLib_Python_Interface_t *)intfobj;
-    CFE_MissionLib_Python_Topic_t *self;
+    CFE_MissionLib_Python_Topic_t *self = NULL;
+    char Buffer[128];
+    int32_t Status;
     PyObject *TopicIdVal;
-    PyObject *weakref;
-    const char* TopicName = NULL;
 
     do
     {
@@ -167,21 +161,18 @@ static CFE_MissionLib_Python_Topic_t *CFE_MissionLib_Python_Topic_GetFromTopicId
             break;
         }
 
-        weakref = PyDict_GetItem(CFE_MissionLib_Python_TopicCache, TopicIdVal);
-        if (weakref != NULL)
+        self = (CFE_MissionLib_Python_Topic_t *)CFE_MissionLib_Python_GetFromCache(IntfObj->TopicCache, TopicIdVal, &CFE_MissionLib_Python_TopicType);
+        if (self != NULL)
         {
-            self = (CFE_MissionLib_Python_Topic_t *)PyWeakref_GetObject(weakref);
-            if (Py_TYPE(self) == &CFE_MissionLib_Python_TopicType)
+            if (TopicId == self->TopicId)
             {
-                if (TopicId == self->TopicId)
-                {
-                    Py_INCREF(self);
-                    break;
-                }
-
-                /* weakref expired, needs to be recreated */
-                self = NULL;
+                /* matches */
+                break;
             }
+
+            /* not a match */
+            Py_DECREF(self);
+            self = NULL;
         }
 
         self = (CFE_MissionLib_Python_Topic_t*)obj->tp_alloc(obj, 0);
@@ -190,54 +181,54 @@ static CFE_MissionLib_Python_Topic_t *CFE_MissionLib_Python_Topic_GetFromTopicId
             break;
         }
 
-        self->TypeCache = PyDict_New();
-        if (self->TypeCache == NULL)
+        Py_INCREF(IntfObj);
+        self->IntfObj = IntfObj;
+
+        Status = CFE_MissionLib_GetTopicInfo(IntfObj->DbObj->IntfDb, TopicId, &self->TopicInfo);
+        if (Status != CFE_MISSIONLIB_SUCCESS)
         {
-            Py_DECREF(self);
+            PyErr_Format(PyExc_RuntimeError, "Failure in CFE_MissionLib_GetTopicInfo(%d) rc=%d", (int)TopicId, (int)Status);
+            Py_CLEAR(self);
             break;
         }
 
-        Py_INCREF(IntfObj);
-        self->IntfObj = IntfObj;
-        TopicName = CFE_MissionLib_GetTopicName(IntfObj->DbObj->IntfDb, IntfObj->InterfaceId, TopicId);
-        self->TopicName = PyUnicode_FromFormat("%s", TopicName);
+        Status = EdsLib_IntfDB_GetFullName(CFE_MissionLib_GetParent(IntfObj->DbObj->IntfDb), self->TopicInfo.ParentIntfId, Buffer, sizeof(Buffer));
+        if (Status != EDSLIB_SUCCESS)
+        {
+            /* Intf ID does not appear to be valid, this is not a valid topic ID */
+            PyErr_Format(PyExc_RuntimeError, "No interface mapping for topicid=%d", (int)TopicId);
+            Py_CLEAR(self);
+            break;
+        }
+
+        self->TopicName = PyUnicode_FromFormat("%s", Buffer);
         self->TopicId = TopicId;
-        CFE_MissionLib_GetArgumentType(IntfObj->DbObj->IntfDb, IntfObj->InterfaceId, TopicId, 1, 1, &self->EdsId);
-        CFE_MissionLib_GetIndicationInfo(IntfObj->DbObj->IntfDb, IntfObj->InterfaceId, TopicId, 1, &self->IndInfo);
+
+        /* All SB topics should map to an interface type with a single command on it */
+        Status = EdsLib_IntfDB_FindAllArgumentTypes(CFE_MissionLib_GetParent(IntfObj->DbObj->IntfDb), IntfObj->CmdEdsId,
+            self->TopicInfo.ParentIntfId, &self->DataEdsId, 1);
+        if (Status != EDSLIB_SUCCESS)
+        {
+            /* Unable to determine data type on this topic */
+            PyErr_Format(PyExc_RuntimeError, "EdsLib_IntfDB_FindAllArgumentTypes(%x) rc=%d", (unsigned int)IntfObj->CmdEdsId, (int)Status);
+            Py_CLEAR(self);
+            break;
+        }
 
         /* Create a weak reference to store in the local cache in case this
          * database is constructed again. */
-        weakref = PyWeakref_NewRef((PyObject*)self, NULL);
-        if (weakref == NULL)
+        if (CFE_MissionLib_Python_SaveToCache(IntfObj->TopicCache, TopicIdVal, (PyObject*)self) < 0)
         {
+            /* if something went wrong this raises an error and must return NULL */
             Py_DECREF(self);
-            break;
+            self = NULL;
         }
-
-        PyDict_SetItem(CFE_MissionLib_Python_TopicCache, TopicIdVal, weakref);
-        Py_DECREF(weakref);
-
     }
     while(0);
 
     Py_XDECREF(TopicIdVal);
     return self;
 }
-
-//const CFE_MissionLib_TopicId_Entry_t *CFE_MissionLib_Python_Topic_GetEntry(PyObject *obj)
-//{
-//    if (obj == NULL)
-//    {
-//        return NULL;
-//    }
-//    if (!PyObject_TypeCheck(obj, &CFE_MissionLib_Python_TopicType))
-//    {
-//        PyErr_SetObject(PyExc_TypeError, obj);
-//        return NULL;
-//    }
-//
-//    return ((CFE_MissionLib_Python_Topic_t*)obj)->TopicEntry;
-//}
 
 static PyObject *CFE_MissionLib_Python_Topic_new(PyTypeObject *obj, PyObject *args, PyObject *kwds)
 {
@@ -248,10 +239,7 @@ static PyObject *CFE_MissionLib_Python_Topic_new(PyTypeObject *obj, PyObject *ar
     CFE_MissionLib_Python_Database_t *DbObj;
     CFE_MissionLib_Python_Interface_t *IntfObj;
     uint16_t TopicId = 0;      // 0 is an invalid TopicId
-
-    CFE_MissionLib_TopicInfo_t TopicInfo;
-    int32_t Status;
-
+    EdsLib_Id_t CompIntfId;
     uint16_t status;
     PyObject *tempargs = NULL;
     PyObject *result = NULL;
@@ -264,7 +252,7 @@ static PyObject *CFE_MissionLib_Python_Topic_new(PyTypeObject *obj, PyObject *ar
      *   - An EdsDb Python Object (only needed if Database associated with the Interface Database Identifier has not been set up)
      *
      * Databases are natively of the CFE_MissionLib_Python_Database_t type
-     * Interface Identifiers are indices which are natively unsigned integers (uint16_t specifically)
+     * Interface Identifiers are indices which are natively unsigned integers (EdsLib_Id_t specifically)
      * Topic Identifiers are also indices which are natively unsigned integers (uint16_t specifically)
      *
      * However, any value can alternatively be supplied as a string,
@@ -341,36 +329,25 @@ static PyObject *CFE_MissionLib_Python_Topic_new(PyTypeObject *obj, PyObject *ar
             }
 
             TopicId = PyLong_AsUnsignedLong(tempargs);
-            Status = CFE_MissionLib_GetTopicInfo(DbObj->IntfDb, IntfObj->InterfaceId, TopicId, &TopicInfo);
-            if (Status != CFE_MISSIONLIB_SUCCESS)
-            {
-                PyErr_Format(PyExc_RuntimeError, "Invalid Topic Id: %u\tStatus: %d", TopicId, Status);
-                break;
-            }
         }
         else
         {
-            if (PyUnicode_Check(arg3))
-            {
-                tempargs = PyUnicode_AsUTF8String(arg3);
-            }
-            else
-            {
-                tempargs = PyObject_Bytes(arg3);
-            }
+            // Set up the topic with either a TopicId or Topic Name
+            CompIntfId = CFE_MissionLib_Python_ConvertArgToEdsId(EdsLib_IntfDB_FindComponentInterfaceByFullName, CFE_MissionLib_GetParent(DbObj->IntfDb), arg3);
 
-            if (tempargs == NULL)
+            /* if the lookup failed it should have already set an exception */
+            if (!EdsLib_Is_Valid(CompIntfId))
             {
                 break;
             }
 
-            status = CFE_MissionLib_FindTopicByName(DbObj->IntfDb, IntfObj->InterfaceId, PyBytes_AsString(tempargs), &TopicId);
-
+            status = CFE_MissionLib_FindTopicIdFromIntfId(DbObj->IntfDb, CompIntfId, &TopicId);
             if (status != CFE_MISSIONLIB_SUCCESS)
             {
-                PyErr_Format(PyExc_RuntimeError, "Topic %s undefined", PyBytes_AsString(tempargs));
+                PyErr_Format(PyExc_RuntimeError, "No TopicID maps to %s", PyBytes_AsString(tempargs));
                 break;
             }
+
         }
 
         result = (PyObject*)CFE_MissionLib_Python_Topic_GetFromTopicId_Impl(&CFE_MissionLib_Python_TopicType, (PyObject *)IntfObj, TopicId);
@@ -393,34 +370,36 @@ PyObject *CFE_MissionLib_Python_Topic_GetFromTopicName(CFE_MissionLib_Python_Int
 {
     CFE_MissionLib_Python_Topic_t *TopicEntry;
 
-    PyObject *weakref;
     int32_t status;
     uint16_t TopicId;
+    EdsLib_Id_t CompIntfId;
 
-    weakref = PyDict_GetItem(CFE_MissionLib_Python_TopicCache, TopicName);
-    if (weakref != NULL)
+    TopicEntry = (CFE_MissionLib_Python_Topic_t *)CFE_MissionLib_Python_GetFromCache(obj->TopicCache, TopicName, &CFE_MissionLib_Python_TopicType);
+    if (TopicEntry != NULL)
     {
-        TopicEntry = (CFE_MissionLib_Python_Topic_t *)PyWeakref_GetObject(weakref);
-        if (Py_TYPE(TopicEntry) == &CFE_MissionLib_Python_TopicType)
+        if (TopicEntry->TopicName != TopicName)
         {
-            if (TopicEntry->TopicName != TopicName)
-            {
-                PyErr_SetString(PyExc_RuntimeError, "Topic name conflict");
-                TopicEntry = NULL;
-            }
-            else
-            {
-                Py_INCREF(TopicEntry);
-            }
-            return (PyObject*)TopicEntry;
+            PyErr_SetString(PyExc_RuntimeError, "Topic name conflict");
+            Py_DECREF(TopicEntry);
+            TopicEntry = NULL;
         }
+        return (PyObject*)TopicEntry;
     }
 
-    status = CFE_MissionLib_FindTopicByName(obj->DbObj->IntfDb, obj->InterfaceId, PyBytes_AsString(TopicName), &TopicId);
+    /* this is slightly more complicated; the name is actually associated with a component interface,
+        * and once that is found, then we need to reverse lookup that intf back to a topic ID */
+    status = EdsLib_IntfDB_FindComponentInterfaceByFullName(CFE_MissionLib_GetParent(obj->DbObj->IntfDb),
+        PyBytes_AsString(TopicName), &CompIntfId);
+    if (status != EDSLIB_SUCCESS)
+    {
+        PyErr_Format(PyExc_RuntimeError, "Component Intf %s not defined", PyBytes_AsString(TopicName));
+        return NULL;
+    }
 
+    status = CFE_MissionLib_FindTopicIdFromIntfId(obj->DbObj->IntfDb, CompIntfId, &TopicId);
     if (status != CFE_MISSIONLIB_SUCCESS)
     {
-        PyErr_Format(PyExc_RuntimeError, "Topic %s undefined:%u", PyBytes_AsString(TopicName));
+        PyErr_Format(PyExc_RuntimeError, "No TopicID maps to %s", PyBytes_AsString(TopicName));
         return NULL;
     }
 
@@ -433,7 +412,7 @@ static PyObject *  CFE_MissionLib_Python_Topic_iter(PyObject *obj)
     CFE_MissionLib_Python_TopicIterator_t *TopicIter;
     PyObject *result = NULL;
 
-    if (Topic->IndInfo.NumSubcommands > 0)
+    if (Topic->TopicInfo.NumSubcommands > 0)
     {
     	TopicIter = PyObject_GC_New(CFE_MissionLib_Python_TopicIterator_t, &CFE_MissionLib_Python_TopicIteratorType);
 
@@ -484,7 +463,7 @@ static PyObject *CFE_MissionLib_Python_TopicIterator_iternext(PyObject *obj)
 {
     CFE_MissionLib_Python_TopicIterator_t *self = (CFE_MissionLib_Python_TopicIterator_t*)obj;
     CFE_MissionLib_Python_Topic_t *topic = NULL;
-    EdsLib_Python_Database_t *EdsDb;
+    const EdsLib_DatabaseObject_t *GD;
     uint16_t idx;
     EdsLib_Id_t PossibleId;
 
@@ -500,13 +479,12 @@ static PyObject *CFE_MissionLib_Python_TopicIterator_iternext(PyObject *obj)
         }
 
         topic = (CFE_MissionLib_Python_Topic_t *)self->refobj;
-        EdsDb = topic->IntfObj->DbObj->EdsDbObj;
+        GD = CFE_MissionLib_GetParent(topic->IntfObj->DbObj->IntfDb);
         idx = self->Index;
 
-        if (EdsLib_DataTypeDB_GetDerivedTypeById(EdsDb->GD, topic->EdsId, idx, &PossibleId) == EDSLIB_SUCCESS)
+        if (EdsLib_DataTypeDB_GetDerivedTypeById(GD, topic->DataEdsId, idx, &PossibleId) == EDSLIB_SUCCESS)
         {
-
-            key = PyUnicode_FromString(EdsLib_DisplayDB_GetBaseName(EdsDb->GD, PossibleId));
+            key = PyUnicode_FromString(EdsLib_DisplayDB_GetBaseName(GD, PossibleId));
             edsid = PyLong_FromLong((long int)PossibleId);
 
             if ((key == NULL) || (edsid == NULL))
@@ -532,7 +510,8 @@ void SubcommandCallback(const EdsLib_DatabaseObject_t *GD, const EdsLib_DataType
 {
     CbArg_t *Argument = (CbArg_t *) Arg;
 
-    if (ConstraintValue->Value.u8 == Argument->CommandCode )
+    if (MemberInfo->Offset.Bytes == offsetof(EdsDataType_CFE_HDR_CommandHeader_t, Sec.FunctionCode) &&
+        ConstraintValue->Value.u8 == Argument->CommandCode)
     {
         Argument->EdsId = Argument->PossibleId;
     }
@@ -541,7 +520,7 @@ void SubcommandCallback(const EdsLib_DatabaseObject_t *GD, const EdsLib_DataType
 static PyObject *CFE_MissionLib_Python_Topic_GetCmdEdsIdFromCode(PyObject *obj, PyObject *args)
 {
     CFE_MissionLib_Python_Topic_t *self = (CFE_MissionLib_Python_Topic_t*) obj;
-    EdsLib_Python_Database_t *EdsDb;
+    const EdsLib_DatabaseObject_t *GD;
     PyObject *arg1;
     uint8_t CommandCode;
     int32_t idx;
@@ -568,17 +547,27 @@ static PyObject *CFE_MissionLib_Python_Topic_GetCmdEdsIdFromCode(PyObject *obj, 
             break;
         }
 
-        EdsDb = self->IntfObj->DbObj->EdsDbObj;
-        Argument.CommandCode = CommandCode;
+        GD = CFE_MissionLib_GetParent(self->IntfObj->DbObj->IntfDb);
 
-        for (idx = 0; idx < self->IndInfo.NumSubcommands; idx++)
+        Argument.CommandCode = CommandCode;
+        Argument.EdsId = EDSLIB_ID_INVALID;
+
+        for (idx = 0; idx < self->TopicInfo.NumSubcommands && !EdsLib_Is_Valid(Argument.EdsId); idx++)
         {
-            EdsLib_DataTypeDB_GetDerivedTypeById(EdsDb->GD, self->EdsId, idx, &PossibleId);
+            EdsLib_DataTypeDB_GetDerivedTypeById(GD, self->DataEdsId, idx, &PossibleId);
             Argument.PossibleId = PossibleId;
-            EdsLib_DataTypeDB_ConstraintIterator(EdsDb->GD, self->EdsId, PossibleId, Callback, (void *)&Argument);
+            EdsLib_DataTypeDB_ConstraintIterator(GD, self->DataEdsId, PossibleId, Callback, (void *)&Argument);
         }
 
-        result = PyLong_FromLong((long int) Argument.EdsId);
+        if (EdsLib_Is_Valid(Argument.EdsId))
+        {
+            result = PyLong_FromLong((long int) Argument.EdsId);
+        }
+        else
+        {
+            result = Py_None;
+            Py_INCREF(result);
+        }
     } while(0);
 
     return result;

@@ -1,0 +1,138 @@
+name: Internal Build And Run EdsLib Validation Tests
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+  workflow_dispatch:
+
+# Force bash to apply pipefail option so pipeline failures aren't masked
+defaults:
+  run:
+    shell: bash
+
+env:
+  UPSTREAM_OSAL_REPO: nasa/osal
+  UPSTREAM_OSAL_REF: main
+
+jobs:
+  prepare-dependencies:
+    name: Prepare Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache EdsLib Source
+        uses: actions/cache@v3
+        id: cache-edslib
+        with:
+          path: ${{ github.workspace }}/source
+          key: edslib-source-${{ github.sha }}
+
+      - name: Cache OSAL Dependency
+        uses: actions/cache@v3
+        id: cache-osal
+        with:
+          path: ${{ github.workspace }}/osal-staging
+          key: edslib-dep-${{ env.UPSTREAM_OSAL_REPO }}@${{ env.UPSTREAM_OSAL_REF }}
+
+      - name: Checkout EdsLib
+        if: steps.cache-edslib.outputs.cache-hit != 'True'
+        uses: actions/checkout@v4
+        with:
+          path: source
+
+      - name: Set up OSAL
+        if: steps.cache-osal.outputs.cache-hit != 'True'
+        uses: ./source/.github/actions/setup-osal
+        with:
+          staging-dir: ${GITHUB_WORKSPACE}/osal-staging
+          upstream-repo: ${{ env.UPSTREAM_OSAL_REPO }}
+          upstream-ref: ${{ env.UPSTREAM_OSAL_REF }}
+
+  build-and-test:
+    name: Build EdsLib and Execute Tests
+    needs: [prepare-dependencies]
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        buildtype: [Debug, Release]
+
+    env:
+      MATRIX_ID: matrix-${{ matrix.buildtype }}
+
+    steps:
+
+      - name: Install Build Dependencies
+        run: sudo apt-get install liblua5.4-dev libpython3-dev libjson-c-dev pkg-config lcov xsltproc -y
+
+      # Note - caches were updated in "prepare-dependencies" job so all three of these should be a hit
+      - name: Retrieve Cached EdsLib Source
+        uses: actions/cache@v3
+        id: restore-source
+        with:
+          path: ${{ github.workspace }}/source
+          key: edslib-source-${{ github.sha }}
+
+      - name: Retrieve Cached OSAL Dependency
+        id: restore-osal
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/osal-staging
+          key: edslib-dep-${{ env.UPSTREAM_OSAL_REPO }}@${{ env.UPSTREAM_OSAL_REF }}
+
+      # The files extracted from the cache only have owner permissions,
+      # so in order to make this work it needs to adjust this.
+      - name: Import OSAL
+        run: |
+          sudo find ${GITHUB_WORKSPACE}/osal-staging -type d -print0 | xargs -0 chmod go+rx
+          sudo find ${GITHUB_WORKSPACE}/osal-staging -type f -print0 | xargs -0 chmod go+r
+          sudo find ${GITHUB_WORKSPACE}/osal-staging -type f -path '*/bin/*' -print0 | xargs -0 chmod go+x
+          sudo cp -rv -t / ${GITHUB_WORKSPACE}/osal-staging/*
+
+      - name: Refresh Dynamic Linker Cache
+        run: sudo ldconfig
+
+      - name: Set up EdsLib Build
+        run: cmake
+          -DCMAKE_BUILD_TYPE=${{ matrix.buildtype }}
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE
+          -DENABLE_UNIT_TESTS=TRUE
+          -DCMAKE_PREFIX_PATH=/usr/local/lib/cmake
+          -S source -B ${{ env.MATRIX_ID }}
+
+      - name: Build BPLib
+        working-directory: ${{ env.MATRIX_ID }}
+        run: make all
+
+      - name: Check for Tests
+        run: if [ -e '${{ env.MATRIX_ID }}/CTestTestfile.cmake' ]; then echo 'RUN_TESTS=True' >> $GITHUB_ENV; fi
+
+      - name: Run Tests
+        working-directory: ${{ env.MATRIX_ID }}
+        if: env.RUN_TESTS == 'True'
+        run: ctest --output-on-failure 2>&1 | tee ctest.log
+
+      - name: Check Coverage
+        if: env.MATRIX_ID == 'matrix-Debug'
+        uses: ./source/.github/actions/check-coverage
+        with:
+          binary-dir: ${{ env.MATRIX_ID }}
+
+      - name: Assemble Results
+        run: |
+          if [ -s '${{ env.MATRIX_ID }}/ctest.log' ]; then
+            echo '<h2>CTest Execution</h2>' >> $GITHUB_STEP_SUMMARY
+            echo '<pre>' >> $GITHUB_STEP_SUMMARY
+            cat '${{ env.MATRIX_ID }}/ctest.log' >> $GITHUB_STEP_SUMMARY
+            echo '</pre>' >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -s '${{ env.MATRIX_ID }}/lcov-summary.xml' ]; then
+            cat '${{ env.MATRIX_ID }}/lcov-summary.xml' >> $GITHUB_STEP_SUMMARY
+          fi

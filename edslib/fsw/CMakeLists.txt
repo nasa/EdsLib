@@ -88,7 +88,6 @@
 #
 #
 
-cmake_minimum_required(VERSION 3.5)
 project(EDSLIB_FSW C)
 
 enable_testing()
@@ -98,6 +97,8 @@ option(EDSLIB_BUILD_MODULE
     OFF)
 
 set(EDSLIB_BASE_SOURCES
+    src/edslib_global_api.c
+    src/edslib_database_ops.c
     src/edslib_datatypedb_lookup.c
     src/edslib_datatypedb_iterator.c
     src/edslib_datatypedb_pack_unpack.c
@@ -105,6 +106,8 @@ set(EDSLIB_BASE_SOURCES
     src/edslib_datatypedb_constraints.c
     src/edslib_datatypedb_errorcontrol.c
     src/edslib_datatypedb_api.c
+    src/edslib_intfdb_api.c
+    src/edslib_intfdb_lookup.c
 )
 
 set(EDSLIB_RUNTIME_SOURCES
@@ -115,7 +118,6 @@ set(EDSLIB_RUNTIME_SOURCES
     src/edslib_displaydb_base64.c
     src/edslib_displaydb_api.c
     src/edslib_binding_objects.c
-    src/edslib_msgid_api.c
 )
 
 # All files compiled here will have _EDSLIB_BUILD_ macro defined
@@ -145,7 +147,8 @@ target_include_directories(edslib_api INTERFACE inc)
 #
 add_library(edslib_minimal STATIC EXCLUDE_FROM_ALL
     ${EDSLIB_BASE_SOURCES})
-target_link_libraries(edslib_minimal edslib_api m)
+target_link_libraries(edslib_minimal PUBLIC edslib_api)
+target_link_libraries(edslib_minimal PRIVATE m)
 
 #
 # The "edslib_runtime" static library target will always be defined.
@@ -157,7 +160,7 @@ target_link_libraries(edslib_minimal edslib_api m)
 add_library(edslib_runtime_static STATIC EXCLUDE_FROM_ALL
     src/edslib_init.c
     ${EDSLIB_RUNTIME_SOURCES})
-target_link_libraries(edslib_runtime_static edslib_minimal)
+target_link_libraries(edslib_runtime_static PUBLIC edslib_minimal)
 
 #
 # The "edslib_runtime" PIC library target will always be defined.
@@ -187,13 +190,23 @@ if(EDSLIB_BUILD_MODULE)
     # general purpose processors using this dynamically-loaded version are not likely
     # to be memory-constrained, and probably need the full feature set as well).
     add_library(edslib MODULE src/edslib_init.c $<TARGET_OBJECTS:edslib_runtime_pic>)
+    target_link_libraries(edslib PUBLIC edslib_api)
 
     # By default install the "host" (all-inclusive) library into the lib directory
     install(TARGETS edslib DESTINATION lib)
 
+else(EDSLIB_BUILD_MODULE)
+
+    # If not building a separate module, this alias allows embedded use 
+    # cases to simply link with "edslib" and get the static lib
+    add_library(edslib ALIAS edslib_runtime_static)
+
 endif(EDSLIB_BUILD_MODULE)
 
-# UT stubs should only be necessary on a CFS target build
-if (ENABLE_UNIT_TESTS AND IS_CFS_ARCH_BUILD)
+# For unit tests, this requires the ut_assert dependency, and this 
+# is currently NOT available in the CFS mission build.  So this covers
+# the standalone build and the CFE arch build.
+if (ENABLE_UNIT_TESTS AND NOT IS_CFS_MISSION_BUILD)
   add_subdirectory(ut-stubs)
-endif (ENABLE_UNIT_TESTS AND IS_CFS_ARCH_BUILD)
+  add_subdirectory(unit-test)
+endif ()

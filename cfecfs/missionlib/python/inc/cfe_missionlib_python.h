@@ -34,8 +34,6 @@
 
 #include <Python.h>
 #include "cfe_missionlib_api.h"
-//#include <edslib_api_types.h>
-//#include <edslib_id.h>
 
 /**
  * Documentation string for this Python module
@@ -80,25 +78,10 @@
 PyObject* CFE_MissionLib_Python_CreateModule(void);
 
 /**
- * Creates a Python SoftwareBus Interface Database object from a C Database Object
- *
- * This would typically be used when the DB object is statically linked
- * into the C environment, and should be exposed to Python as a built-in.
- */
-PyObject *CFE_MissionLib_Python_Database_CreateFromStaticDB(const char *Name, const CFE_MissionLib_SoftwareBus_Interface_t *Intf);
-
-/**
  * Gets the C EDS Database object from a Python MissionLib Database Object
  *
  * This should be used when calling the MissionLib API from Python.
  */
 const CFE_MissionLib_SoftwareBus_Interface_t *CFE_MissionLib_Python_Database_GetDB(PyObject *obj);
-
-/**
- * Gets a topic entry from a Python CFE MissionLib Interface Database object using a C Msg_Id_t value
- *
- * This is a convenience wrapper that performs type checking and conversions
- */
-//PyTypeObject *CFE_MissionLib_Python_TopicEntry_GetFromMsgId(PyObject *dbobj, const EdsInterface_CFE_SB_SoftwareBus_PubSub_t Params);
 
 #endif /* TOOLS_EDS_CFECFS_MISSIONLIB_PYTHON_INC_CFE_MISSIONLIB_PYTHON_H_ */

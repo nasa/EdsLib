@@ -154,6 +154,7 @@ else ()
             src/cfe_missionlib_python_module.c
             $<TARGET_OBJECTS:cfe_missionlib_python_pic>
             $<TARGET_OBJECTS:edslib_runtime_pic>
+            $<TARGET_OBJECTS:cfe_missionlib_pic>
             $<TARGET_OBJECTS:cfe_missionlib_runtime_pic>)
 
         # Per Python naming conventions, the output file should be called only "CFE_MissionLib"

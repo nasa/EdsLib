@@ -30,6 +30,8 @@
     </InterfaceMapSet>
   </InstanceRule>
 
+  <InstanceRule name="TableService" pattern="singleton" component="CFE_TBL/TableService" />
+
   <!--
       Consider all "Application" components to always exist
       The "matchname" pattern attribute means a separate dedicated instance of each component
@@ -43,6 +45,7 @@
       <InterfaceMap type="CFE_SB/Telemetry" rule="Publisher">
         <ParameterValue name="InstanceNumber" method="static" value="1" />
       </InterfaceMap>
+      <InterfaceMap type="CFE_TBL/Table" rule="TableService" />
     </InterfaceMapSet>
   </InstanceRule>
 

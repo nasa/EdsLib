@@ -30,30 +30,6 @@
 
 /*
  * ----------------------------------------------------
- * Handler function for CFE_MissionLib_FindCommandByName()
- * ----------------------------------------------------
- */
-void UT_DefaultHandler_CFE_MissionLib_FindCommandByName(void *UserObj, UT_EntryKey_t FuncKey,
-                                                        const UT_StubContext_t *Context)
-{
-    CFE_MissionLib_Stub_DefaultZeroOutput(
-        FuncKey, Context, UT_Hook_GetArgValueByName(Context, "CommandIdBuffer", uint16_t *), sizeof(uint16_t));
-}
-
-/*
- * ----------------------------------------------------
- * Handler function for CFE_MissionLib_FindInterfaceByName()
- * ----------------------------------------------------
- */
-void UT_DefaultHandler_CFE_MissionLib_FindInterfaceByName(void *UserObj, UT_EntryKey_t FuncKey,
-                                                          const UT_StubContext_t *Context)
-{
-    CFE_MissionLib_Stub_DefaultZeroOutput(
-        FuncKey, Context, UT_Hook_GetArgValueByName(Context, "InterfaceIdBuffer", uint16_t *), sizeof(uint16_t));
-}
-
-/*
- * ----------------------------------------------------
  * Handler function for CFE_MissionLib_FindTopicByName()
  * ----------------------------------------------------
  */
@@ -62,56 +38,6 @@ void UT_DefaultHandler_CFE_MissionLib_FindTopicByName(void *UserObj, UT_EntryKey
 {
     CFE_MissionLib_Stub_DefaultZeroOutput(
         FuncKey, Context, UT_Hook_GetArgValueByName(Context, "TopicIdBuffer", uint16_t *), sizeof(uint16_t));
-}
-
-/*
- * ----------------------------------------------------
- * Handler function for CFE_MissionLib_GetArgumentType()
- * ----------------------------------------------------
- */
-void UT_DefaultHandler_CFE_MissionLib_GetArgumentType(void *UserObj, UT_EntryKey_t FuncKey,
-                                                      const UT_StubContext_t *Context)
-{
-    CFE_MissionLib_Stub_DefaultZeroOutput(FuncKey, Context, UT_Hook_GetArgValueByName(Context, "Id", EdsLib_Id_t *),
-                                          sizeof(EdsLib_Id_t));
-}
-
-/*
- * ----------------------------------------------------
- * Handler function for CFE_MissionLib_GetIndicationInfo()
- * ----------------------------------------------------
- */
-void UT_DefaultHandler_CFE_MissionLib_GetIndicationInfo(void *UserObj, UT_EntryKey_t FuncKey,
-                                                        const UT_StubContext_t *Context)
-{
-    CFE_MissionLib_Stub_DefaultZeroOutput(
-        FuncKey, Context, UT_Hook_GetArgValueByName(Context, "IndInfo", CFE_MissionLib_IndicationInfo_t *),
-        sizeof(CFE_MissionLib_IndicationInfo_t));
-}
-
-/*
- * ----------------------------------------------------
- * Handler function for CFE_MissionLib_GetInterfaceInfo()
- * ----------------------------------------------------
- */
-void UT_DefaultHandler_CFE_MissionLib_GetInterfaceInfo(void *UserObj, UT_EntryKey_t FuncKey,
-                                                       const UT_StubContext_t *Context)
-{
-    CFE_MissionLib_Stub_DefaultZeroOutput(
-        FuncKey, Context, UT_Hook_GetArgValueByName(Context, "IntfInfo", CFE_MissionLib_InterfaceInfo_t *),
-        sizeof(CFE_MissionLib_InterfaceInfo_t));
-}
-
-/*
- * ----------------------------------------------------
- * Handler function for CFE_MissionLib_GetSubcommandOffset()
- * ----------------------------------------------------
- */
-void UT_DefaultHandler_CFE_MissionLib_GetSubcommandOffset(void *UserObj, UT_EntryKey_t FuncKey,
-                                                          const UT_StubContext_t *Context)
-{
-    CFE_MissionLib_Stub_DefaultZeroOutput(FuncKey, Context, UT_Hook_GetArgValueByName(Context, "Offset", uint16_t *),
-                                          sizeof(uint16_t));
 }
 
 /*
@@ -129,24 +55,14 @@ void UT_DefaultHandler_CFE_MissionLib_GetTopicInfo(void *UserObj, UT_EntryKey_t 
 
 /*
  * ----------------------------------------------------
- * Handler function for CFE_MissionLib_GetCommandName()
+ * Handler function for CFE_MissionLib_FindTopicIdFromIntfId()
  * ----------------------------------------------------
  */
-void UT_DefaultHandler_CFE_MissionLib_GetCommandName(void *UserObj, UT_EntryKey_t FuncKey,
-                                                     const UT_StubContext_t *Context)
+void UT_DefaultHandler_CFE_MissionLib_FindTopicIdFromIntfId(void *UserObj, UT_EntryKey_t FuncKey,
+                                                            const UT_StubContext_t *Context)
 {
-    CFE_MissionLib_Stub_DefaultStringOutput(FuncKey, Context);
-}
-
-/*
- * ----------------------------------------------------
- * Handler function for CFE_MissionLib_GetInterfaceName()
- * ----------------------------------------------------
- */
-void UT_DefaultHandler_CFE_MissionLib_GetInterfaceName(void *UserObj, UT_EntryKey_t FuncKey,
-                                                       const UT_StubContext_t *Context)
-{
-    CFE_MissionLib_Stub_DefaultStringOutput(FuncKey, Context);
+    CFE_MissionLib_Stub_DefaultZeroOutput(
+        FuncKey, Context, UT_Hook_GetArgValueByName(Context, "TopicIdBuffer", uint16_t *), sizeof(uint16_t));
 }
 
 /*

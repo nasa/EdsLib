@@ -32,14 +32,14 @@ function(do_add_cfe_tables_impl TABLE_FQNAME)
     set(TABLE_GENSCRIPT "${CFS_TABLETOOL_SCRIPT_DIR}/generate_eds_table_rules.cmake")
 
     set(TABLE_CMD_OPTS
-      -DTEMPLATE_FILE="${TEMPLATE_FILE}"
-      -DAPP_NAME="${ADDTBL_ARG_APP_NAME}"
-      -DTARGET_NAME="${ADDTBL_ARG_TARGET_NAME}"
+      -DTEMPLATE_FILE=${TEMPLATE_FILE}
+      -DAPP_NAME=${ADDTBL_ARG_APP_NAME}
+      -DTARGET_NAME=${ADDTBL_ARG_TARGET_NAME}
     )
 
     if (ADDTBL_ARG_INSTALL_SUBDIR)
       list(APPEND TABLE_CMD_OPTS
-        -DINSTALL_SUBDIR="${ADDTBL_ARG_INSTALL_SUBDIR}"
+        -DINSTALL_SUBDIR=${ADDTBL_ARG_INSTALL_SUBDIR}
       )
     endif()
 
@@ -51,13 +51,13 @@ function(do_add_cfe_tables_impl TABLE_FQNAME)
             ${ADDTBL_ARG_APP_NAME}.table
         )
         list(APPEND TABLE_CMD_OPTS
-            -DINCLUDE_DIRS="$<TARGET_PROPERTY:${ADDTBL_ARG_APP_NAME}.table,INTERFACE_INCLUDE_DIRECTORIES>"
-            -DCOMPILE_DEFS="$<TARGET_PROPERTY:${ADDTBL_ARG_APP_NAME}.table,INTERFACE_COMPILE_DEFINITIONS>"
+            -DINCLUDE_DIRS=$<TARGET_PROPERTY:${ADDTBL_ARG_APP_NAME}.table,INTERFACE_INCLUDE_DIRECTORIES>
+            -DCOMPILE_DEFS=$<TARGET_PROPERTY:${ADDTBL_ARG_APP_NAME}.table,INTERFACE_COMPILE_DEFINITIONS>
         )
     else()
         list(APPEND TABLE_CMD_OPTS
-            -DINCLUDE_DIRS="$<TARGET_PROPERTY:core_api,INTERFACE_INCLUDE_DIRECTORIES>"
-            -DCOMPILE_DEFS="$<TARGET_PROPERTY:core_api,INTERFACE_COMPILE_DEFINITIONS>"
+            -DINCLUDE_DIRS=$<TARGET_PROPERTY:core_api,INTERFACE_INCLUDE_DIRECTORIES>
+            -DCOMPILE_DEFS=$<TARGET_PROPERTY:core_api,INTERFACE_COMPILE_DEFINITIONS>
         )
     endif()
 
@@ -111,17 +111,18 @@ function(do_add_cfe_tables_impl TABLE_FQNAME)
             OUTPUT "${TABLE_RULEFILE}"
             COMMAND ${CMAKE_COMMAND}
                 ${TABLE_CMD_OPTS}
-                -DOUTPUT_FILE="${TABLE_RULEFILE}"
-                -DTABLE_NAME="${TABLE_BASENAME}"
-                -DSOURCES="${TBL_SRC}"
-                -DOBJEXT="${CMAKE_C_OUTPUT_EXTENSION}"
-                -P "${TABLE_GENSCRIPT}"
+                "-DOUTPUT_FILE=${TABLE_RULEFILE}"
+                "-DTABLE_NAME=${TABLE_BASENAME}"
+                "-DSOURCES=${TBL_SRC}"
+                "-DOBJEXT=${CMAKE_C_OUTPUT_EXTENSION}"
+                -P ${TABLE_GENSCRIPT}
             WORKING_DIRECTORY
                 ${MISSION_BINARY_DIR}/tables
             DEPENDS
                 ${TABLE_TEMPLATE}
                 ${TABLE_GENSCRIPT}
                 ${TABLE_DEPENDENCIES}
+            VERBATIM
           )
 
           # Add a custom target to generate the config file

@@ -89,6 +89,7 @@ typedef struct
     seds_integer_t local_align_mask;        /**< Expected alignment requirements based on typical alignment rules */
     seds_bytepack_status_t packing_status;  /**< If the structure is packed efficiently, this allows for some added optimizations */
     seds_checksum_t checksum;               /**< Checksum/Hash value for the data type definition */
+    seds_boolean_t is_variable_size;        /**< Set true if the size is not a fixed quantity of bits */
 } seds_memreq_t;
 
 
@@ -105,4 +106,3 @@ void seds_memreq_register_globals(lua_State *lua);
 
 
 #endif  /* _SEDS_MEMREQ_H_ */
-

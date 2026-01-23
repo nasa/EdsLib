@@ -33,6 +33,13 @@
 
 #include "edslib_python_internal.h"
 
+/* Newer versions of Python provide a Py_SET_TYPE macro directly,
+ * but older versions need a small workaround */
+#if PY_VERSION_HEX < 0x030900A4 && !defined(Py_SET_TYPE)
+static inline void _Py_SET_TYPE(PyObject *ob, PyTypeObject *type)
+{ ob->ob_type = type; }
+#define Py_SET_TYPE(ob, type) _Py_SET_TYPE((PyObject*)(ob), type)
+#endif
 /*
  * A shared scratch buffer for packing objects...
  *

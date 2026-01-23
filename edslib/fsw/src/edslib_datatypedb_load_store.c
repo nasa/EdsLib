@@ -33,6 +33,12 @@
 #include "edslib_datatypedb.h"
 #include "edslib_internal.h"
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 void EdsLib_DataTypeLoad_Impl(EdsLib_GenericValueBuffer_t *ValueBuff, EdsLib_ConstPtr_t SrcPtr, const EdsLib_DataTypeDB_Entry_t *DictEntryPtr)
 {
     EdsLib_BasicType_t SubjectType;
@@ -117,6 +123,12 @@ void EdsLib_DataTypeLoad_Impl(EdsLib_GenericValueBuffer_t *ValueBuff, EdsLib_Con
     }
 }
 
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 void EdsLib_DataTypeConvert(EdsLib_GenericValueBuffer_t *ValueBuff, EdsLib_BasicType_t DesiredType)
 {
     switch(EDSLIB_TYPE_AND_SIZE(DesiredType, ValueBuff->ValueType))
@@ -151,6 +163,8 @@ void EdsLib_DataTypeConvert(EdsLib_GenericValueBuffer_t *ValueBuff, EdsLib_Basic
     case EDSLIB_TYPE_AND_SIZE(EDSLIB_BASICTYPE_BINARY, EDSLIB_BASICTYPE_BINARY):
     case EDSLIB_TYPE_AND_SIZE(EDSLIB_BASICTYPE_ARRAY, EDSLIB_BASICTYPE_ARRAY):
     case EDSLIB_TYPE_AND_SIZE(EDSLIB_BASICTYPE_CONTAINER, EDSLIB_BASICTYPE_CONTAINER):
+    case EDSLIB_TYPE_AND_SIZE(EDSLIB_BASICTYPE_COMPONENT, EDSLIB_BASICTYPE_COMPONENT):
+    case EDSLIB_TYPE_AND_SIZE(EDSLIB_BASICTYPE_GENERIC, EDSLIB_BASICTYPE_GENERIC):
         /* No changes to ValueBuff */
         break;
     default:
@@ -160,7 +174,12 @@ void EdsLib_DataTypeConvert(EdsLib_GenericValueBuffer_t *ValueBuff, EdsLib_Basic
     }
 }
 
-
+/*----------------------------------------------------------------
+ *
+ * EdsLib internal function
+ * See description in header file for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
 void EdsLib_DataTypeStore_Impl(EdsLib_Ptr_t DstPtr, EdsLib_GenericValueBuffer_t *ValueBuff, const EdsLib_DataTypeDB_Entry_t *DictEntryPtr)
 {
     EdsLib_BasicType_t SubjectType;
@@ -244,5 +263,4 @@ void EdsLib_DataTypeStore_Impl(EdsLib_Ptr_t DstPtr, EdsLib_GenericValueBuffer_t 
         break;
     }
 }
-
 

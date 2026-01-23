@@ -14,17 +14,19 @@
 ##################################################################
 
 # Module library
-add_library(${DEP} STATIC
-    fsw/src/cfe_msg_init.c
-    fsw/src/cfe_msg_integrity.c
-    fsw/src/cfe_msg_msgid.c
-    fsw/src/cfe_msg_commonhdr.c
-
-    fsw/src/cfe_msg_sechdr_cmd.c
-    fsw/src/cfe_msg_sechdr_tlm.c
-
-    fsw/src/cfe_msg_dispatcher.c
+add_library(edsmsg STATIC
+    fsw/src/edsmsg_init.c
+    fsw/src/edsmsg_integrity.c
+    fsw/src/edsmsg_msgid.c
+    fsw/src/edsmsg_commonhdr.c
+    fsw/src/edsmsg_sechdr_cmd.c
+    fsw/src/edsmsg_sechdr_tlm.c
+    fsw/src/edsmsg_dispatcher.c
 )
 
-target_include_directories(${DEP} PUBLIC fsw/inc)
-target_link_libraries(${DEP} PRIVATE core_private)
+target_include_directories(edsmsg PUBLIC fsw/inc)
+target_link_libraries(edsmsg PRIVATE core_private)
+
+if (ENABLE_UNIT_TESTS)
+    add_subdirectory(fsw/ut-stubs)
+endif()
