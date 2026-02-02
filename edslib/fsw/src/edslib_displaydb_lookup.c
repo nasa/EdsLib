@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_displaydb_lookup.c
  * \ingroup  fsw
@@ -48,20 +47,20 @@
  *-----------------------------------------------------------------*/
 EdsLib_DisplayDB_t EdsLib_DisplayDB_GetTopLevel(const EdsLib_DatabaseObject_t *GD, uint16_t AppIdx)
 {
-   /*
-    * As name tables are dependent on data tables, check that data table is also present
-    */
-   if (GD->DisplayDB_Table == NULL)
-   {
-      return NULL;
-   }
+    /*
+     * As name tables are dependent on data tables, check that data table is also present
+     */
+    if (GD->DisplayDB_Table == NULL)
+    {
+        return NULL;
+    }
 
-   if (AppIdx >= GD->AppTableSize)
-   {
-      return NULL;
-   }
+    if (AppIdx >= GD->AppTableSize)
+    {
+        return NULL;
+    }
 
-   return GD->DisplayDB_Table[AppIdx];
+    return GD->DisplayDB_Table[AppIdx];
 }
 
 /*----------------------------------------------------------------
@@ -70,34 +69,33 @@ EdsLib_DisplayDB_t EdsLib_DisplayDB_GetTopLevel(const EdsLib_DatabaseObject_t *G
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-const EdsLib_DisplayDB_Entry_t *EdsLib_DisplayDB_GetEntry(const EdsLib_DatabaseObject_t *GD, const EdsLib_DatabaseRef_t *RefObj)
+const EdsLib_DisplayDB_Entry_t *EdsLib_DisplayDB_GetEntry(const EdsLib_DatabaseObject_t *GD,
+                                                          const EdsLib_DatabaseRef_t    *RefObj)
 {
-   EdsLib_DisplayDB_t NameDict;
-   EdsLib_DataTypeDB_t DataDict;
+    EdsLib_DisplayDB_t  NameDict;
+    EdsLib_DataTypeDB_t DataDict;
 
-   if (RefObj == NULL || RefObj->Qualifier != EdsLib_DbRef_Qualifier_DATATYPE)
-   {
-       return NULL;
-   }
+    if (RefObj == NULL || RefObj->Qualifier != EdsLib_DbRef_Qualifier_DATATYPE)
+    {
+        return NULL;
+    }
 
-   DataDict = EdsLib_DataTypeDB_GetTopLevel(GD, RefObj->AppIndex);
-   if (DataDict == NULL)
-   {
-       return NULL;
-   }
+    DataDict = EdsLib_DataTypeDB_GetTopLevel(GD, RefObj->AppIndex);
+    if (DataDict == NULL)
+    {
+        return NULL;
+    }
 
-   NameDict = EdsLib_DisplayDB_GetTopLevel(GD, RefObj->AppIndex);
-   if (NameDict == NULL)
-   {
-       return NULL;
-   }
+    NameDict = EdsLib_DisplayDB_GetTopLevel(GD, RefObj->AppIndex);
+    if (NameDict == NULL)
+    {
+        return NULL;
+    }
 
-   if (NameDict->DisplayInfoTable == NULL ||
-           RefObj->SubIndex >= DataDict->DataTypeTableSize)
-   {
-       return NULL;
-   }
+    if (NameDict->DisplayInfoTable == NULL || RefObj->SubIndex >= DataDict->DataTypeTableSize)
+    {
+        return NULL;
+    }
 
-   return &NameDict->DisplayInfoTable[RefObj->SubIndex];
+    return &NameDict->DisplayInfoTable[RefObj->SubIndex];
 }
-

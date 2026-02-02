@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     remote_interface.c
  * \ingroup  testexecutive
@@ -54,17 +53,17 @@
 #include "cfe_missionlib_lua_softwarebus.h"
 
 /* Size to use for ring buffer - keep as power of 2 for masking */
-#define REMOTE_BUFFER_SIZE      0x8000
-#define REMOTE_BUFFER_MASK      0x7FFF
-#define SEND_BUFFER_SIZE        0x4000
+#define REMOTE_BUFFER_SIZE 0x8000
+#define REMOTE_BUFFER_MASK 0x7FFF
+#define SEND_BUFFER_SIZE   0x4000
 
 typedef struct
 {
-    pid_t pid;
-    int InFd;
-    int OutFd;
-    char SendBuffer[SEND_BUFFER_SIZE];
-    char RecvBuffer[REMOTE_BUFFER_SIZE];
+    pid_t  pid;
+    int    InFd;
+    int    OutFd;
+    char   SendBuffer[SEND_BUFFER_SIZE];
+    char   RecvBuffer[REMOTE_BUFFER_SIZE];
     size_t RecvBufWrPos;
     size_t RecvBufChkPos;
     size_t RecvBufRdPos;
@@ -96,68 +95,68 @@ static void TestIntf_Poll_Subprocess(TestIntf_RemoteConnection_t *Conn)
 
 static int TestIntf_Remote_ObjToString(lua_State *lua)
 {
-    switch(lua_type(lua, 1))
+    switch (lua_type(lua, 1))
     {
-    case LUA_TSTRING:
-    {
-        /*
-         * Note this string could contain embedded special chars (including nulls)
-         * as well as newlines and other binary data which will throw off the parser.
-         * To be safe all strings will be base64 encoded.  It will increase the length
-         * by 4/3 but it will be guaranteed to get through intact.
-         */
-        const uint8_t *Data = (const uint8_t *)lua_tostring(lua, 1);
-        uint32_t DataLength = 8 * lua_rawlen(lua, 1);
-        uint32_t EncodedLength = (DataLength + 32) / 6;
-        char *Block;
-        luaL_Buffer Buf;
+        case LUA_TSTRING:
+        {
+            /*
+             * Note this string could contain embedded special chars (including nulls)
+             * as well as newlines and other binary data which will throw off the parser.
+             * To be safe all strings will be base64 encoded.  It will increase the length
+             * by 4/3 but it will be guaranteed to get through intact.
+             */
+            const uint8_t *Data          = (const uint8_t *)lua_tostring(lua, 1);
+            uint32_t       DataLength    = 8 * lua_rawlen(lua, 1);
+            uint32_t       EncodedLength = (DataLength + 32) / 6;
+            char          *Block;
+            luaL_Buffer    Buf;
 
-        luaL_buffinit(lua, &Buf);
-        luaL_addstring(&Buf, "Base64(");
-        lua_pushinteger(lua, DataLength);
-        luaL_addvalue(&Buf);
-        luaL_addstring(&Buf, ",\"");
-        Block = luaL_prepbuffsize(&Buf, EncodedLength);
-        EdsLib_DisplayDB_Base64Encode(Block, EncodedLength, Data, DataLength);
-        luaL_addsize(&Buf, strlen(Block));
-        luaL_addstring(&Buf, "\")");
-        luaL_pushresult(&Buf);
-        break;
-    }
-    case LUA_TNUMBER:
-    case LUA_TBOOLEAN:
-    {
-        luaL_tolstring(lua, 1, NULL);
-        break;
-    }
-    case LUA_TTABLE:
-    {
-        lua_pushstring(lua, "{");
-        lua_pushnil(lua);
-        while(lua_next(lua, 1))
+            luaL_buffinit(lua, &Buf);
+            luaL_addstring(&Buf, "Base64(");
+            lua_pushinteger(lua, DataLength);
+            luaL_addvalue(&Buf);
+            luaL_addstring(&Buf, ",\"");
+            Block = luaL_prepbuffsize(&Buf, EncodedLength);
+            EdsLib_DisplayDB_Base64Encode(Block, EncodedLength, Data, DataLength);
+            luaL_addsize(&Buf, strlen(Block));
+            luaL_addstring(&Buf, "\")");
+            luaL_pushresult(&Buf);
+            break;
+        }
+        case LUA_TNUMBER:
+        case LUA_TBOOLEAN:
         {
-            if (lua_checkstack(lua, 3) && lua_type(lua, -2) == LUA_TSTRING)
+            luaL_tolstring(lua, 1, NULL);
+            break;
+        }
+        case LUA_TTABLE:
+        {
+            lua_pushstring(lua, "{");
+            lua_pushnil(lua);
+            while (lua_next(lua, 1))
             {
-                lua_pushcfunction(lua, TestIntf_Remote_ObjToString);
-                lua_insert(lua, -2);
-                lua_call(lua, 1, 1);
-                lua_pushstring(lua, "=");
-                lua_insert(lua, -2);
-                lua_pushstring(lua, ",");
-                lua_pushvalue(lua, -4);
+                if (lua_checkstack(lua, 3) && lua_type(lua, -2) == LUA_TSTRING)
+                {
+                    lua_pushcfunction(lua, TestIntf_Remote_ObjToString);
+                    lua_insert(lua, -2);
+                    lua_call(lua, 1, 1);
+                    lua_pushstring(lua, "=");
+                    lua_insert(lua, -2);
+                    lua_pushstring(lua, ",");
+                    lua_pushvalue(lua, -4);
+                }
             }
+            if (lua_gettop(lua) > 2)
+            {
+                lua_pop(lua, 1);
+            }
+            lua_pushstring(lua, "}");
+            lua_concat(lua, lua_gettop(lua) - 1);
+            break;
         }
-        if (lua_gettop(lua) > 2)
-        {
-            lua_pop(lua, 1);
-        }
-        lua_pushstring(lua, "}");
-        lua_concat(lua, lua_gettop(lua) - 1);
-        break;
-    }
-    default:
-        lua_pushstring(lua, "nil");
-        break;
+        default:
+            lua_pushstring(lua, "nil");
+            break;
     }
 
     return 1;
@@ -166,11 +165,11 @@ static int TestIntf_Remote_ObjToString(lua_State *lua)
 static int TestIntf_Remote_DoAction(lua_State *lua)
 {
     TestIntf_RemoteConnection_t *Conn = luaL_checkudata(lua, 1, "TestIntf_RemoteConnection");
-    char *BufPtr;
-    size_t BufLen;
-    ssize_t wrsz;
-    int narg;
-    int idx;
+    char                        *BufPtr;
+    size_t                       BufLen;
+    ssize_t                      wrsz;
+    int                          narg;
+    int                          idx;
 
     TestIntf_Poll_Subprocess(Conn);
     if (Conn->OutFd < 0)
@@ -178,8 +177,8 @@ static int TestIntf_Remote_DoAction(lua_State *lua)
         return luaL_error(lua, "Remote subprocess not running");
     }
 
-    BufLen = snprintf(Conn->SendBuffer, sizeof(Conn->SendBuffer), "DoAction(\"%s\"",
-            lua_tostring(lua, lua_upvalueindex(1)));
+    BufLen =
+        snprintf(Conn->SendBuffer, sizeof(Conn->SendBuffer), "DoAction(\"%s\"", lua_tostring(lua, lua_upvalueindex(1)));
 
     if (BufLen < sizeof(Conn->SendBuffer))
     {
@@ -203,8 +202,8 @@ static int TestIntf_Remote_DoAction(lua_State *lua)
          * for subsequent args we need to replace this with a comma separator.
          */
         *(BufPtr - 1) = ',';
-        BufLen = BufPtr - Conn->SendBuffer;
-        BufPtr = memccpy(BufPtr, lua_tostring(lua, -1), 0, sizeof(Conn->SendBuffer) - BufLen);
+        BufLen        = BufPtr - Conn->SendBuffer;
+        BufPtr        = memccpy(BufPtr, lua_tostring(lua, -1), 0, sizeof(Conn->SendBuffer) - BufLen);
     }
 
     if (BufPtr != NULL)
@@ -250,25 +249,24 @@ static int TestIntf_Remote_DoAction(lua_State *lua)
         return lua_error(lua);
     }
 
-
     return 0;
 }
 
-const char * TestIntf_Remote_RecvBuffReader(lua_State *lua, void *Data, size_t *ChunkSize)
+const char *TestIntf_Remote_RecvBuffReader(lua_State *lua, void *Data, size_t *ChunkSize)
 {
     TestIntf_RemoteConnection_t *Conn = Data;
-    const char *BufPtr;
+    const char                  *BufPtr;
 
     if (Conn->RecvBufRdPos == Conn->RecvBufChkPos)
     {
-        BufPtr = NULL;
+        BufPtr     = NULL;
         *ChunkSize = 0;
     }
     else
     {
         size_t StartPos = Conn->RecvBufRdPos & REMOTE_BUFFER_MASK;
-        size_t EndPos = Conn->RecvBufChkPos & REMOTE_BUFFER_MASK;
-        BufPtr = &Conn->RecvBuffer[StartPos];
+        size_t EndPos   = Conn->RecvBufChkPos & REMOTE_BUFFER_MASK;
+        BufPtr          = &Conn->RecvBuffer[StartPos];
         if (StartPos < EndPos)
         {
             /* The whole chunk may be returned */
@@ -288,7 +286,7 @@ static int TestIntf_Remote_ExecuteAction(lua_State *lua)
 {
     int tbl = lua_upvalueindex(1);
 
-    while(lua_gettop(lua) > 0)
+    while (lua_gettop(lua) > 0)
     {
         printf("%s(): set %s\n", __func__, lua_typename(lua, lua_type(lua, -1)));
         lua_rawseti(lua, tbl, 1 + lua_rawlen(lua, tbl));
@@ -299,14 +297,13 @@ static int TestIntf_Remote_ExecuteAction(lua_State *lua)
 
 static int TestIntf_Remote_Base64(lua_State *lua)
 {
-    uint32_t DataLengthBits = luaL_checkinteger(lua, 1);
-    const char *EncodedStr = luaL_checkstring(lua, 2);
-    uint32_t DataLengthBytes = (DataLengthBits + 7) / 8;
+    uint32_t    DataLengthBits  = luaL_checkinteger(lua, 1);
+    const char *EncodedStr      = luaL_checkstring(lua, 2);
+    uint32_t    DataLengthBytes = (DataLengthBits + 7) / 8;
     luaL_Buffer Buf;
 
     luaL_buffinit(lua, &Buf);
-    EdsLib_DisplayDB_Base64Decode((uint8_t*)luaL_prepbuffsize(&Buf, DataLengthBytes),
-            DataLengthBits, EncodedStr);
+    EdsLib_DisplayDB_Base64Decode((uint8_t *)luaL_prepbuffsize(&Buf, DataLengthBytes), DataLengthBits, EncodedStr);
     luaL_addsize(&Buf, DataLengthBytes);
     luaL_pushresult(&Buf);
     return 1;
@@ -314,11 +311,11 @@ static int TestIntf_Remote_Base64(lua_State *lua)
 
 static int TestIntf_Remote_Wait(lua_State *lua)
 {
-    TestIntf_RemoteConnection_t *Conn = luaL_checkudata(lua, 1, "TestIntf_RemoteConnection");
-    int32_t Timeout = luaL_optinteger(lua, 2, -1);
-    struct timeval stime;
-    struct timeval *stptr;
-    fd_set rdfd;
+    TestIntf_RemoteConnection_t *Conn    = luaL_checkudata(lua, 1, "TestIntf_RemoteConnection");
+    int32_t                      Timeout = luaL_optinteger(lua, 2, -1);
+    struct timeval               stime;
+    struct timeval              *stptr;
+    fd_set                       rdfd;
 
     printf("%s()\n", __func__);
 
@@ -331,9 +328,9 @@ static int TestIntf_Remote_Wait(lua_State *lua)
     {
         if (Timeout >= 0)
         {
-            stime.tv_sec = Timeout / 1000;
+            stime.tv_sec  = Timeout / 1000;
             stime.tv_usec = 1000 * (Timeout % 1000);
-            stptr = &stime;
+            stptr         = &stime;
         }
         else
         {
@@ -348,7 +345,7 @@ static int TestIntf_Remote_Wait(lua_State *lua)
             if (errno != EINTR)
             {
                 /* error reading the filehandle */
-                fprintf(stderr,"%s(): select: %s\n", __func__, strerror(errno));
+                fprintf(stderr, "%s(): select: %s\n", __func__, strerror(errno));
             }
             lua_pushboolean(lua, 0);
         }
@@ -364,12 +361,12 @@ static int TestIntf_Remote_Wait(lua_State *lua)
 static int TestIntf_Remote_Poll(lua_State *lua)
 {
     TestIntf_RemoteConnection_t *Conn = luaL_checkudata(lua, 1, "TestIntf_RemoteConnection");
-    int idx;
-    size_t TempPos;
-    ssize_t rdsz;
+    int                          idx;
+    size_t                       TempPos;
+    ssize_t                      rdsz;
 
     lua_settop(lua, 1);
-    lua_newtable(lua);                                     /* idx 2 - action table (initially empty) */
+    lua_newtable(lua); /* idx 2 - action table (initially empty) */
 
     /*
      * First poll that the subprocess is still alive.
@@ -406,7 +403,9 @@ static int TestIntf_Remote_Poll(lua_State *lua)
                         lua_pushvalue(lua, 2);
                         lua_pushcclosure(lua, TestIntf_Remote_ExecuteAction, 1);
                         lua_setfield(lua, -2, "DoAction");
-                        lua_rawseti(lua, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS); /* Set as temp/protected global environment */
+                        lua_rawseti(lua,
+                                    LUA_REGISTRYINDEX,
+                                    LUA_RIDX_GLOBALS); /* Set as temp/protected global environment */
                     }
 
                     if (lua_load(lua, TestIntf_Remote_RecvBuffReader, Conn, "in", "t") != LUA_OK)
@@ -415,7 +414,7 @@ static int TestIntf_Remote_Poll(lua_State *lua)
                         fprintf(stderr, "%s(): Load error: %s\n", __func__, luaL_tolstring(lua, -1, NULL));
                         lua_pop(lua, 2);
                     }
-                    else if (lua_pcall(lua, 0, 0, 0)  != LUA_OK)
+                    else if (lua_pcall(lua, 0, 0, 0) != LUA_OK)
                     {
                         fprintf(stderr, "%s(): %s\n", __func__, luaL_tolstring(lua, -1, NULL));
                         lua_pop(lua, 2);
@@ -462,7 +461,7 @@ static int TestIntf_Remote_Poll(lua_State *lua)
          * so that there is no risk of getting stuck here.
          */
         TempPos = Conn->RecvBufWrPos & REMOTE_BUFFER_MASK;
-        rdsz = sizeof(Conn->RecvBuffer) - TempPos;
+        rdsz    = sizeof(Conn->RecvBuffer) - TempPos;
         if (rdsz > (sizeof(Conn->RecvBuffer) / 4))
         {
             rdsz = (sizeof(Conn->RecvBuffer) / 4);
@@ -486,7 +485,7 @@ static int TestIntf_Remote_Poll(lua_State *lua)
         {
             if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK)
             {
-                fprintf(stderr,"%s(): read: %s\n", __func__, strerror(errno));
+                fprintf(stderr, "%s(): read: %s\n", __func__, strerror(errno));
             }
             break;
         }
@@ -510,9 +509,9 @@ static int TestIntf_Remote_Poll(lua_State *lua)
 static int TestIntf_Remote_Close(lua_State *lua)
 {
     TestIntf_RemoteConnection_t *Conn = luaL_checkudata(lua, 1, "TestIntf_RemoteConnection");
-    uint32_t Timeout;
-    struct pollfd pfd;
-    nfds_t nfds;
+    uint32_t                     Timeout;
+    struct pollfd                pfd;
+    nfds_t                       nfds;
 
     printf("%s(): START\n", __func__);
     /*
@@ -611,8 +610,8 @@ static int TestIntf_Remote_Close(lua_State *lua)
             memset(&pfd, 0, sizeof(pfd));
             if (Conn->InFd >= 0)
             {
-                nfds = 1;
-                pfd.fd = Conn->InFd;
+                nfds       = 1;
+                pfd.fd     = Conn->InFd;
                 pfd.events = POLLIN;
             }
             else
@@ -656,11 +655,11 @@ static int TestIntf_Remote_Close(lua_State *lua)
 
 int TestIntf_Remote_Create(lua_State *lua)
 {
-    const char *ShellCmd = luaL_checkstring(lua, 2);
+    const char                  *ShellCmd = luaL_checkstring(lua, 2);
     TestIntf_RemoteConnection_t *Conn;
-    int rdpipe[2];
-    int wrpipe[2];
-    int status;
+    int                          rdpipe[2];
+    int                          wrpipe[2];
+    int                          status;
 
     Conn = lua_newuserdata(lua, sizeof(TestIntf_RemoteConnection_t));
     if (luaL_newmetatable(lua, "TestIntf_RemoteConnection"))
@@ -698,9 +697,9 @@ int TestIntf_Remote_Create(lua_State *lua)
     lua_setmetatable(lua, -2);
 
     memset(Conn, 0, sizeof(*Conn));
-    Conn->InFd = -1;
+    Conn->InFd  = -1;
     Conn->OutFd = -1;
-    Conn->pid = -1;
+    Conn->pid   = -1;
 
     status = pipe(rdpipe);
     if (status < 0)
@@ -758,15 +757,14 @@ int TestIntf_Remote_Create(lua_State *lua)
      * This is the parent process
      * Set up the InStream / OutStream FILE objects from the file descriptors.
      */
-    close(rdpipe[1]);   /* write side */
-    close(wrpipe[0]);   /* read side */
-    Conn->InFd = rdpipe[0];
+    close(rdpipe[1]); /* write side */
+    close(wrpipe[0]); /* read side */
+    Conn->InFd  = rdpipe[0];
     Conn->OutFd = wrpipe[1];
 
-    status = fcntl(Conn->InFd, F_GETFL);
+    status  = fcntl(Conn->InFd, F_GETFL);
     status |= O_NONBLOCK;
     fcntl(Conn->InFd, F_SETFL, status);
 
     return 1;
 } /* end TestIntf_Remote_Create */
-

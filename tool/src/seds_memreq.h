@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     seds_memreq.h
  * \ingroup  tool
@@ -30,7 +29,6 @@
 
 #ifndef _SEDS_MEMREQ_H_
 #define _SEDS_MEMREQ_H_
-
 
 #include "seds_global.h"
 #include "seds_checksum.h"
@@ -74,7 +72,6 @@ typedef enum
     SEDS_BYTEPACK_STATUS_OTHER
 } seds_bytepack_status_t;
 
-
 /**
  * Structure that tracks the size of EDS-defined objects
  *
@@ -83,15 +80,15 @@ typedef enum
  */
 typedef struct
 {
-    seds_integer_t raw_bit_size;            /**< Total bits consumed by the object */
-    seds_integer_t endpoint_bytes;          /**< Byte offset of the end of the object */
-    seds_integer_t local_storage_bytes;     /**< Total byte storage required (may include padding) */
-    seds_integer_t local_align_mask;        /**< Expected alignment requirements based on typical alignment rules */
-    seds_bytepack_status_t packing_status;  /**< If the structure is packed efficiently, this allows for some added optimizations */
-    seds_checksum_t checksum;               /**< Checksum/Hash value for the data type definition */
-    seds_boolean_t is_variable_size;        /**< Set true if the size is not a fixed quantity of bits */
+    seds_integer_t raw_bit_size;        /**< Total bits consumed by the object */
+    seds_integer_t endpoint_bytes;      /**< Byte offset of the end of the object */
+    seds_integer_t local_storage_bytes; /**< Total byte storage required (may include padding) */
+    seds_integer_t local_align_mask;    /**< Expected alignment requirements based on typical alignment rules */
+    seds_bytepack_status_t
+        packing_status;       /**< If the structure is packed efficiently, this allows for some added optimizations */
+    seds_checksum_t checksum; /**< Checksum/Hash value for the data type definition */
+    seds_boolean_t  is_variable_size; /**< Set true if the size is not a fixed quantity of bits */
 } seds_memreq_t;
-
 
 /*******************************************************************************/
 /*                  Function documentation and prototypes                      */
@@ -104,5 +101,4 @@ typedef struct
  */
 void seds_memreq_register_globals(lua_State *lua);
 
-
-#endif  /* _SEDS_MEMREQ_H_ */
+#endif /* _SEDS_MEMREQ_H_ */

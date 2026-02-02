@@ -340,7 +340,7 @@ static bool seds_rangesegment_is_single_value(const seds_rangesegment_t *pseg)
 
 /**
  * Helper function: push a single value onto the stack corresponding to the segment
- * 
+ *
  * If the segment is a single value, this pushes that value in simple/primitive form.
  * For example a single number is pushed as a number.  If the value is not actually
  * a single, then this depends on the "force" option.
@@ -367,7 +367,7 @@ static void seds_rangesegment_push_as_single_value(lua_State *lua, int arg_idx, 
         /* push the midpoint as a number, this is reasonable for sorting purposes */
         lua_pushnumber(lua, (pseg->min.valx + pseg->max.valx) / 2);
     }
-    else 
+    else
     {
         /* not able to push as single value, push as nil */
         lua_pushnil(lua);
@@ -409,8 +409,8 @@ static void seds_rangesegment_set_empty(seds_rangesegment_t *pseg)
  */
 static bool seds_rangesegment_includes_rangesegment(seds_rangesegment_t *pseg1, seds_rangesegment_t *pseg2)
 {
-    return seds_rangesegment_compare_min(&pseg1->min, &pseg2->min) &&
-           seds_rangesegment_compare_max(&pseg1->max, &pseg2->max);
+    return seds_rangesegment_compare_min(&pseg1->min, &pseg2->min)
+           && seds_rangesegment_compare_max(&pseg1->max, &pseg2->max);
 }
 
 /**
@@ -533,7 +533,8 @@ static int seds_rangesegment_matches(lua_State *lua)
  * NOTE: this will produce an invalid result if the segments
  * do not overlap at all (this can be checked for via is_empty)
  */
-static void seds_rangesegment_compute_intersection(seds_rangesegment_t *pcombined, const seds_rangesegment_t *pseg1,
+static void seds_rangesegment_compute_intersection(seds_rangesegment_t       *pcombined,
+                                                   const seds_rangesegment_t *pseg1,
                                                    const seds_rangesegment_t *pseg2)
 {
     memset(pcombined, 0, sizeof(*pcombined));
@@ -567,7 +568,8 @@ static void seds_rangesegment_compute_intersection(seds_rangesegment_t *pcombine
  * NOTE: this covers any gap between them, the caller should confirm the segments
  * are overlapping in some way before bridging if the intent is to create a union
  */
-static void seds_rangesegment_compute_bridge(seds_rangesegment_t *pcombined, const seds_rangesegment_t *pseg1,
+static void seds_rangesegment_compute_bridge(seds_rangesegment_t       *pcombined,
+                                             const seds_rangesegment_t *pseg1,
                                              const seds_rangesegment_t *pseg2)
 {
     /* get the lesser of the two minimums */
@@ -696,16 +698,16 @@ static int seds_rangesegment_contiguous_with(lua_State *lua)
     pseg1 = seds_rangesegment_get_safe(lua, 1, &temp1);
     pseg2 = seds_rangesegment_get_safe(lua, 2, &temp2);
 
-    result = (seds_rangelimit_is_contiguous(&pseg1->max, &pseg2->min) ||
-              seds_rangelimit_is_contiguous(&pseg1->min, &pseg2->max));
+    result = (seds_rangelimit_is_contiguous(&pseg1->max, &pseg2->min)
+              || seds_rangelimit_is_contiguous(&pseg1->min, &pseg2->max));
 
     lua_pushboolean(lua, result);
 
     return 1;
 }
 
-static bool seds_rangesegment_compute_union(seds_rangesegment_t *pcombined, seds_rangesegment_t *pseg1,
-                                            seds_rangesegment_t *pseg2)
+static bool
+seds_rangesegment_compute_union(seds_rangesegment_t *pcombined, seds_rangesegment_t *pseg1, seds_rangesegment_t *pseg2)
 {
     seds_rangesegment_t temp;
     bool                result;
@@ -718,8 +720,8 @@ static bool seds_rangesegment_compute_union(seds_rangesegment_t *pcombined, seds
      * the segment(s) are immediately next to eachother even if they do not
      * overlap.  In this case the union is still representable as a single
      * segment. */
-    if (!seds_rangesegment_is_empty(&temp) || seds_rangelimit_is_contiguous(&pseg1->max, &pseg2->min) ||
-        seds_rangelimit_is_contiguous(&pseg1->min, &pseg2->max))
+    if (!seds_rangesegment_is_empty(&temp) || seds_rangelimit_is_contiguous(&pseg1->max, &pseg2->min)
+        || seds_rangelimit_is_contiguous(&pseg1->min, &pseg2->max))
     {
         seds_rangesegment_compute_bridge(pcombined, pseg1, pseg2);
         result = true;
@@ -977,7 +979,12 @@ static int seds_rangesegment_to_string(lua_State *lua)
         snprintf(maxbuf, sizeof(maxbuf), "+inf");
     }
 
-    snprintf(stringbuf, sizeof(stringbuf), "%c%s,%s%c", pseg->min.is_inclusive ? '[' : '(', minbuf, maxbuf,
+    snprintf(stringbuf,
+             sizeof(stringbuf),
+             "%c%s,%s%c",
+             pseg->min.is_inclusive ? '[' : '(',
+             minbuf,
+             maxbuf,
              pseg->max.is_inclusive ? ']' : ')');
 
     lua_pushstring(lua, stringbuf);
@@ -2351,7 +2358,7 @@ static int seds_rangemap_set_value(lua_State *lua)
 static int seds_rangemap_tostring(lua_State *lua)
 {
     luaL_Buffer buf;
-    bool is_empty;
+    bool        is_empty;
 
     is_empty = true;
     luaL_buffinit(lua, &buf);
@@ -2364,7 +2371,7 @@ static int seds_rangemap_tostring(lua_State *lua)
         {
             is_empty = false;
         }
-        else 
+        else
         {
             luaL_addstring(&buf, "+");
         }

@@ -136,7 +136,9 @@ void Test_EdsLib_DisplayDB_GetNameByIndex(void)
     UtAssert_STRINGBUF_EQ(Name, -1, "Cmd1Data1", -1);
 }
 
-static void Test_EntityCallback(void *Arg, const EdsLib_EntityDescriptor_t *ParamDesc) {}
+static void Test_EntityCallback(void *Arg, const EdsLib_EntityDescriptor_t *ParamDesc)
+{
+}
 
 void Test_EdsLib_DisplayDB_IterateBaseEntities(void)
 {
@@ -178,7 +180,7 @@ void Test_EdsLib_Generate_Hexdump(void)
     /* Test Case for:
      * void EdsLib_Generate_Hexdump(void *output, const uint8_t *DataPtr, uint16_t DisplayOffset, uint16_t Count);
      */
-    const uint8_t Data[] = {0x0A, 0x0B, 0x0C, 0x0D};
+    const uint8_t Data[] = { 0x0A, 0x0B, 0x0C, 0x0D };
     UtAssert_VOIDCALL(EdsLib_Generate_Hexdump(stdout, Data, 0, sizeof(Data)));
 }
 
@@ -238,7 +240,9 @@ void Test_EdsLib_DisplayDB_GetEnumValue(void)
     UtAssert_UINT32_EQ(ValueBuffer.Value.UnsignedInteger, 142);
 }
 
-static void Test_SymbolCallback(void *Arg, const char *SymbolName, int32_t SymbolValue) {}
+static void Test_SymbolCallback(void *Arg, const char *SymbolName, int32_t SymbolValue)
+{
+}
 
 void Test_EdsLib_DisplayDB_IterateEnumValues(void)
 {

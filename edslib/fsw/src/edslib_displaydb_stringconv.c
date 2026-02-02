@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_displaydb_stringconv.c
  * \ingroup  fsw
@@ -46,16 +45,19 @@
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-const EdsLib_SymbolTableEntry_t *EdsLib_DisplaySymbolLookup_GetByName(const EdsLib_SymbolTableEntry_t *SymbolDict, uint16_t TableSize, const char *String, uint32_t StringLen)
+const EdsLib_SymbolTableEntry_t *EdsLib_DisplaySymbolLookup_GetByName(const EdsLib_SymbolTableEntry_t *SymbolDict,
+                                                                      uint16_t                         TableSize,
+                                                                      const char                      *String,
+                                                                      uint32_t                         StringLen)
 {
     const EdsLib_SymbolTableEntry_t *Sym;
-    int Compare;
-    uint32_t LowIndex;
-    uint32_t HighIndex;
-    uint32_t SearchIndex;
+    int                              Compare;
+    uint32_t                         LowIndex;
+    uint32_t                         HighIndex;
+    uint32_t                         SearchIndex;
 
-    Sym = NULL;
-    LowIndex = 0;
+    Sym       = NULL;
+    LowIndex  = 0;
     HighIndex = TableSize;
     while (true)
     {
@@ -66,7 +68,7 @@ const EdsLib_SymbolTableEntry_t *EdsLib_DisplaySymbolLookup_GetByName(const EdsL
         }
 
         SearchIndex = (LowIndex + HighIndex) / 2;
-        Sym = &SymbolDict[SearchIndex];
+        Sym         = &SymbolDict[SearchIndex];
 
         Compare = strncmp(Sym->SymName, String, StringLen);
         if (Compare == 0 && Sym->SymName[StringLen] == 0)
@@ -93,7 +95,8 @@ const EdsLib_SymbolTableEntry_t *EdsLib_DisplaySymbolLookup_GetByName(const EdsL
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-const EdsLib_SymbolTableEntry_t *EdsLib_DisplaySymbolLookup_GetByValue(const EdsLib_SymbolTableEntry_t *SymbolDict, uint16_t TableSize, intmax_t Value)
+const EdsLib_SymbolTableEntry_t *
+EdsLib_DisplaySymbolLookup_GetByValue(const EdsLib_SymbolTableEntry_t *SymbolDict, uint16_t TableSize, intmax_t Value)
 {
     const EdsLib_SymbolTableEntry_t *Result;
 
@@ -121,21 +124,23 @@ const EdsLib_SymbolTableEntry_t *EdsLib_DisplaySymbolLookup_GetByValue(const Eds
     return Result;
 }
 
-
 /*----------------------------------------------------------------
  *
  * EdsLib internal function
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DisplayScalarConv_ToString_Impl(const EdsLib_DataTypeDB_Entry_t *DictEntryPtr, const EdsLib_DisplayDB_Entry_t *DisplayInfoPtr,
-        char *OutputBuffer, uint32_t BufferSize, const void *SourcePtr)
+int32_t EdsLib_DisplayScalarConv_ToString_Impl(const EdsLib_DataTypeDB_Entry_t *DictEntryPtr,
+                                               const EdsLib_DisplayDB_Entry_t  *DisplayInfoPtr,
+                                               char                            *OutputBuffer,
+                                               uint32_t                         BufferSize,
+                                               const void                      *SourcePtr)
 {
     EdsLib_GenericValueBuffer_t NumberBuffer;
-    EdsLib_ConstPtr_t Src;
-    int32_t Status;
+    EdsLib_ConstPtr_t           Src;
+    int32_t                     Status;
 
-    Src.Ptr = SourcePtr;
+    Src.Ptr                = SourcePtr;
     NumberBuffer.ValueType = EDSLIB_BASICTYPE_NONE;
 
     /*
@@ -148,22 +153,22 @@ int32_t EdsLib_DisplayScalarConv_ToString_Impl(const EdsLib_DataTypeDB_Entry_t *
     }
     else if (DictEntryPtr->BasicType == EDSLIB_BASICTYPE_CONTAINER)
     {
-        snprintf(OutputBuffer,BufferSize,"<ContainerDataType>");
+        snprintf(OutputBuffer, BufferSize, "<ContainerDataType>");
         Status = EDSLIB_SUCCESS;
     }
     else if (DictEntryPtr->BasicType == EDSLIB_BASICTYPE_COMPONENT)
     {
-        snprintf(OutputBuffer,BufferSize,"<Component>");
+        snprintf(OutputBuffer, BufferSize, "<Component>");
         Status = EDSLIB_SUCCESS;
     }
     else if (DictEntryPtr->BasicType == EDSLIB_BASICTYPE_ARRAY)
     {
-        snprintf(OutputBuffer,BufferSize,"<ArrayDataType>");
+        snprintf(OutputBuffer, BufferSize, "<ArrayDataType>");
         Status = EDSLIB_SUCCESS;
     }
     else if (DictEntryPtr->BasicType == EDSLIB_BASICTYPE_GENERIC)
     {
-        snprintf(OutputBuffer,BufferSize,"<GenericType>");
+        snprintf(OutputBuffer, BufferSize, "<GenericType>");
         Status = EDSLIB_SUCCESS;
     }
     else
@@ -179,103 +184,110 @@ int32_t EdsLib_DisplayScalarConv_ToString_Impl(const EdsLib_DataTypeDB_Entry_t *
         {
             switch (DisplayInfoPtr->DisplayHint)
             {
-            case EDSLIB_DISPLAYHINT_STRING:
-            {
-                uint16_t SrcSize = DictEntryPtr->SizeInfo.Bytes;
-
-                /*
-                 * binary blob contains character string data.
-                 * copy only PRINTABLE chars to output buffer,
-                 * as this is intended for UI display
-                 */
-                while (SrcSize > 0 && BufferSize > 1 && Src.u->u8 != 0)
+                case EDSLIB_DISPLAYHINT_STRING:
                 {
-                    if (isprint((int)Src.u->u8))
+                    uint16_t SrcSize = DictEntryPtr->SizeInfo.Bytes;
+
+                    /*
+                     * binary blob contains character string data.
+                     * copy only PRINTABLE chars to output buffer,
+                     * as this is intended for UI display
+                     */
+                    while (SrcSize > 0 && BufferSize > 1 && Src.u->u8 != 0)
                     {
-                        *OutputBuffer = Src.u->u8;
+                        if (isprint((int)Src.u->u8))
+                        {
+                            *OutputBuffer = Src.u->u8;
+                        }
+                        else
+                        {
+                            *OutputBuffer = '.';
+                        }
+
+                        ++OutputBuffer;
+                        --BufferSize;
+                        ++Src.Addr;
+                        --SrcSize;
+                    }
+                    if (BufferSize > 0)
+                    {
+                        *OutputBuffer = 0;
+                    }
+                    Status = EDSLIB_SUCCESS;
+                    break;
+                }
+                case EDSLIB_DISPLAYHINT_BASE64:
+                {
+                    /*
+                     * binary blob contains binary data, which cannot be
+                     * put into a normal string.  Use Base64 encoding.
+                     */
+                    EdsLib_DisplayDB_Base64Encode(OutputBuffer, BufferSize, Src.Addr, DictEntryPtr->SizeInfo.Bits);
+                    Status = EDSLIB_SUCCESS;
+                    break;
+                }
+                case EDSLIB_DISPLAYHINT_ENUM_SYMTABLE:
+                {
+                    const EdsLib_SymbolTableEntry_t *Symbol;
+
+                    if (NumberBuffer.ValueType == EDSLIB_BASICTYPE_SIGNED_INT)
+                    {
+                        Symbol = EdsLib_DisplaySymbolLookup_GetByValue(DisplayInfoPtr->DisplayArg.SymTable,
+                                                                       DisplayInfoPtr->DisplayArgTableSize,
+                                                                       NumberBuffer.Value.SignedInteger);
+                    }
+                    else if (NumberBuffer.ValueType == EDSLIB_BASICTYPE_UNSIGNED_INT)
+                    {
+                        Symbol = EdsLib_DisplaySymbolLookup_GetByValue(DisplayInfoPtr->DisplayArg.SymTable,
+                                                                       DisplayInfoPtr->DisplayArgTableSize,
+                                                                       NumberBuffer.Value.UnsignedInteger);
                     }
                     else
                     {
-                        *OutputBuffer = '.';
+                        Symbol = NULL;
                     }
 
-                    ++OutputBuffer;
-                    --BufferSize;
-                    ++Src.Addr;
-                    --SrcSize;
+                    if (Symbol != NULL)
+                    {
+                        snprintf(OutputBuffer, BufferSize, "%s", Symbol->SymName);
+                        Status = EDSLIB_SUCCESS;
+                    }
+                    break;
                 }
-                if (BufferSize > 0)
+                case EDSLIB_DISPLAYHINT_ADDRESS:
                 {
-                    *OutputBuffer = 0;
+                    /* memory addresses are always hex values */
+                    if (NumberBuffer.ValueType == EDSLIB_BASICTYPE_SIGNED_INT
+                        || NumberBuffer.ValueType == EDSLIB_BASICTYPE_UNSIGNED_INT)
+                    {
+                        snprintf(OutputBuffer,
+                                 BufferSize,
+                                 "0x%0*llx",
+                                 (int)(DictEntryPtr->SizeInfo.Bytes * 2),
+                                 NumberBuffer.Value.UnsignedInteger);
+                        Status = EDSLIB_SUCCESS;
+                    }
+                    break;
                 }
-                Status = EDSLIB_SUCCESS;
-                break;
-            }
-            case EDSLIB_DISPLAYHINT_BASE64:
-            {
-                /*
-                 * binary blob contains binary data, which cannot be
-                 * put into a normal string.  Use Base64 encoding.
-                 */
-                EdsLib_DisplayDB_Base64Encode(OutputBuffer, BufferSize, Src.Addr, DictEntryPtr->SizeInfo.Bits);
-                Status = EDSLIB_SUCCESS;
-                break;
-            }
-            case EDSLIB_DISPLAYHINT_ENUM_SYMTABLE:
-            {
-                const EdsLib_SymbolTableEntry_t *Symbol;
-
-                if (NumberBuffer.ValueType == EDSLIB_BASICTYPE_SIGNED_INT)
+                case EDSLIB_DISPLAYHINT_BOOLEAN:
                 {
-                    Symbol = EdsLib_DisplaySymbolLookup_GetByValue(DisplayInfoPtr->DisplayArg.SymTable,
-                            DisplayInfoPtr->DisplayArgTableSize, NumberBuffer.Value.SignedInteger);
-                }
-                else if (NumberBuffer.ValueType == EDSLIB_BASICTYPE_UNSIGNED_INT)
-                {
-                    Symbol = EdsLib_DisplaySymbolLookup_GetByValue(DisplayInfoPtr->DisplayArg.SymTable,
-                            DisplayInfoPtr->DisplayArgTableSize, NumberBuffer.Value.UnsignedInteger);
-                }
-                else
-                {
-                    Symbol = NULL;
-                }
-
-                if (Symbol != NULL)
-                {
-                    snprintf(OutputBuffer, BufferSize, "%s", Symbol->SymName);
+                    /* memory addresses are always hex values */
+                    if ((NumberBuffer.ValueType == EDSLIB_BASICTYPE_UNSIGNED_INT
+                         && NumberBuffer.Value.UnsignedInteger != 0)
+                        || (NumberBuffer.ValueType == EDSLIB_BASICTYPE_SIGNED_INT
+                            && NumberBuffer.Value.SignedInteger != 0))
+                    {
+                        snprintf(OutputBuffer, BufferSize, "true");
+                    }
+                    else
+                    {
+                        snprintf(OutputBuffer, BufferSize, "false");
+                    }
                     Status = EDSLIB_SUCCESS;
+                    break;
                 }
-                break;
-            }
-            case EDSLIB_DISPLAYHINT_ADDRESS:
-            {
-                /* memory addresses are always hex values */
-                if (NumberBuffer.ValueType == EDSLIB_BASICTYPE_SIGNED_INT ||
-                        NumberBuffer.ValueType == EDSLIB_BASICTYPE_UNSIGNED_INT)
-                {
-                    snprintf(OutputBuffer,BufferSize,"0x%0*llx", (int)(DictEntryPtr->SizeInfo.Bytes * 2),
-                            NumberBuffer.Value.UnsignedInteger);
-                    Status = EDSLIB_SUCCESS;
-                }
-                break;
-            }
-            case EDSLIB_DISPLAYHINT_BOOLEAN:
-            {
-                /* memory addresses are always hex values */
-                if ((NumberBuffer.ValueType == EDSLIB_BASICTYPE_UNSIGNED_INT && NumberBuffer.Value.UnsignedInteger != 0) ||
-                        (NumberBuffer.ValueType == EDSLIB_BASICTYPE_SIGNED_INT && NumberBuffer.Value.SignedInteger != 0))
-                {
-                    snprintf(OutputBuffer, BufferSize, "true");
-                }
-                else
-                {
-                    snprintf(OutputBuffer, BufferSize, "false");
-                }
-                Status = EDSLIB_SUCCESS;
-                break;
-            }
-            default:
-                break;
+                default:
+                    break;
             }
         }
     }
@@ -285,27 +297,27 @@ int32_t EdsLib_DisplayScalarConv_ToString_Impl(const EdsLib_DataTypeDB_Entry_t *
      */
     if (Status != EDSLIB_SUCCESS)
     {
-        switch(NumberBuffer.ValueType)
+        switch (NumberBuffer.ValueType)
         {
-        case EDSLIB_BASICTYPE_UNSIGNED_INT:
-            snprintf(OutputBuffer,BufferSize,"%llu",NumberBuffer.Value.UnsignedInteger);
-            Status = EDSLIB_SUCCESS;
-            break;
-        case EDSLIB_BASICTYPE_SIGNED_INT:
-            snprintf(OutputBuffer,BufferSize,"%lld",NumberBuffer.Value.SignedInteger);
-            Status = EDSLIB_SUCCESS;
-            break;
-        case EDSLIB_BASICTYPE_FLOAT:
-            snprintf(OutputBuffer,BufferSize,"%.4Lg",NumberBuffer.Value.FloatingPoint);
-            Status = EDSLIB_SUCCESS;
-            break;
-        default:
-            /*
-             * catch-all case, to ensure something is written to the buffer.
-             * If this is seen in the output it likely means a DB is missing.
-             */
-            snprintf(OutputBuffer,BufferSize,"<\?\?\?>");
-            break;
+            case EDSLIB_BASICTYPE_UNSIGNED_INT:
+                snprintf(OutputBuffer, BufferSize, "%llu", NumberBuffer.Value.UnsignedInteger);
+                Status = EDSLIB_SUCCESS;
+                break;
+            case EDSLIB_BASICTYPE_SIGNED_INT:
+                snprintf(OutputBuffer, BufferSize, "%lld", NumberBuffer.Value.SignedInteger);
+                Status = EDSLIB_SUCCESS;
+                break;
+            case EDSLIB_BASICTYPE_FLOAT:
+                snprintf(OutputBuffer, BufferSize, "%.4Lg", NumberBuffer.Value.FloatingPoint);
+                Status = EDSLIB_SUCCESS;
+                break;
+            default:
+                /*
+                 * catch-all case, to ensure something is written to the buffer.
+                 * If this is seen in the output it likely means a DB is missing.
+                 */
+                snprintf(OutputBuffer, BufferSize, "<\?\?\?>");
+                break;
         }
     }
 
@@ -318,14 +330,16 @@ int32_t EdsLib_DisplayScalarConv_ToString_Impl(const EdsLib_DataTypeDB_Entry_t *
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DisplayScalarConv_FromString_Impl(const EdsLib_DataTypeDB_Entry_t *DictEntryPtr, const EdsLib_DisplayDB_Entry_t *DisplayInfoPtr,
-        void *DestPtr, const char *SrcString)
+int32_t EdsLib_DisplayScalarConv_FromString_Impl(const EdsLib_DataTypeDB_Entry_t *DictEntryPtr,
+                                                 const EdsLib_DisplayDB_Entry_t  *DisplayInfoPtr,
+                                                 void                            *DestPtr,
+                                                 const char                      *SrcString)
 {
     EdsLib_GenericValueBuffer_t NumberBuffer;
-    int32_t Status;
-    EdsLib_Ptr_t Dst;
+    int32_t                     Status;
+    EdsLib_Ptr_t                Dst;
 
-    Dst.Ptr = DestPtr;
+    Dst.Ptr                = DestPtr;
     NumberBuffer.ValueType = EDSLIB_BASICTYPE_NONE;
 
     if (DictEntryPtr == NULL)
@@ -348,151 +362,152 @@ int32_t EdsLib_DisplayScalarConv_FromString_Impl(const EdsLib_DataTypeDB_Entry_t
         {
             switch (DisplayInfoPtr->DisplayHint)
             {
-            case EDSLIB_DISPLAYHINT_STRING:
-            {
-                uint16_t DstSize = DictEntryPtr->SizeInfo.Bytes;
-                while (DstSize > 0)
+                case EDSLIB_DISPLAYHINT_STRING:
                 {
-                    Dst.u->u8 = *SrcString;
-                    if (*SrcString != 0)
+                    uint16_t DstSize = DictEntryPtr->SizeInfo.Bytes;
+                    while (DstSize > 0)
                     {
-                        ++SrcString;
+                        Dst.u->u8 = *SrcString;
+                        if (*SrcString != 0)
+                        {
+                            ++SrcString;
+                        }
+                        ++Dst.Addr;
+                        --DstSize;
                     }
-                    ++Dst.Addr;
-                    --DstSize;
+                    Status = EDSLIB_SUCCESS;
+                    break;
                 }
-                Status = EDSLIB_SUCCESS;
-                break;
-            }
-            case EDSLIB_DISPLAYHINT_BASE64:
-            {
-                /*
-                 * binary blob contains binary data, which cannot be
-                 * put into a normal string.  Use Base64 encoding.
-                 */
-                EdsLib_DisplayDB_Base64Decode(Dst.Addr, DictEntryPtr->SizeInfo.Bits, SrcString);
-                Status = EDSLIB_SUCCESS;
-                break;
-            }
-            case EDSLIB_DISPLAYHINT_ENUM_SYMTABLE:
-            {
-                const EdsLib_SymbolTableEntry_t *Symbol;
+                case EDSLIB_DISPLAYHINT_BASE64:
+                {
+                    /*
+                     * binary blob contains binary data, which cannot be
+                     * put into a normal string.  Use Base64 encoding.
+                     */
+                    EdsLib_DisplayDB_Base64Decode(Dst.Addr, DictEntryPtr->SizeInfo.Bits, SrcString);
+                    Status = EDSLIB_SUCCESS;
+                    break;
+                }
+                case EDSLIB_DISPLAYHINT_ENUM_SYMTABLE:
+                {
+                    const EdsLib_SymbolTableEntry_t *Symbol;
 
-                Symbol = EdsLib_DisplaySymbolLookup_GetByName(DisplayInfoPtr->DisplayArg.SymTable,
-                        DisplayInfoPtr->DisplayArgTableSize, SrcString, strlen(SrcString));
+                    Symbol = EdsLib_DisplaySymbolLookup_GetByName(DisplayInfoPtr->DisplayArg.SymTable,
+                                                                  DisplayInfoPtr->DisplayArgTableSize,
+                                                                  SrcString,
+                                                                  strlen(SrcString));
 
-                if (Symbol != NULL)
-                {
-                    NumberBuffer.Value.SignedInteger = Symbol->SymValue;
-                    NumberBuffer.ValueType = EDSLIB_BASICTYPE_SIGNED_INT;
+                    if (Symbol != NULL)
+                    {
+                        NumberBuffer.Value.SignedInteger = Symbol->SymValue;
+                        NumberBuffer.ValueType           = EDSLIB_BASICTYPE_SIGNED_INT;
+                    }
+                    break;
                 }
-                break;
-            }
-            case EDSLIB_DISPLAYHINT_ADDRESS:
-            {
-                /* memory addresses are always hex values */
-                const char *EndPtr;
-                NumberBuffer.Value.UnsignedInteger = strtoull(SrcString, (char**)&EndPtr, 16);
-                if (EndPtr != SrcString && *EndPtr == 0)
+                case EDSLIB_DISPLAYHINT_ADDRESS:
                 {
-                    NumberBuffer.ValueType = EDSLIB_BASICTYPE_UNSIGNED_INT;
+                    /* memory addresses are always hex values */
+                    const char *EndPtr;
+                    NumberBuffer.Value.UnsignedInteger = strtoull(SrcString, (char **)&EndPtr, 16);
+                    if (EndPtr != SrcString && *EndPtr == 0)
+                    {
+                        NumberBuffer.ValueType = EDSLIB_BASICTYPE_UNSIGNED_INT;
+                    }
+                    break;
                 }
-                break;
-            }
-            case EDSLIB_DISPLAYHINT_BOOLEAN:
-            {
-                /* typically TRUE/FALSE, also accept YES/NO or 0/1 */
-                const char *EndPtr = SrcString;
-                if (strcasecmp(SrcString, "true") == 0)
+                case EDSLIB_DISPLAYHINT_BOOLEAN:
                 {
-                    EndPtr += 4;
-                    NumberBuffer.Value.UnsignedInteger = 1;
+                    /* typically TRUE/FALSE, also accept YES/NO or 0/1 */
+                    const char *EndPtr = SrcString;
+                    if (strcasecmp(SrcString, "true") == 0)
+                    {
+                        EndPtr                             += 4;
+                        NumberBuffer.Value.UnsignedInteger  = 1;
+                    }
+                    else if (strcasecmp(SrcString, "false") == 0)
+                    {
+                        EndPtr                             += 4;
+                        NumberBuffer.Value.UnsignedInteger  = 0;
+                    }
+                    else if (strcasecmp(SrcString, "yes") == 0)
+                    {
+                        EndPtr                             += 3;
+                        NumberBuffer.Value.UnsignedInteger  = 1;
+                    }
+                    else if (strcasecmp(SrcString, "no") == 0)
+                    {
+                        EndPtr                             += 2;
+                        NumberBuffer.Value.UnsignedInteger  = 0;
+                    }
+                    else
+                    {
+                        NumberBuffer.Value.UnsignedInteger = strtol(SrcString, (char **)&EndPtr, 0);
+                    }
+                    if (EndPtr != SrcString && *EndPtr == 0)
+                    {
+                        NumberBuffer.ValueType = EDSLIB_BASICTYPE_UNSIGNED_INT;
+                    }
+                    break;
                 }
-                else if (strcasecmp(SrcString, "false") == 0)
-                {
-                    EndPtr += 4;
-                    NumberBuffer.Value.UnsignedInteger = 0;
-                }
-                else if (strcasecmp(SrcString, "yes") == 0)
-                {
-                    EndPtr += 3;
-                    NumberBuffer.Value.UnsignedInteger = 1;
-                }
-                else if (strcasecmp(SrcString, "no") == 0)
-                {
-                    EndPtr += 2;
-                    NumberBuffer.Value.UnsignedInteger = 0;
-                }
-                else
-                {
-                    NumberBuffer.Value.UnsignedInteger = strtol(SrcString, (char**)&EndPtr, 0);
-                }
-                if (EndPtr != SrcString && *EndPtr == 0)
-                {
-                    NumberBuffer.ValueType = EDSLIB_BASICTYPE_UNSIGNED_INT;
-                }
-                break;
-            }
-            default:
-                break;
+                default:
+                    break;
             }
         }
 
-        if (Status != EDSLIB_SUCCESS &&
-                NumberBuffer.ValueType == EDSLIB_BASICTYPE_NONE)
+        if (Status != EDSLIB_SUCCESS && NumberBuffer.ValueType == EDSLIB_BASICTYPE_NONE)
         {
             const char *EndPtr;
-            switch(DictEntryPtr->BasicType)
+            switch (DictEntryPtr->BasicType)
             {
-            case EDSLIB_BASICTYPE_UNSIGNED_INT:
-            case EDSLIB_BASICTYPE_SIGNED_INT:
-            case EDSLIB_BASICTYPE_FLOAT:
-            {
-                /*
-                 * NOTE: conversion is done into the system long double type --
-                 * This is because we do not have control over how the input data is
-                 * formatted.  For instance, if the target type is a signed integer and
-                 * supplied string is "-5.0" or "1e3", these should still work.
-                 * Using a long double here should provide for a 64-bit mantissa, so
-                 * even 64 bit integer values can be stored without precision loss
-                 */
-                NumberBuffer.Value.FloatingPoint = strtold(SrcString, (char**)&EndPtr);
-                if (EndPtr != SrcString && *EndPtr == 0)
+                case EDSLIB_BASICTYPE_UNSIGNED_INT:
+                case EDSLIB_BASICTYPE_SIGNED_INT:
+                case EDSLIB_BASICTYPE_FLOAT:
                 {
-                    NumberBuffer.ValueType = EDSLIB_BASICTYPE_FLOAT;
-                }
-                break;
-            }
-            case EDSLIB_BASICTYPE_BINARY:
-            {
-                uint16_t DstSize = DictEntryPtr->SizeInfo.Bytes;
-                size_t SrcSize = strlen(SrcString);
-                Status = EDSLIB_SUCCESS;
-
-                while (DstSize > 0 && SrcSize >= 2)
-                {
-                    NumberBuffer.Value.StringData[0] = *SrcString;
-                    ++SrcString;
-                    NumberBuffer.Value.StringData[1] = *SrcString;
-                    ++SrcString;
-                    NumberBuffer.Value.StringData[2] = 0;
-                    SrcSize -= 2;
-
-                    Dst.u->u8 = strtoul(NumberBuffer.Value.StringData, (char **)&EndPtr, 16);
-                    if (*EndPtr != 0)
+                    /*
+                     * NOTE: conversion is done into the system long double type --
+                     * This is because we do not have control over how the input data is
+                     * formatted.  For instance, if the target type is a signed integer and
+                     * supplied string is "-5.0" or "1e3", these should still work.
+                     * Using a long double here should provide for a 64-bit mantissa, so
+                     * even 64 bit integer values can be stored without precision loss
+                     */
+                    NumberBuffer.Value.FloatingPoint = strtold(SrcString, (char **)&EndPtr);
+                    if (EndPtr != SrcString && *EndPtr == 0)
                     {
-                        Status = EDSLIB_FAILURE;
-                        break;
+                        NumberBuffer.ValueType = EDSLIB_BASICTYPE_FLOAT;
                     }
-                    ++Dst.Addr;
-                    --DstSize;
+                    break;
                 }
-                break;
-            }
-            default:
-            {
-                break;
-            }
+                case EDSLIB_BASICTYPE_BINARY:
+                {
+                    uint16_t DstSize = DictEntryPtr->SizeInfo.Bytes;
+                    size_t   SrcSize = strlen(SrcString);
+                    Status           = EDSLIB_SUCCESS;
+
+                    while (DstSize > 0 && SrcSize >= 2)
+                    {
+                        NumberBuffer.Value.StringData[0] = *SrcString;
+                        ++SrcString;
+                        NumberBuffer.Value.StringData[1] = *SrcString;
+                        ++SrcString;
+                        NumberBuffer.Value.StringData[2]  = 0;
+                        SrcSize                          -= 2;
+
+                        Dst.u->u8 = strtoul(NumberBuffer.Value.StringData, (char **)&EndPtr, 16);
+                        if (*EndPtr != 0)
+                        {
+                            Status = EDSLIB_FAILURE;
+                            break;
+                        }
+                        ++Dst.Addr;
+                        --DstSize;
+                    }
+                    break;
+                }
+                default:
+                {
+                    break;
+                }
             }
         }
 

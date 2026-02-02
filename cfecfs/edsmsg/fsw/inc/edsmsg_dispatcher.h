@@ -74,7 +74,9 @@
  * \param DispatchTable Pointer to the dispatch table
  * \returns If successfully dispatched, returns code from handler function, otherwise an error code.
  */
-CFE_Status_t CFE_EDSMSG_Dispatch(EdsLib_Id_t DeclIntfId, EdsLib_Id_t ComponentId, const CFE_SB_Buffer_t *Buffer,
-                                 const void *DispatchTable);
+CFE_Status_t CFE_EDSMSG_Dispatch(EdsLib_Id_t            DeclIntfId,
+                                 EdsLib_Id_t            ComponentId,
+                                 const CFE_SB_Buffer_t *Buffer,
+                                 const void            *DispatchTable);
 
 #endif /* edsmsg_dispatcher_H */

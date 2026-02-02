@@ -18,13 +18,12 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_python_conversions.c
  * \ingroup  python
  * \author   joseph.p.hickey@nasa.gov
  *
-**   Implement conversion routines for EDS/Python objects
+ **   Implement conversion routines for EDS/Python objects
  */
 
 #include "edslib_python_internal.h"
@@ -37,7 +36,7 @@
 typedef struct
 {
     EdsLib_Binding_DescriptorObject_t desc;
-    PyObject *pyobj;
+    PyObject                         *pyobj;
 } EdsLib_Python_ObjectConversionState_t;
 
 /*
@@ -49,10 +48,11 @@ typedef struct
 static void EdsLib_Python_ConvertEdsObjectToPythonImpl(EdsLib_Python_ObjectConversionState_t *ConvPair);
 static void EdsLib_Python_ConvertPythonToEdsObjectImpl(EdsLib_Python_ObjectConversionState_t *ConvPair);
 
-static int EdsLib_Python_InitBindingDescriptorObject(EdsLib_Python_ObjectBase_t *self, EdsLib_Binding_DescriptorObject_t *desc)
+static int EdsLib_Python_InitBindingDescriptorObject(EdsLib_Python_ObjectBase_t        *self,
+                                                     EdsLib_Binding_DescriptorObject_t *desc)
 {
     EdsLib_Python_DatabaseEntry_t *dbent;
-    int32_t Status;
+    int32_t                        Status;
 
     /*
      * EdsLib Binding descriptor objects can only be generated from
@@ -76,10 +76,10 @@ static int EdsLib_Python_InitBindingDescriptorObject(EdsLib_Python_ObjectBase_t 
         return 0;
     }
 
-    desc->GD = dbent->EdsDb->GD;
-    desc->EdsId = dbent->EdsId;
-    desc->Offset = self->Offset;
-    desc->Length = self->TotalLength;
+    desc->GD        = dbent->EdsDb->GD;
+    desc->EdsId     = dbent->EdsId;
+    desc->Offset    = self->Offset;
+    desc->Length    = self->TotalLength;
     desc->BufferPtr = NULL;
 
     return 1;
@@ -88,7 +88,7 @@ static int EdsLib_Python_InitBindingDescriptorObject(EdsLib_Python_ObjectBase_t 
 static void EdsLib_Python_ConvertPyMembers_Callback(void *Arg, const EdsLib_EntityDescriptor_t *ParamDesc)
 {
     EdsLib_Python_ObjectConversionState_t *ParentConv = Arg;
-    EdsLib_Python_ObjectConversionState_t subpair;
+    EdsLib_Python_ObjectConversionState_t  subpair;
 
     /* Any conversion error should have set an exception/error context.
      * To avoid triggering multiple exceptions, this is a no-op after the first error */
@@ -103,10 +103,9 @@ static void EdsLib_Python_ConvertPyMembers_Callback(void *Arg, const EdsLib_Enti
         if (ParamDesc->FullName != NULL && PyMapping_Check(ParentConv->pyobj))
         {
             /* new ref */
-            subpair.pyobj = PyMapping_GetItemString(ParentConv->pyobj, (char*)ParamDesc->FullName);
+            subpair.pyobj = PyMapping_GetItemString(ParentConv->pyobj, (char *)ParamDesc->FullName);
         }
-        else if (PySequence_Check(ParentConv->pyobj) &&
-                ParamDesc->SeqNum < PySequence_Size(ParentConv->pyobj))
+        else if (PySequence_Check(ParentConv->pyobj) && ParamDesc->SeqNum < PySequence_Size(ParentConv->pyobj))
         {
             /* Use sequence protocol as a backup, which handles normal EDS arrays
              * or python lists being assigned to EDS containers */
@@ -134,7 +133,7 @@ static void EdsLib_Python_ConvertPyMembers_Callback(void *Arg, const EdsLib_Enti
 static void EdsLib_Python_ConvertEdsMembers_Callback(void *Arg, const EdsLib_EntityDescriptor_t *ParamDesc)
 {
     EdsLib_Python_ObjectConversionState_t *ParentConv = Arg;
-    EdsLib_Python_ObjectConversionState_t subpair;
+    EdsLib_Python_ObjectConversionState_t  subpair;
 
     /* Any conversion error should have set an exception/error context */
     if (PyErr_Occurred() == NULL)
@@ -161,7 +160,7 @@ static void EdsLib_Python_ConvertEdsMembers_Callback(void *Arg, const EdsLib_Ent
             {
                 /* If there is a named index then use it
                  * The python object should always be a Dictionary in this case */
-                PyDict_SetItemString(ParentConv->pyobj, (char*)ParamDesc->FullName, subpair.pyobj);
+                PyDict_SetItemString(ParentConv->pyobj, (char *)ParamDesc->FullName, subpair.pyobj);
                 Py_DECREF(subpair.pyobj);
             }
             else
@@ -186,16 +185,17 @@ static void EdsLib_Python_ConvertEdsObjectToPythonImpl(EdsLib_Python_ObjectConve
     {
         ConvPair->pyobj = PyList_New(ConvPair->desc.TypeInfo.NumSubElements);
     }
-    else if (ConvPair->desc.TypeInfo.ElemType == EDSLIB_BASICTYPE_CONTAINER ||
-             ConvPair->desc.TypeInfo.ElemType == EDSLIB_BASICTYPE_COMPONENT)
+    else if (ConvPair->desc.TypeInfo.ElemType == EDSLIB_BASICTYPE_CONTAINER
+             || ConvPair->desc.TypeInfo.ElemType == EDSLIB_BASICTYPE_COMPONENT)
     {
         ConvPair->pyobj = PyDict_New();
     }
     else
     {
-        PyErr_Format(PyExc_RuntimeError, "Cannot map %s/%s to a python type",
-                EdsLib_DisplayDB_GetNamespace(ConvPair->desc.GD, ConvPair->desc.EdsId),
-                EdsLib_DisplayDB_GetBaseName(ConvPair->desc.GD, ConvPair->desc.EdsId));
+        PyErr_Format(PyExc_RuntimeError,
+                     "Cannot map %s/%s to a python type",
+                     EdsLib_DisplayDB_GetNamespace(ConvPair->desc.GD, ConvPair->desc.EdsId),
+                     EdsLib_DisplayDB_GetBaseName(ConvPair->desc.GD, ConvPair->desc.EdsId));
         ConvPair->pyobj = NULL;
     }
 
@@ -205,8 +205,10 @@ static void EdsLib_Python_ConvertEdsObjectToPythonImpl(EdsLib_Python_ObjectConve
      */
     if (ConvPair->pyobj != NULL && ConvPair->desc.TypeInfo.NumSubElements > 0)
     {
-        EdsLib_DisplayDB_IterateBaseEntities(ConvPair->desc.GD, ConvPair->desc.EdsId,
-                EdsLib_Python_ConvertEdsMembers_Callback, ConvPair);
+        EdsLib_DisplayDB_IterateBaseEntities(ConvPair->desc.GD,
+                                             ConvPair->desc.EdsId,
+                                             EdsLib_Python_ConvertEdsMembers_Callback,
+                                             ConvPair);
     }
 }
 
@@ -221,7 +223,8 @@ static int EdsLib_Python_CopyEdsObjectPacked(EdsLib_Python_ObjectConversionState
     }
 
     Status = EdsLib_Binding_InitFromPackedBuffer(&ConvPair->desc,
-            PyBytes_AsString(ConvPair->pyobj), PyBytes_Size(ConvPair->pyobj));
+                                                 PyBytes_AsString(ConvPair->pyobj),
+                                                 PyBytes_Size(ConvPair->pyobj));
 
     if (Status != EDSLIB_SUCCESS)
     {
@@ -259,16 +262,14 @@ static int EdsLib_Python_CopyEdsObjectDirect(EdsLib_Python_ObjectConversionState
      * any trailing data. */
     size_t DstSize = EdsLib_Binding_GetNativeSize(&ConvPair->desc);
     size_t SrcSize = EdsLib_Binding_GetNativeSize(&srcobj);
-    char *DstPtr = EdsLib_Binding_GetNativeObject(&ConvPair->desc);
+    char  *DstPtr  = EdsLib_Binding_GetNativeObject(&ConvPair->desc);
 
     if (DstSize < SrcSize)
     {
         SrcSize = DstSize;
     }
 
-    memcpy(DstPtr,
-            EdsLib_Binding_GetNativeObject(&srcobj),
-            SrcSize);
+    memcpy(DstPtr, EdsLib_Binding_GetNativeObject(&srcobj), SrcSize);
 
     if (SrcSize < DstSize)
     {
@@ -292,17 +293,18 @@ static void EdsLib_Python_ConvertPythonToEdsObjectImpl(EdsLib_Python_ObjectConve
      *
      * For all other types of python objects, call the regular conversion routine.
      */
-    if (ConvPair->pyobj == Py_None ||
-            EdsLib_Python_CopyEdsObjectPacked(ConvPair) ||
-            EdsLib_Python_CopyEdsObjectDirect(ConvPair))
+    if (ConvPair->pyobj == Py_None || EdsLib_Python_CopyEdsObjectPacked(ConvPair)
+        || EdsLib_Python_CopyEdsObjectDirect(ConvPair))
     {
         /* no-op */
     }
     else if (ConvPair->desc.TypeInfo.NumSubElements > 0)
     {
         /* Convert all sub-entities (will recuse back to this function for each item) */
-        EdsLib_DisplayDB_IterateBaseEntities(ConvPair->desc.GD, ConvPair->desc.EdsId,
-                EdsLib_Python_ConvertPyMembers_Callback, ConvPair);
+        EdsLib_DisplayDB_IterateBaseEntities(ConvPair->desc.GD,
+                                             ConvPair->desc.EdsId,
+                                             EdsLib_Python_ConvertPyMembers_Callback,
+                                             ConvPair);
     }
     else
     {
@@ -311,21 +313,19 @@ static void EdsLib_Python_ConvertPythonToEdsObjectImpl(EdsLib_Python_ObjectConve
     }
 }
 
-
-
 PyObject *EdsLib_Python_ConvertEdsScalarToPython(EdsLib_Binding_DescriptorObject_t *edsobj)
 {
-    EdsLib_DisplayHint_t DispHint;
-    const char *Ptr;
-    size_t ActualSize;
+    EdsLib_DisplayHint_t        DispHint;
+    const char                 *Ptr;
+    size_t                      ActualSize;
     EdsLib_GenericValueBuffer_t ValueBuff;
-    char StringBuffer[256];
-    PyObject *result;
+    char                        StringBuffer[256];
+    PyObject                   *result;
 
-    Ptr = EdsLib_Binding_GetNativeObject(edsobj);
+    Ptr        = EdsLib_Binding_GetNativeObject(edsobj);
     ActualSize = EdsLib_Binding_GetNativeSize(edsobj);
-    DispHint = EdsLib_DisplayDB_GetDisplayHint(edsobj->GD, edsobj->EdsId);
-    result = NULL;
+    DispHint   = EdsLib_DisplayDB_GetDisplayHint(edsobj->GD, edsobj->EdsId);
+    result     = NULL;
 
     if (edsobj->TypeInfo.ElemType == EDSLIB_BASICTYPE_BINARY)
     {
@@ -347,9 +347,9 @@ PyObject *EdsLib_Python_ConvertEdsScalarToPython(EdsLib_Binding_DescriptorObject
     }
     else
     {
-        if (DispHint == EDSLIB_DISPLAYHINT_ENUM_SYMTABLE &&
-                EdsLib_Scalar_ToString(edsobj->GD, edsobj->EdsId,
-                    StringBuffer, sizeof(StringBuffer), Ptr) == EDSLIB_SUCCESS)
+        if (DispHint == EDSLIB_DISPLAYHINT_ENUM_SYMTABLE
+            && EdsLib_Scalar_ToString(edsobj->GD, edsobj->EdsId, StringBuffer, sizeof(StringBuffer), Ptr)
+                   == EDSLIB_SUCCESS)
         {
             result = PyUnicode_FromString(StringBuffer);
         }
@@ -357,35 +357,35 @@ PyObject *EdsLib_Python_ConvertEdsScalarToPython(EdsLib_Binding_DescriptorObject
         {
             EdsLib_Binding_LoadValue(edsobj, &ValueBuff);
 
-            switch(ValueBuff.ValueType)
+            switch (ValueBuff.ValueType)
             {
-            case EDSLIB_BASICTYPE_SIGNED_INT:
-                if (DispHint == EDSLIB_DISPLAYHINT_BOOLEAN)
-                {
-                    /* preserve the boolean nature of the integer field */
-                    result = PyBool_FromLong(ValueBuff.Value.SignedInteger);
-                }
-                else
-                {
-                    result = PyLong_FromLongLong(ValueBuff.Value.SignedInteger);
-                }
-                break;
-            case EDSLIB_BASICTYPE_UNSIGNED_INT:
-                if (DispHint == EDSLIB_DISPLAYHINT_BOOLEAN)
-                {
-                    /* preserve the boolean nature of the integer field */
-                    result = PyBool_FromLong(ValueBuff.Value.UnsignedInteger);
-                }
-                else
-                {
-                    result = PyLong_FromUnsignedLongLong(ValueBuff.Value.UnsignedInteger);
-                }
-                break;
-            case EDSLIB_BASICTYPE_FLOAT:
-                result = PyFloat_FromDouble(ValueBuff.Value.FloatingPoint);
-                break;
-            default:
-                break;
+                case EDSLIB_BASICTYPE_SIGNED_INT:
+                    if (DispHint == EDSLIB_DISPLAYHINT_BOOLEAN)
+                    {
+                        /* preserve the boolean nature of the integer field */
+                        result = PyBool_FromLong(ValueBuff.Value.SignedInteger);
+                    }
+                    else
+                    {
+                        result = PyLong_FromLongLong(ValueBuff.Value.SignedInteger);
+                    }
+                    break;
+                case EDSLIB_BASICTYPE_UNSIGNED_INT:
+                    if (DispHint == EDSLIB_DISPLAYHINT_BOOLEAN)
+                    {
+                        /* preserve the boolean nature of the integer field */
+                        result = PyBool_FromLong(ValueBuff.Value.UnsignedInteger);
+                    }
+                    else
+                    {
+                        result = PyLong_FromUnsignedLongLong(ValueBuff.Value.UnsignedInteger);
+                    }
+                    break;
+                case EDSLIB_BASICTYPE_FLOAT:
+                    result = PyFloat_FromDouble(ValueBuff.Value.FloatingPoint);
+                    break;
+                default:
+                    break;
             }
         }
     }
@@ -393,20 +393,19 @@ PyObject *EdsLib_Python_ConvertEdsScalarToPython(EdsLib_Binding_DescriptorObject
     return result;
 }
 
-
 bool EdsLib_Python_ConvertPythonToEdsScalar(EdsLib_Binding_DescriptorObject_t *edsobj, PyObject *pyobj)
 {
-    char *Ptr;
-    size_t ActualSize;
+    char                       *Ptr;
+    size_t                      ActualSize;
     EdsLib_GenericValueBuffer_t ValueBuff;
-    PyObject *ReprObj = NULL;
-    PyObject *BytesObj = NULL;
-    PyObject *NumberObj = NULL;
-    bool success = false;
+    PyObject                   *ReprObj   = NULL;
+    PyObject                   *BytesObj  = NULL;
+    PyObject                   *NumberObj = NULL;
+    bool                        success   = false;
 
-    Ptr = EdsLib_Binding_GetNativeObject(edsobj);
+    Ptr        = EdsLib_Binding_GetNativeObject(edsobj);
     ActualSize = EdsLib_Binding_GetNativeSize(edsobj);
-    memset(&ValueBuff,0,sizeof(ValueBuff));
+    memset(&ValueBuff, 0, sizeof(ValueBuff));
 
     /*
      * First check if a string or string-like object was supplied by the caller.
@@ -433,39 +432,38 @@ bool EdsLib_Python_ConvertPythonToEdsScalar(EdsLib_Binding_DescriptorObject_t *e
         if (edsobj->TypeInfo.ElemType == EDSLIB_BASICTYPE_UNSIGNED_INT)
         {
             ValueBuff.Value.UnsignedInteger = PyInt_AsUnsignedLongMask(pyobj);
-            ValueBuff.ValueType = EDSLIB_BASICTYPE_UNSIGNED_INT;
+            ValueBuff.ValueType             = EDSLIB_BASICTYPE_UNSIGNED_INT;
         }
         else
         {
             ValueBuff.Value.SignedInteger = PyInt_AsLong(pyobj);
-            ValueBuff.ValueType = EDSLIB_BASICTYPE_SIGNED_INT;
+            ValueBuff.ValueType           = EDSLIB_BASICTYPE_SIGNED_INT;
         }
     }
 #endif
     else if (PyBool_Check(pyobj))
     {
         ValueBuff.Value.UnsignedInteger = (pyobj == Py_True);
-        ValueBuff.ValueType = EDSLIB_BASICTYPE_UNSIGNED_INT;
+        ValueBuff.ValueType             = EDSLIB_BASICTYPE_UNSIGNED_INT;
     }
     else if (PyLong_Check(pyobj))
     {
         if (edsobj->TypeInfo.ElemType == EDSLIB_BASICTYPE_UNSIGNED_INT)
         {
             ValueBuff.Value.UnsignedInteger = PyLong_AsUnsignedLongLong(pyobj);
-            ValueBuff.ValueType = EDSLIB_BASICTYPE_UNSIGNED_INT;
+            ValueBuff.ValueType             = EDSLIB_BASICTYPE_UNSIGNED_INT;
         }
         else
         {
             ValueBuff.Value.SignedInteger = PyLong_AsLongLong(pyobj);
-            ValueBuff.ValueType = EDSLIB_BASICTYPE_SIGNED_INT;
+            ValueBuff.ValueType           = EDSLIB_BASICTYPE_SIGNED_INT;
         }
     }
     else if (PyFloat_Check(pyobj))
     {
         ValueBuff.Value.FloatingPoint = PyFloat_AsDouble(pyobj);
-        ValueBuff.ValueType = EDSLIB_BASICTYPE_FLOAT;
+        ValueBuff.ValueType           = EDSLIB_BASICTYPE_FLOAT;
     }
-
 
     /*
      * Depending on the desired/wanted data type, if the simple conversion above
@@ -474,34 +472,34 @@ bool EdsLib_Python_ConvertPythonToEdsScalar(EdsLib_Binding_DescriptorObject_t *e
      */
     if (ValueBuff.ValueType == EDSLIB_BASICTYPE_NONE && PyNumber_Check(pyobj))
     {
-        switch(edsobj->TypeInfo.ElemType)
+        switch (edsobj->TypeInfo.ElemType)
         {
-        case EDSLIB_BASICTYPE_SIGNED_INT:
-            NumberObj = PyNumber_Long(pyobj);
-            if (NumberObj != NULL)
-            {
-                ValueBuff.Value.SignedInteger = PyLong_AsLongLong(NumberObj);
-                ValueBuff.ValueType = EDSLIB_BASICTYPE_SIGNED_INT;
-            }
-            break;
-        case EDSLIB_BASICTYPE_UNSIGNED_INT:
-            NumberObj = PyNumber_Long(pyobj);
-            if (NumberObj != NULL)
-            {
-                ValueBuff.Value.UnsignedInteger = PyLong_AsUnsignedLongLong(NumberObj);
-                ValueBuff.ValueType = EDSLIB_BASICTYPE_UNSIGNED_INT;
-            }
-            break;
-        case EDSLIB_BASICTYPE_FLOAT:
-            NumberObj = PyNumber_Float(pyobj);
-            if (NumberObj != NULL)
-            {
-                ValueBuff.Value.FloatingPoint = PyFloat_AsDouble(NumberObj);
-                ValueBuff.ValueType = EDSLIB_BASICTYPE_FLOAT;
-            }
-            break;
-        default:
-            break;
+            case EDSLIB_BASICTYPE_SIGNED_INT:
+                NumberObj = PyNumber_Long(pyobj);
+                if (NumberObj != NULL)
+                {
+                    ValueBuff.Value.SignedInteger = PyLong_AsLongLong(NumberObj);
+                    ValueBuff.ValueType           = EDSLIB_BASICTYPE_SIGNED_INT;
+                }
+                break;
+            case EDSLIB_BASICTYPE_UNSIGNED_INT:
+                NumberObj = PyNumber_Long(pyobj);
+                if (NumberObj != NULL)
+                {
+                    ValueBuff.Value.UnsignedInteger = PyLong_AsUnsignedLongLong(NumberObj);
+                    ValueBuff.ValueType             = EDSLIB_BASICTYPE_UNSIGNED_INT;
+                }
+                break;
+            case EDSLIB_BASICTYPE_FLOAT:
+                NumberObj = PyNumber_Float(pyobj);
+                if (NumberObj != NULL)
+                {
+                    ValueBuff.Value.FloatingPoint = PyFloat_AsDouble(NumberObj);
+                    ValueBuff.ValueType           = EDSLIB_BASICTYPE_FLOAT;
+                }
+                break;
+            default:
+                break;
         }
     }
 
@@ -511,9 +509,8 @@ bool EdsLib_Python_ConvertPythonToEdsScalar(EdsLib_Binding_DescriptorObject_t *e
      * the EdsLib FromString function can parse it.  This should, for instance,
      * handle coercion of Python numbers into EDS strings where needed.
      */
-    if (BytesObj == NULL &&
-            (ValueBuff.ValueType == EDSLIB_BASICTYPE_NONE ||
-                    edsobj->TypeInfo.ElemType == EDSLIB_BASICTYPE_BINARY))
+    if (BytesObj == NULL
+        && (ValueBuff.ValueType == EDSLIB_BASICTYPE_NONE || edsobj->TypeInfo.ElemType == EDSLIB_BASICTYPE_BINARY))
     {
         ReprObj = PyObject_Repr(pyobj);
         if (ReprObj != NULL)
@@ -554,8 +551,7 @@ bool EdsLib_Python_ConvertPythonToEdsScalar(EdsLib_Binding_DescriptorObject_t *e
             }
             success = true;
         }
-        else if(EdsLib_Scalar_FromString(edsobj->GD, edsobj->EdsId,
-                Ptr, PyBytes_AsString(BytesObj)) == EDSLIB_SUCCESS)
+        else if (EdsLib_Scalar_FromString(edsobj->GD, edsobj->EdsId, Ptr, PyBytes_AsString(BytesObj)) == EDSLIB_SUCCESS)
         {
             success = true;
         }
@@ -576,8 +572,10 @@ bool EdsLib_Python_ConvertPythonToEdsScalar(EdsLib_Binding_DescriptorObject_t *e
 
     if (!success)
     {
-        PyErr_Format(PyExc_TypeError, "Cannot initialize %s from %s",
-                EdsLib_DisplayDB_GetBaseName(edsobj->GD, edsobj->EdsId), pyobj->ob_type->tp_name);
+        PyErr_Format(PyExc_TypeError,
+                     "Cannot initialize %s from %s",
+                     EdsLib_DisplayDB_GetBaseName(edsobj->GD, edsobj->EdsId),
+                     pyobj->ob_type->tp_name);
     }
 
     return success;
@@ -589,7 +587,7 @@ bool EdsLib_Python_ConvertPythonToEdsScalar(EdsLib_Binding_DescriptorObject_t *e
 PyObject *EdsLib_Python_ConvertEdsObjectToPython(EdsLib_Python_ObjectBase_t *self)
 {
     EdsLib_Python_ObjectConversionState_t ConvPair;
-    EdsLib_Binding_Buffer_Content_t* content = NULL;
+    EdsLib_Binding_Buffer_Content_t      *content = NULL;
 
     memset(&ConvPair, 0, sizeof(ConvPair));
 
@@ -628,8 +626,7 @@ PyObject *EdsLib_Python_ConvertEdsObjectToPython(EdsLib_Python_ObjectBase_t *sel
          * If unsuccessful, it will set an exception before returning.
          */
         EdsLib_Python_ConvertEdsObjectToPythonImpl(&ConvPair);
-    }
-    while(0);
+    } while (0);
 
     /* be sure to release window reference before returning */
     if (content != NULL)
@@ -647,8 +644,8 @@ PyObject *EdsLib_Python_ConvertEdsObjectToPython(EdsLib_Python_ObjectBase_t *sel
 bool EdsLib_Python_ConvertPythonToEdsObject(EdsLib_Python_ObjectBase_t *self, PyObject *pyobj)
 {
     EdsLib_Python_ObjectConversionState_t ConvPair;
-    EdsLib_Binding_Buffer_Content_t *content = NULL;
-    bool success = false;
+    EdsLib_Binding_Buffer_Content_t      *content = NULL;
+    bool                                  success = false;
 
     memset(&ConvPair, 0, sizeof(ConvPair));
 
@@ -694,8 +691,7 @@ bool EdsLib_Python_ConvertPythonToEdsObject(EdsLib_Python_ObjectBase_t *self, Py
          */
         EdsLib_Python_ConvertPythonToEdsObjectImpl(&ConvPair);
         success = (PyErr_Occurred() == NULL);
-    }
-    while(0);
+    } while (0);
 
     /* be sure to release window reference before returning */
     if (content != NULL)
@@ -707,7 +703,9 @@ bool EdsLib_Python_ConvertPythonToEdsObject(EdsLib_Python_ObjectBase_t *self, Py
     return success;
 }
 
-int EdsLib_Python_SetupObjectDesciptor(EdsLib_Python_ObjectBase_t *self, EdsLib_Binding_DescriptorObject_t *descobj, int flags)
+int EdsLib_Python_SetupObjectDesciptor(EdsLib_Python_ObjectBase_t        *self,
+                                       EdsLib_Binding_DescriptorObject_t *descobj,
+                                       int                                flags)
 {
     EdsLib_Binding_Buffer_Content_t *content;
 
@@ -743,13 +741,13 @@ void EdsLib_Python_ReleaseObjectDesciptor(EdsLib_Binding_DescriptorObject_t *des
     }
 }
 
-EdsLib_Id_t EdsLib_Python_ConvertArgToEdsId(const EdsLib_DatabaseObject_t *GD, PyObject* arg)
+EdsLib_Id_t EdsLib_Python_ConvertArgToEdsId(const EdsLib_DatabaseObject_t *GD, PyObject *arg)
 {
     EdsLib_Id_t Result;
-    PyObject *temp_id;
+    PyObject   *temp_id;
 
     temp_id = NULL;
-    Result = EDSLIB_ID_INVALID;
+    Result  = EDSLIB_ID_INVALID;
 
     /*
      * The identifier might come from the python interpreter as a string or number.

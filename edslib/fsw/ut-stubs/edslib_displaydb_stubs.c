@@ -113,7 +113,8 @@ const char *EdsLib_DisplayDB_GetEdsName(const EdsLib_DatabaseObject_t *GD, uint1
  * Generated stub function for EdsLib_DisplayDB_GetEnumLabel()
  * ----------------------------------------------------
  */
-const char *EdsLib_DisplayDB_GetEnumLabel(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId,
+const char *EdsLib_DisplayDB_GetEnumLabel(const EdsLib_DatabaseObject_t     *GD,
+                                          EdsLib_Id_t                        EdsId,
                                           const EdsLib_GenericValueBuffer_t *ValueBuffer)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_DisplayDB_GetEnumLabel, const char *);
@@ -132,8 +133,11 @@ const char *EdsLib_DisplayDB_GetEnumLabel(const EdsLib_DatabaseObject_t *GD, Eds
  * Generated stub function for EdsLib_DisplayDB_GetEnumLabelByIndex()
  * ----------------------------------------------------
  */
-const char *EdsLib_DisplayDB_GetEnumLabelByIndex(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, uint16_t Index,
-                                                 char *Buffer, uint32_t BufferSize)
+const char *EdsLib_DisplayDB_GetEnumLabelByIndex(const EdsLib_DatabaseObject_t *GD,
+                                                 EdsLib_Id_t                    EdsId,
+                                                 uint16_t                       Index,
+                                                 char                          *Buffer,
+                                                 uint32_t                       BufferSize)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_DisplayDB_GetEnumLabelByIndex, const char *);
 
@@ -153,8 +157,10 @@ const char *EdsLib_DisplayDB_GetEnumLabelByIndex(const EdsLib_DatabaseObject_t *
  * Generated stub function for EdsLib_DisplayDB_GetEnumValue()
  * ----------------------------------------------------
  */
-void EdsLib_DisplayDB_GetEnumValue(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, const char *String,
-                                   EdsLib_GenericValueBuffer_t *ValueBuffer)
+void EdsLib_DisplayDB_GetEnumValue(const EdsLib_DatabaseObject_t *GD,
+                                   EdsLib_Id_t                    EdsId,
+                                   const char                    *String,
+                                   EdsLib_GenericValueBuffer_t   *ValueBuffer)
 {
     UT_GenStub_AddParam(EdsLib_DisplayDB_GetEnumValue, const EdsLib_DatabaseObject_t *, GD);
     UT_GenStub_AddParam(EdsLib_DisplayDB_GetEnumValue, EdsLib_Id_t, EdsId);
@@ -187,8 +193,10 @@ intmax_t EdsLib_DisplayDB_GetEnumValueByIndex(const EdsLib_DatabaseObject_t *GD,
  * Generated stub function for EdsLib_DisplayDB_GetIndexByName()
  * ----------------------------------------------------
  */
-int32_t EdsLib_DisplayDB_GetIndexByName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, const char *Name,
-                                        uint16_t *SubIndex)
+int32_t EdsLib_DisplayDB_GetIndexByName(const EdsLib_DatabaseObject_t *GD,
+                                        EdsLib_Id_t                    EdsId,
+                                        const char                    *Name,
+                                        uint16_t                      *SubIndex)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_DisplayDB_GetIndexByName, int32_t);
 
@@ -242,8 +250,8 @@ const char *EdsLib_DisplayDB_GetNamespace(const EdsLib_DatabaseObject_t *GD, Eds
  * Generated stub function for EdsLib_DisplayDB_GetTypeName()
  * ----------------------------------------------------
  */
-const char *EdsLib_DisplayDB_GetTypeName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, char *Buffer,
-                                         uint32_t BufferSize)
+const char *
+EdsLib_DisplayDB_GetTypeName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, char *Buffer, uint32_t BufferSize)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_DisplayDB_GetTypeName, const char *);
 
@@ -264,7 +272,6 @@ const char *EdsLib_DisplayDB_GetTypeName(const EdsLib_DatabaseObject_t *GD, EdsL
  */
 void EdsLib_DisplayDB_Initialize(void)
 {
-
     UT_GenStub_Execute(EdsLib_DisplayDB_Initialize, Basic, NULL);
 }
 
@@ -273,8 +280,10 @@ void EdsLib_DisplayDB_Initialize(void)
  * Generated stub function for EdsLib_DisplayDB_IterateAllEntities()
  * ----------------------------------------------------
  */
-void EdsLib_DisplayDB_IterateAllEntities(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId,
-                                         EdsLib_EntityCallback_t Callback, void *Arg)
+void EdsLib_DisplayDB_IterateAllEntities(const EdsLib_DatabaseObject_t *GD,
+                                         EdsLib_Id_t                    EdsId,
+                                         EdsLib_EntityCallback_t        Callback,
+                                         void                          *Arg)
 {
     UT_GenStub_AddParam(EdsLib_DisplayDB_IterateAllEntities, const EdsLib_DatabaseObject_t *, GD);
     UT_GenStub_AddParam(EdsLib_DisplayDB_IterateAllEntities, EdsLib_Id_t, EdsId);
@@ -289,8 +298,10 @@ void EdsLib_DisplayDB_IterateAllEntities(const EdsLib_DatabaseObject_t *GD, EdsL
  * Generated stub function for EdsLib_DisplayDB_IterateBaseEntities()
  * ----------------------------------------------------
  */
-void EdsLib_DisplayDB_IterateBaseEntities(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId,
-                                          EdsLib_EntityCallback_t Callback, void *Arg)
+void EdsLib_DisplayDB_IterateBaseEntities(const EdsLib_DatabaseObject_t *GD,
+                                          EdsLib_Id_t                    EdsId,
+                                          EdsLib_EntityCallback_t        Callback,
+                                          void                          *Arg)
 {
     UT_GenStub_AddParam(EdsLib_DisplayDB_IterateBaseEntities, const EdsLib_DatabaseObject_t *, GD);
     UT_GenStub_AddParam(EdsLib_DisplayDB_IterateBaseEntities, EdsLib_Id_t, EdsId);
@@ -305,8 +316,10 @@ void EdsLib_DisplayDB_IterateBaseEntities(const EdsLib_DatabaseObject_t *GD, Eds
  * Generated stub function for EdsLib_DisplayDB_IterateEnumValues()
  * ----------------------------------------------------
  */
-void EdsLib_DisplayDB_IterateEnumValues(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId,
-                                        EdsLib_SymbolCallback_t Callback, void *Arg)
+void EdsLib_DisplayDB_IterateEnumValues(const EdsLib_DatabaseObject_t *GD,
+                                        EdsLib_Id_t                    EdsId,
+                                        EdsLib_SymbolCallback_t        Callback,
+                                        void                          *Arg)
 {
     UT_GenStub_AddParam(EdsLib_DisplayDB_IterateEnumValues, const EdsLib_DatabaseObject_t *, GD);
     UT_GenStub_AddParam(EdsLib_DisplayDB_IterateEnumValues, EdsLib_Id_t, EdsId);
@@ -321,7 +334,9 @@ void EdsLib_DisplayDB_IterateEnumValues(const EdsLib_DatabaseObject_t *GD, EdsLi
  * Generated stub function for EdsLib_DisplayDB_LocateSubEntity()
  * ----------------------------------------------------
  */
-int32_t EdsLib_DisplayDB_LocateSubEntity(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, const char *Name,
+int32_t EdsLib_DisplayDB_LocateSubEntity(const EdsLib_DatabaseObject_t  *GD,
+                                         EdsLib_Id_t                     EdsId,
+                                         const char                     *Name,
                                          EdsLib_DataTypeDB_EntityInfo_t *CompInfo)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_DisplayDB_LocateSubEntity, int32_t);
@@ -373,8 +388,8 @@ void EdsLib_Generate_Hexdump(void *output, const uint8_t *DataPtr, uint16_t Disp
  * Generated stub function for EdsLib_Scalar_FromString()
  * ----------------------------------------------------
  */
-int32_t EdsLib_Scalar_FromString(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, void *DestPtr,
-                                 const char *SrcString)
+int32_t
+EdsLib_Scalar_FromString(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, void *DestPtr, const char *SrcString)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_Scalar_FromString, int32_t);
 
@@ -393,8 +408,11 @@ int32_t EdsLib_Scalar_FromString(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t 
  * Generated stub function for EdsLib_Scalar_ToString()
  * ----------------------------------------------------
  */
-int32_t EdsLib_Scalar_ToString(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, char *OutputBuffer,
-                               uint32_t BufferSize, const void *SrcPtr)
+int32_t EdsLib_Scalar_ToString(const EdsLib_DatabaseObject_t *GD,
+                               EdsLib_Id_t                    EdsId,
+                               char                          *OutputBuffer,
+                               uint32_t                       BufferSize,
+                               const void                    *SrcPtr)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_Scalar_ToString, int32_t);
 

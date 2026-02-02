@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     seds_preprocess.h
  * \ingroup  tool
@@ -31,12 +30,9 @@
 #ifndef _SEDS_PREPROCESS_H_
 #define _SEDS_PREPROCESS_H_
 
-
 /**
  * Register the preprocessor functions in the global Lua state
  */
 void seds_preprocess_register_globals(lua_State *lua);
 
-
-#endif  /* _SEDS_PREPROCESS_H_ */
-
+#endif /* _SEDS_PREPROCESS_H_ */

@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     seds_global.h
  * \ingroup  tool
@@ -37,7 +36,6 @@
 
 #ifndef _SEDS_GLOBAL_H_
 #define _SEDS_GLOBAL_H_
-
 
 /* Use C99 standard integer/boolean types.  Any viable host/build system must have these headers. */
 #include <stdint.h>
@@ -61,10 +59,10 @@
  * When using GNU C, it can give helpful warnings about mismatched arguments to printf-style calls.
  * this macro enables that error checking.
  */
-#if defined (__GNUC__)
-#define SEDS_PRINTF(n,m)  __attribute__ ((format (printf, n, m)))
+#if defined(__GNUC__)
+#define SEDS_PRINTF(n, m) __attribute__((format(printf, n, m)))
 #else
-#define SEDS_PRINTF(n,m)
+#define SEDS_PRINTF(n, m)
 #endif
 
 /**
@@ -83,30 +81,30 @@ typedef uint64_t seds_checksum_t;
 /**
  * Minimum value for seds_integer_t values
  */
-#define SEDS_INTEGER_MIN         INTMAX_MIN
+#define SEDS_INTEGER_MIN INTMAX_MIN
 
 /**
  * Maximum value for seds_integer_t values
  */
-#define SEDS_INTEGER_MAX         INTMAX_MAX
+#define SEDS_INTEGER_MAX INTMAX_MAX
 
 /** EDS booleans */
-typedef bool                     seds_boolean_t;
+typedef bool seds_boolean_t;
 
 /** EDS floating-point number values */
-typedef double                   seds_number_t;
+typedef double seds_number_t;
 
 /**
  * Maximum value for seds_number_t values without losing integer precision.
  * NOTE - this is not the full range of the data type, but rather a "useful range"
  */
-#define SEDS_NUMBER_MAX         ((seds_number_t)((1ULL << DBL_MANT_DIG)))
+#define SEDS_NUMBER_MAX ((seds_number_t)((1ULL << DBL_MANT_DIG)))
 
 /**
  * Minimum value for seds_number_t values without losing integer precision.
  * NOTE - this is not the full range of the data type, but rather a "useful range"
  */
-#define SEDS_NUMBER_MIN         (-SEDS_NUMBER_MAX)
+#define SEDS_NUMBER_MIN (-SEDS_NUMBER_MAX)
 
 /**
  * Structure to store the top-level state of the toolchain as a while
@@ -141,11 +139,9 @@ typedef struct
 
 } seds_toplevel_t;
 
-
 /**
  * A single global containing the top level state object of the tool.
  */
 extern seds_toplevel_t sedstool;
 
-
-#endif  /* _SEDS_GLOBAL_H_ */
+#endif /* _SEDS_GLOBAL_H_ */

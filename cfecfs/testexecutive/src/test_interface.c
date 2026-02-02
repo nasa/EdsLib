@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     test_interface.c
  * \ingroup  testexecutive
@@ -60,18 +59,16 @@ typedef struct
     int (*InitFunc)(lua_State *lua);
 } TestExec_Intf_ModuleEntry_t;
 
-#define TESTEXEC_MODULE(x)  extern int TestIntf_ ## x ## _Create(lua_State *lua);
+#define TESTEXEC_MODULE(x) extern int TestIntf_##x##_Create(lua_State *lua);
 #include "testexec_compiledin_modules.h"
 #undef TESTEXEC_MODULE
 
-#define TESTEXEC_MODULE(x) { #x, TestIntf_ ## x ## _Create },
-static const TestExec_Intf_ModuleEntry_t TESTEXEC_INTF_TABLE[] =
-{
+#define TESTEXEC_MODULE(x) { #x, TestIntf_##x##_Create },
+static const TestExec_Intf_ModuleEntry_t TESTEXEC_INTF_TABLE[] = {
 #include "testexec_compiledin_modules.h"
-        { NULL, NULL }
+    { NULL, NULL }
 };
 #undef TESTEXEC_MODULE
-
 
 static int TestIntf_Preprocess_Message(lua_State *lua)
 {
@@ -94,12 +91,10 @@ static int TestIntf_Preprocess_Message(lua_State *lua)
      *  idx@-1 - MissionLib interface object
      *  idx@-2 - EdsLib data object
      */
-    printf("%s(): Intf=%s\n", __func__,
-            luaL_tolstring(lua, -1, NULL));
+    printf("%s(): Intf=%s\n", __func__, luaL_tolstring(lua, -1, NULL));
     lua_pop(lua, 1);
 
-    printf("%s(): EdsObj=%s\n", __func__,
-            luaL_tolstring(lua, -2, NULL));
+    printf("%s(): EdsObj=%s\n", __func__, luaL_tolstring(lua, -2, NULL));
     lua_pop(lua, 1);
 
     lua_setfield(lua, 2, "Interface");
@@ -154,12 +149,12 @@ static int TestIntf_Filter_Message(lua_State *lua)
 
 static int TestIntf_WaitAction(lua_State *lua)
 {
-    int32_t Timeout = luaL_optinteger(lua, 2, -1);
+    int32_t         Timeout = luaL_optinteger(lua, 2, -1);
     struct timespec expire;
     struct timespec current;
-    int nret;
-    uint32_t conditions_req;
-    uint32_t conditions_met;
+    int             nret;
+    uint32_t        conditions_req;
+    uint32_t        conditions_met;
     enum
     {
         WAIT_STATE_NORMAL = 0,
@@ -170,13 +165,13 @@ static int TestIntf_WaitAction(lua_State *lua)
     nret = 0;
     luaL_checktype(lua, 1, LUA_TTABLE);
     lua_settop(lua, 2);
-    lua_getfield(lua, lua_upvalueindex(1), "API");   /* @3 (userdata object = low level intf) */
+    lua_getfield(lua, lua_upvalueindex(1), "API"); /* @3 (userdata object = low level intf) */
     waitstate = WAIT_STATE_NORMAL;
 
     clock_gettime(CLOCK_MONOTONIC, &expire);
     if (Timeout >= 0)
     {
-        expire.tv_sec += Timeout / 1000;
+        expire.tv_sec  += Timeout / 1000;
         expire.tv_nsec += (Timeout % 1000) * 1000000;
     }
     if (expire.tv_nsec > 1000000000)
@@ -185,7 +180,7 @@ static int TestIntf_WaitAction(lua_State *lua)
         expire.tv_nsec -= 1000000000;
     }
 
-    while(1)
+    while (1)
     {
         lua_settop(lua, 3);
 
@@ -200,10 +195,11 @@ static int TestIntf_WaitAction(lua_State *lua)
          *  idx@5 = event data object
          *  idx@6 = additional event attributes
          */
-        printf("%s(): Stack= %s %s %s\n", __func__,
-                lua_typename(lua, lua_type(lua, 4)),
-                lua_typename(lua, lua_type(lua, 5)),
-                lua_typename(lua, lua_type(lua, 6)));
+        printf("%s(): Stack= %s %s %s\n",
+               __func__,
+               lua_typename(lua, lua_type(lua, 4)),
+               lua_typename(lua, lua_type(lua, 5)),
+               lua_typename(lua, lua_type(lua, 6)));
         if (!lua_isnil(lua, 4))
         {
             /*
@@ -211,14 +207,14 @@ static int TestIntf_WaitAction(lua_State *lua)
              */
             if (!lua_isnil(lua, 5))
             {
-                lua_getfield(lua, lua_upvalueindex(1), "RecvProcessor");/* idx@7 - preprocessor table */
-                lua_pushvalue(lua, 4);                                  /* idx@8 - event type */
-                lua_gettable(lua, -2);                                  /* idx@8 - preprocessor func */
+                lua_getfield(lua, lua_upvalueindex(1), "RecvProcessor"); /* idx@7 - preprocessor table */
+                lua_pushvalue(lua, 4);                                   /* idx@8 - event type */
+                lua_gettable(lua, -2);                                   /* idx@8 - preprocessor func */
                 if (lua_isfunction(lua, -1))
                 {
-                    lua_pushvalue(lua, 5);                              /* idx@9 - event data object */
-                    lua_call(lua, 1, 1);                                /* idx@8 - preprocessed event data obj */
-                    lua_replace(lua, 5);                                /* replace original event data obj */
+                    lua_pushvalue(lua, 5); /* idx@9 - event data object */
+                    lua_call(lua, 1, 1);   /* idx@8 - preprocessed event data obj */
+                    lua_replace(lua, 5);   /* replace original event data obj */
                 }
                 lua_settop(lua, 6);
             }
@@ -228,27 +224,27 @@ static int TestIntf_WaitAction(lua_State *lua)
              */
             conditions_req = 0;
             conditions_met = 0;
-            lua_pushnil(lua);                           /* idx @7 - expected event table index */
-            while(lua_next(lua, 1))                     /* idx @8 - expected event table value */
+            lua_pushnil(lua);        /* idx @7 - expected event table index */
+            while (lua_next(lua, 1)) /* idx @8 - expected event table value */
             {
                 ++conditions_req;
                 if (lua_type(lua, 8) == LUA_TTABLE)
                 {
-                    lua_getfield(lua, 8, "Matched");    /* idx @9 - already matched? */
+                    lua_getfield(lua, 8, "Matched"); /* idx @9 - already matched? */
                     if (lua_toboolean(lua, -1))
                     {
                         ++conditions_met;
                     }
                     else
                     {
-                        lua_getfield(lua, lua_upvalueindex(1), "RecvFilter");   /* idx@10 - filter table */
-                        lua_pushvalue(lua, 4);                                  /* idx@11 - event type */
-                        lua_gettable(lua, -2);                                  /* idx@11 - filter func */
+                        lua_getfield(lua, lua_upvalueindex(1), "RecvFilter"); /* idx@10 - filter table */
+                        lua_pushvalue(lua, 4);                                /* idx@11 - event type */
+                        lua_gettable(lua, -2);                                /* idx@11 - filter func */
                         if (lua_isfunction(lua, -1))
                         {
-                            lua_pushvalue(lua, 8);                              /* idx@12 - filter criteria table */
-                            lua_pushvalue(lua, 5);                              /* idx@13 - preprocessed event data */
-                            lua_call(lua, 2, 1);                                /* idx@11 - object (match) or nil (no match) */
+                            lua_pushvalue(lua, 8); /* idx@12 - filter criteria table */
+                            lua_pushvalue(lua, 5); /* idx@13 - preprocessed event data */
+                            lua_call(lua, 2, 1);   /* idx@11 - object (match) or nil (no match) */
                             if (lua_toboolean(lua, -1))
                             {
                                 /* if the user specified a callback,
@@ -300,7 +296,7 @@ static int TestIntf_WaitAction(lua_State *lua)
             if (Timeout >= 0)
             {
                 clock_gettime(CLOCK_MONOTONIC, &current);
-                current.tv_sec = expire.tv_sec - current.tv_sec;
+                current.tv_sec  = expire.tv_sec - current.tv_sec;
                 current.tv_nsec = expire.tv_nsec - current.tv_nsec;
                 if (current.tv_nsec < 0)
                 {
@@ -334,7 +330,7 @@ static int TestIntf_WaitAction(lua_State *lua)
             }
             else
             {
-                current.tv_sec = 1;
+                current.tv_sec  = 1;
                 current.tv_nsec = 0;
             }
 
@@ -385,7 +381,7 @@ static int TestIntf_WaitAction(lua_State *lua)
                  */
                 if (current.tv_sec > 0 || current.tv_nsec > 250000000)
                 {
-                    current.tv_sec = 0;
+                    current.tv_sec  = 0;
                     current.tv_nsec = 250000000;
                 }
                 clock_nanosleep(CLOCK_MONOTONIC, 0, &current, NULL);
@@ -409,9 +405,9 @@ static int TestIntf_DoAction(lua_State *lua)
      */
     lua_settop(lua, 2);
 
-    lua_getfield(lua, lua_upvalueindex(1), "API");  /* idx @3 - low level userdata object */
+    lua_getfield(lua, lua_upvalueindex(1), "API"); /* idx @3 - low level userdata object */
     lua_pushvalue(lua, lua_upvalueindex(2));
-    lua_gettable(lua, -2);                          /* idx @4 - action function */
+    lua_gettable(lua, -2); /* idx @4 - action function */
     if (!lua_isfunction(lua, -1))
     {
         return luaL_error(lua, "Action %s undefined", luaL_tolstring(lua, lua_upvalueindex(2), NULL));
@@ -458,16 +454,14 @@ static int TestIntf_DoAction(lua_State *lua)
     }
 
     /* Call the low level function */
-    lua_call(lua, lua_gettop(lua) - 3, 2);  /* idx @3,4 = return values */
+    lua_call(lua, lua_gettop(lua) - 3, 2); /* idx @3,4 = return values */
 
     if (lua_type(lua, 3) == LUA_TTABLE)
     {
         lua_pushnil(lua);
-        while(lua_next(lua, 3))
+        while (lua_next(lua, 3))
         {
-            printf("%s(): %s = %s\n", __func__,
-                    luaL_tolstring(lua, 5, NULL),
-                    luaL_tolstring(lua, 6, NULL));
+            printf("%s(): %s = %s\n", __func__, luaL_tolstring(lua, 5, NULL), luaL_tolstring(lua, 6, NULL));
             lua_settop(lua, 5);
         }
         lua_pushvalue(lua, lua_upvalueindex(1));
@@ -484,7 +478,7 @@ static int TestIntf_GetAction(lua_State *lua)
     luaL_checkudata(lua, 1, "TestIntf");
     lua_settop(lua, 2);
 
-    lua_getuservalue(lua, 1);       /* @3 */
+    lua_getuservalue(lua, 1); /* @3 */
 
     if (lua_type(lua, 2) == LUA_TSTRING)
     {
@@ -500,7 +494,6 @@ static int TestIntf_GetAction(lua_State *lua)
     lua_pushcclosure(lua, TestIntf_DoAction, 2);
     return 1;
 }
-
 
 static int TestIntf_Destroy(lua_State *lua)
 {
@@ -541,7 +534,7 @@ static int TestIntf_Create(lua_State *lua)
     luaL_argcheck(lua, Conn->TargetNum != 0, 2, "Invalid target specified");
 
     /* create a table for use as the userdata */
-    lua_newtable(lua);  /* index 5 */
+    lua_newtable(lua); /* index 5 */
 
     lua_pushvalue(lua, 1);
     lua_gettable(lua, lua_upvalueindex(1));
@@ -575,9 +568,7 @@ int TestIntf_GetFactory(lua_State *lua)
 
     lua_newtable(lua);
 
-    while (ModEnt != NULL &&
-            ModEnt->InitFunc != NULL &&
-            ModEnt->LuaName != NULL)
+    while (ModEnt != NULL && ModEnt->InitFunc != NULL && ModEnt->LuaName != NULL)
     {
         lua_pushcfunction(lua, ModEnt->InitFunc);
         lua_setfield(lua, -2, ModEnt->LuaName);

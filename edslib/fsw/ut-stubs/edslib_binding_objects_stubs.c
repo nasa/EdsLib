@@ -66,8 +66,9 @@ EdsLib_Binding_Compatibility_t EdsLib_Binding_CheckEdsObjectsCompatible(EdsLib_B
  * Generated stub function for EdsLib_Binding_ExportToPackedBuffer()
  * ----------------------------------------------------
  */
-int32_t EdsLib_Binding_ExportToPackedBuffer(EdsLib_Binding_DescriptorObject_t *ObjectUserData, void *PackedData,
-                                            size_t PackedDataSize)
+int32_t EdsLib_Binding_ExportToPackedBuffer(EdsLib_Binding_DescriptorObject_t *ObjectUserData,
+                                            void                              *PackedData,
+                                            size_t                             PackedDataSize)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_Binding_ExportToPackedBuffer, int32_t);
 
@@ -134,7 +135,8 @@ size_t EdsLib_Binding_GetNativeSize(const EdsLib_Binding_DescriptorObject_t *Obj
  * ----------------------------------------------------
  */
 void EdsLib_Binding_InitDescriptor(EdsLib_Binding_DescriptorObject_t *ObjectUserData,
-                                   const EdsLib_DatabaseObject_t *EdsDB, EdsLib_Id_t EdsId)
+                                   const EdsLib_DatabaseObject_t     *EdsDB,
+                                   EdsLib_Id_t                        EdsId)
 {
     UT_GenStub_AddParam(EdsLib_Binding_InitDescriptor, EdsLib_Binding_DescriptorObject_t *, ObjectUserData);
     UT_GenStub_AddParam(EdsLib_Binding_InitDescriptor, const EdsLib_DatabaseObject_t *, EdsDB);
@@ -148,8 +150,9 @@ void EdsLib_Binding_InitDescriptor(EdsLib_Binding_DescriptorObject_t *ObjectUser
  * Generated stub function for EdsLib_Binding_InitFromPackedBuffer()
  * ----------------------------------------------------
  */
-int32_t EdsLib_Binding_InitFromPackedBuffer(EdsLib_Binding_DescriptorObject_t *ObjectUserData, const void *PackedData,
-                                            size_t PackedDataSize)
+int32_t EdsLib_Binding_InitFromPackedBuffer(EdsLib_Binding_DescriptorObject_t *ObjectUserData,
+                                            const void                        *PackedData,
+                                            size_t                             PackedDataSize)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_Binding_InitFromPackedBuffer, int32_t);
 
@@ -195,8 +198,8 @@ void EdsLib_Binding_InitSubObject(EdsLib_Binding_DescriptorObject_t       *SubOb
  * Generated stub function for EdsLib_Binding_InitUnmanagedBuffer()
  * ----------------------------------------------------
  */
-EdsLib_Binding_Buffer_Content_t *EdsLib_Binding_InitUnmanagedBuffer(EdsLib_Binding_Buffer_Content_t *ContentPtr,
-                                                                    void *DataPtr, size_t MaxContentSize)
+EdsLib_Binding_Buffer_Content_t *
+EdsLib_Binding_InitUnmanagedBuffer(EdsLib_Binding_Buffer_Content_t *ContentPtr, void *DataPtr, size_t MaxContentSize)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_Binding_InitUnmanagedBuffer, EdsLib_Binding_Buffer_Content_t *);
 
@@ -216,7 +219,6 @@ EdsLib_Binding_Buffer_Content_t *EdsLib_Binding_InitUnmanagedBuffer(EdsLib_Bindi
  */
 void EdsLib_Binding_Initialize(void)
 {
-
     UT_GenStub_Execute(EdsLib_Binding_Initialize, Basic, NULL);
 }
 

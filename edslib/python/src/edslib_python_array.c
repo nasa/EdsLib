@@ -18,60 +18,49 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_python_array.c
  * \ingroup  python
  * \author   joseph.p.hickey@nasa.gov
  *
-**   This extends the base type with the Python Sequence protocol.  This forms
-**   the base type of all EDS array objects.  For static EDS arrays, i.e.
-**   those defined at compile time in an EDS file using the "ArrayDataType" EDS
-**   element, this type will be further derived with the EDS definition in a
-**   manner similar to scalars and containers.
-**
-**   The python bindings also allow for dynamic arrays, which are allocated at
-**   run time from any other EDS object and allow any length to be created,
-**   memory permitting.  These also derive (separately) from this base type.
+ **   This extends the base type with the Python Sequence protocol.  This forms
+ **   the base type of all EDS array objects.  For static EDS arrays, i.e.
+ **   those defined at compile time in an EDS file using the "ArrayDataType" EDS
+ **   element, this type will be further derived with the EDS definition in a
+ **   manner similar to scalars and containers.
+ **
+ **   The python bindings also allow for dynamic arrays, which are allocated at
+ **   run time from any other EDS object and allow any length to be created,
+ **   memory permitting.  These also derive (separately) from this base type.
  */
 
 #include "edslib_python_internal.h"
 
-static Py_ssize_t   EdsLib_Python_ObjectArray_seq_len(PyObject *obj);
-static PyObject *   EdsLib_Python_ObjectArray_seq_item(PyObject *obj, Py_ssize_t idx);
-static int          EdsLib_Python_ObjectArray_seq_ass_item(PyObject *obj, Py_ssize_t idx, PyObject *val);
-static int          EdsLib_Python_ObjectArray_getbuffer(PyObject *obj, Py_buffer *view, int flags);
-static void         EdsLib_Python_ObjectArray_releasebuffer(PyObject *obj, Py_buffer *view);
-static int          EdsLib_Python_ObjectArray_init(PyObject *obj, PyObject *args, PyObject *kwds);
+static Py_ssize_t EdsLib_Python_ObjectArray_seq_len(PyObject *obj);
+static PyObject  *EdsLib_Python_ObjectArray_seq_item(PyObject *obj, Py_ssize_t idx);
+static int        EdsLib_Python_ObjectArray_seq_ass_item(PyObject *obj, Py_ssize_t idx, PyObject *val);
+static int        EdsLib_Python_ObjectArray_getbuffer(PyObject *obj, Py_buffer *view, int flags);
+static void       EdsLib_Python_ObjectArray_releasebuffer(PyObject *obj, Py_buffer *view);
+static int        EdsLib_Python_ObjectArray_init(PyObject *obj, PyObject *args, PyObject *kwds);
 
+static PyBufferProcs EdsLib_Python_ObjectArray_BufferProcs = { .bf_getbuffer = EdsLib_Python_ObjectArray_getbuffer,
+                                                               .bf_releasebuffer =
+                                                                   EdsLib_Python_ObjectArray_releasebuffer };
 
-static PyBufferProcs EdsLib_Python_ObjectArray_BufferProcs =
-{
-        .bf_getbuffer = EdsLib_Python_ObjectArray_getbuffer,
-        .bf_releasebuffer = EdsLib_Python_ObjectArray_releasebuffer
-};
+static PySequenceMethods EdsLib_Python_ObjectArray_SequenceMethods = { .sq_length = EdsLib_Python_ObjectArray_seq_len,
+                                                                       .sq_item   = EdsLib_Python_ObjectArray_seq_item,
+                                                                       .sq_ass_item =
+                                                                           EdsLib_Python_ObjectArray_seq_ass_item };
 
-
-static PySequenceMethods EdsLib_Python_ObjectArray_SequenceMethods =
-{
-        .sq_length = EdsLib_Python_ObjectArray_seq_len,
-        .sq_item = EdsLib_Python_ObjectArray_seq_item,
-        .sq_ass_item = EdsLib_Python_ObjectArray_seq_ass_item
-};
-
-PyTypeObject EdsLib_Python_ObjectArrayType =
-{
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = EDSLIB_PYTHON_ENTITY_NAME("Array"),
-    .tp_basicsize = sizeof(EdsLib_Python_ObjectArray_t),
-    .tp_base = &EdsLib_Python_ObjectBaseType,
-    .tp_as_buffer = &EdsLib_Python_ObjectArray_BufferProcs,
-    .tp_as_sequence = &EdsLib_Python_ObjectArray_SequenceMethods,
-    .tp_init = EdsLib_Python_ObjectArray_init,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_doc = PyDoc_STR("EDS Array Type")
-};
-
+PyTypeObject EdsLib_Python_ObjectArrayType = { PyVarObject_HEAD_INIT(NULL, 0).tp_name =
+                                                   EDSLIB_PYTHON_ENTITY_NAME("Array"),
+                                               .tp_basicsize   = sizeof(EdsLib_Python_ObjectArray_t),
+                                               .tp_base        = &EdsLib_Python_ObjectBaseType,
+                                               .tp_as_buffer   = &EdsLib_Python_ObjectArray_BufferProcs,
+                                               .tp_as_sequence = &EdsLib_Python_ObjectArray_SequenceMethods,
+                                               .tp_init        = EdsLib_Python_ObjectArray_init,
+                                               .tp_flags       = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+                                               .tp_doc         = PyDoc_STR("EDS Array Type") };
 
 static Py_ssize_t EdsLib_Python_ObjectArray_seq_len(PyObject *obj)
 {
@@ -79,31 +68,30 @@ static Py_ssize_t EdsLib_Python_ObjectArray_seq_len(PyObject *obj)
     return self->ElementCount;
 }
 
-static PyObject *   EdsLib_Python_ObjectArray_GetIndexAccessor(PyObject *obj, Py_ssize_t idx)
+static PyObject *EdsLib_Python_ObjectArray_GetIndexAccessor(PyObject *obj, Py_ssize_t idx)
 {
     EdsLib_Python_ObjectArray_t *self = (EdsLib_Python_ObjectArray_t *)obj;
-    PyObject *accessor;
-
+    PyObject                    *accessor;
 
     if (idx >= 0 && idx < self->ElementCount)
     {
         accessor = EdsLib_Python_ElementAccessor_CreateFromOffsetSize(self->RefDbEntry->EdsId,
-                self->ElementSize * idx, self->ElementSize);
+                                                                      self->ElementSize * idx,
+                                                                      self->ElementSize);
     }
     else
     {
-        PyErr_Format(PyExc_IndexError, "Request for index %zd in array of length %zd",
-                idx, self->ElementCount);
+        PyErr_Format(PyExc_IndexError, "Request for index %zd in array of length %zd", idx, self->ElementCount);
         accessor = NULL;
     }
 
     return accessor;
 }
 
-static PyObject *   EdsLib_Python_ObjectArray_seq_item(PyObject *obj, Py_ssize_t idx)
+static PyObject *EdsLib_Python_ObjectArray_seq_item(PyObject *obj, Py_ssize_t idx)
 {
-    PyObject *accessor = EdsLib_Python_ObjectArray_GetIndexAccessor(obj, idx);
-    PyObject *result;
+    PyObject    *accessor = EdsLib_Python_ObjectArray_GetIndexAccessor(obj, idx);
+    PyObject    *result;
     descrgetfunc getfunc;
 
     if (accessor == NULL)
@@ -134,8 +122,8 @@ static PyObject *   EdsLib_Python_ObjectArray_seq_item(PyObject *obj, Py_ssize_t
 
 static int EdsLib_Python_ObjectArray_seq_ass_item(PyObject *obj, Py_ssize_t idx, PyObject *val)
 {
-    PyObject *accessor = EdsLib_Python_ObjectArray_GetIndexAccessor(obj, idx);
-    int result;
+    PyObject    *accessor = EdsLib_Python_ObjectArray_GetIndexAccessor(obj, idx);
+    int          result;
     descrsetfunc setfunc;
 
     if (accessor == NULL)
@@ -162,10 +150,10 @@ static int EdsLib_Python_ObjectArray_seq_ass_item(PyObject *obj, Py_ssize_t idx,
 
 static int EdsLib_Python_ObjectArray_getbuffer(PyObject *obj, Py_buffer *view, int flags)
 {
-    EdsLib_Python_ObjectArray_t * self = (EdsLib_Python_ObjectArray_t *)obj;
-    Py_ssize_t ArrayItemSize;
+    EdsLib_Python_ObjectArray_t *self = (EdsLib_Python_ObjectArray_t *)obj;
+    Py_ssize_t                   ArrayItemSize;
 
-    ArrayItemSize = EdsLib_Python_DatabaseEntry_GetMaxSize((PyTypeObject*)self->RefDbEntry);
+    ArrayItemSize = EdsLib_Python_DatabaseEntry_GetMaxSize((PyTypeObject *)self->RefDbEntry);
     if (view->itemsize <= 0)
     {
         return -1;
@@ -192,7 +180,7 @@ static int EdsLib_Python_ObjectArray_getbuffer(PyObject *obj, Py_buffer *view, i
     }
     if ((flags & PyBUF_ND) == PyBUF_ND)
     {
-        view->ndim = 1;
+        view->ndim  = 1;
         view->shape = &self->ElementCount;
     }
     if ((flags & PyBUF_STRIDES) == PyBUF_STRIDES)
@@ -208,18 +196,18 @@ static void EdsLib_Python_ObjectArray_releasebuffer(PyObject *obj, Py_buffer *vi
     EdsLib_Python_Buffer_ReleaseContentRef(view->internal);
 }
 
-static int          EdsLib_Python_ObjectArray_init(PyObject *obj, PyObject *args, PyObject *kwds)
+static int EdsLib_Python_ObjectArray_init(PyObject *obj, PyObject *args, PyObject *kwds)
 {
-    static const char *in_kwlist[] = { "value", NULL };
-    EdsLib_Python_ObjectArray_t * self = (EdsLib_Python_ObjectArray_t *)obj;
-    EdsLib_Python_DatabaseEntry_t *dbent = NULL;
-    EdsLib_DataTypeDB_TypeInfo_t TypeInfo;
+    static const char                  *in_kwlist[] = { "value", NULL };
+    EdsLib_Python_ObjectArray_t        *self        = (EdsLib_Python_ObjectArray_t *)obj;
+    EdsLib_Python_DatabaseEntry_t      *dbent       = NULL;
+    EdsLib_DataTypeDB_TypeInfo_t        TypeInfo;
     EdsLib_DataTypeDB_DerivedTypeInfo_t DerivInfo;
-    Py_ssize_t maxsize = -1;
-    Py_ssize_t nelem = -1;
-    Py_ssize_t elemsz = -1;
-    Py_ssize_t idx;
-    int result = -1;
+    Py_ssize_t                          maxsize = -1;
+    Py_ssize_t                          nelem   = -1;
+    Py_ssize_t                          elemsz  = -1;
+    Py_ssize_t                          idx;
+    int                                 result = -1;
 
     /*
      * First drop any existing buffer (e.g. in case __init__ is invoked directly)
@@ -227,11 +215,11 @@ static int          EdsLib_Python_ObjectArray_init(PyObject *obj, PyObject *args
     Py_CLEAR(self->RefDbEntry);
 
     kwds = EdsLib_Python_ObjectBase_InitArgsToKwds(args, kwds, in_kwlist);
-    args = NULL;    /* should no longer be used directly */
+    args = NULL; /* should no longer be used directly */
 
     do
     {
-        if (!EdsLib_Python_ObjectBase_GetKwArg(kwds,"|O:ObjectArray_init", "dbent", &dbent))
+        if (!EdsLib_Python_ObjectBase_GetKwArg(kwds, "|O:ObjectArray_init", "dbent", &dbent))
         {
             break;
         }
@@ -241,28 +229,25 @@ static int          EdsLib_Python_ObjectArray_init(PyObject *obj, PyObject *args
             Py_INCREF(dbent); /* make owned.  It is DECREF'ed at the end of this function. */
             if (Py_TYPE(dbent) != &EdsLib_Python_DatabaseEntryType)
             {
-                PyErr_Format(PyExc_TypeError, "dbent must be a database entry type, not %s",
-                        Py_TYPE(dbent)->tp_name);
+                PyErr_Format(PyExc_TypeError, "dbent must be a database entry type, not %s", Py_TYPE(dbent)->tp_name);
                 break;
             }
         }
 
-        if (!EdsLib_Python_ObjectBase_GetKwArg(kwds,"|n:ObjectArray_init", "nelem", &nelem))
+        if (!EdsLib_Python_ObjectBase_GetKwArg(kwds, "|n:ObjectArray_init", "nelem", &nelem))
         {
             break;
         }
 
-        if (!EdsLib_Python_ObjectBase_GetKwArg(kwds,"|n:ObjectArray_init", "elemsz", &elemsz))
+        if (!EdsLib_Python_ObjectBase_GetKwArg(kwds, "|n:ObjectArray_init", "elemsz", &elemsz))
         {
             break;
         }
 
-        if (!EdsLib_Python_ObjectBase_GetKwArg(kwds,"|n:ObjectArray_init", "maxsize", &maxsize))
+        if (!EdsLib_Python_ObjectBase_GetKwArg(kwds, "|n:ObjectArray_init", "maxsize", &maxsize))
         {
             break;
         }
-
-
 
         /*
          * If the object has a direct EDS definition (static array) then look up the info now.
@@ -282,15 +267,17 @@ static int          EdsLib_Python_ObjectArray_init(PyObject *obj, PyObject *args
             {
                 EdsLib_DataTypeDB_EntityInfo_t EntityInfo;
 
-                if (EdsLib_DataTypeDB_GetMemberByIndex(SelfDbEntry->EdsDb->GD, SelfDbEntry->EdsId, 0, &EntityInfo) != EDSLIB_SUCCESS)
+                if (EdsLib_DataTypeDB_GetMemberByIndex(SelfDbEntry->EdsDb->GD, SelfDbEntry->EdsId, 0, &EntityInfo)
+                    != EDSLIB_SUCCESS)
                 {
                     PyErr_Format(PyExc_RuntimeError, "Cannot get array entity info from EDS DB");
                     break;
                 }
 
-                dbent = (EdsLib_Python_DatabaseEntry_t *)EdsLib_Python_DatabaseEntry_GetFromEdsId((PyObject*)SelfDbEntry->EdsDb, EntityInfo.EdsId);
+                dbent = (EdsLib_Python_DatabaseEntry_t *)EdsLib_Python_DatabaseEntry_GetFromEdsId(
+                    (PyObject *)SelfDbEntry->EdsDb,
+                    EntityInfo.EdsId);
             }
-
         }
         else
         {
@@ -326,8 +313,7 @@ static int          EdsLib_Python_ObjectArray_init(PyObject *obj, PyObject *args
             {
                 elemsz = maxsize / nelem;
             }
-            else if (EdsLib_DataTypeDB_GetDerivedInfo(dbent->EdsDb->GD,
-                    dbent->EdsId, &DerivInfo) == EDSLIB_SUCCESS)
+            else if (EdsLib_DataTypeDB_GetDerivedInfo(dbent->EdsDb->GD, dbent->EdsId, &DerivInfo) == EDSLIB_SUCCESS)
             {
                 elemsz = DerivInfo.MaxSize.Bytes;
             }
@@ -381,10 +367,10 @@ static int          EdsLib_Python_ObjectArray_init(PyObject *obj, PyObject *args
             break;
         }
 
-        self->RefDbEntry = dbent;
-        dbent = NULL; /* steal ref */
+        self->RefDbEntry   = dbent;
+        dbent              = NULL; /* steal ref */
         self->ElementCount = nelem;
-        self->ElementSize = elemsz;
+        self->ElementSize  = elemsz;
 
         /*
          * At this point the Python object is fully initialized....
@@ -399,7 +385,8 @@ static int          EdsLib_Python_ObjectArray_init(PyObject *obj, PyObject *args
              * Now get the type info for the _element_ rather than the array itself.
              * This should always be present
              */
-            if (EdsLib_DataTypeDB_GetTypeInfo(self->RefDbEntry->EdsDb->GD, self->RefDbEntry->EdsId, &TypeInfo) != EDSLIB_SUCCESS)
+            if (EdsLib_DataTypeDB_GetTypeInfo(self->RefDbEntry->EdsDb->GD, self->RefDbEntry->EdsId, &TypeInfo)
+                != EDSLIB_SUCCESS)
             {
                 PyErr_Format(PyExc_RuntimeError, "Cannot get type info from EDS DB");
                 break;
@@ -411,7 +398,7 @@ static int          EdsLib_Python_ObjectArray_init(PyObject *obj, PyObject *args
              * */
             if (TypeInfo.NumSubElements > 0)
             {
-                EdsLib_Binding_Buffer_Content_t *content;
+                EdsLib_Binding_Buffer_Content_t  *content;
                 EdsLib_Binding_DescriptorObject_t desc;
 
                 content = EdsLib_Python_Buffer_GetContentRef(self->objbase.StorageBuf, PyBUF_WRITABLE);
@@ -422,8 +409,8 @@ static int          EdsLib_Python_ObjectArray_init(PyObject *obj, PyObject *args
 
                 memset(&desc, 0, sizeof(desc));
 
-                desc.GD = self->RefDbEntry->EdsDb->GD;
-                desc.EdsId = self->RefDbEntry->EdsId;
+                desc.GD     = self->RefDbEntry->EdsDb->GD;
+                desc.EdsId  = self->RefDbEntry->EdsId;
                 desc.Offset = self->objbase.Offset;
                 desc.Length = self->ElementSize;
                 EdsLib_Binding_SetDescBuffer(&desc, content);
@@ -440,12 +427,10 @@ static int          EdsLib_Python_ObjectArray_init(PyObject *obj, PyObject *args
         }
 
         result = 0;
-    }
-    while (0);
+    } while (0);
 
     Py_XDECREF(dbent);
     Py_XDECREF(kwds);
 
     return result;
 }
-

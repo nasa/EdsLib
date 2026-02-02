@@ -40,15 +40,12 @@
  */
 #if (PY_MAJOR_VERSION >= 3)
 
-static PyModuleDef CFE_MissionLib_Python_ModuleDef =
-{
-    PyModuleDef_HEAD_INIT,
-    CFE_MISSIONLIB_PYTHON_MODULE_NAME,
-    PyDoc_STR(CFE_MISSIONLIB_PYTHON_DOC),
-    -1
-};
+static PyModuleDef CFE_MissionLib_Python_ModuleDef = { PyModuleDef_HEAD_INIT,
+                                                       CFE_MISSIONLIB_PYTHON_MODULE_NAME,
+                                                       PyDoc_STR(CFE_MISSIONLIB_PYTHON_DOC),
+                                                       -1 };
 
-static inline PyObject* CFE_MissionLib_Python_InstantiateModule(void)
+static inline PyObject *CFE_MissionLib_Python_InstantiateModule(void)
 {
     /* python3 uses PyModule_Create() API */
     return PyModule_Create(&CFE_MissionLib_Python_ModuleDef);
@@ -56,7 +53,7 @@ static inline PyObject* CFE_MissionLib_Python_InstantiateModule(void)
 
 #else
 
-static inline PyObject* CFE_MissionLib_Python_InstantiateModule(void)
+static inline PyObject *CFE_MissionLib_Python_InstantiateModule(void)
 {
     /* python2 uses Py_InitModule3() API */
     return Py_InitModule3(CFE_MISSIONLIB_PYTHON_MODULE_NAME, NULL, CFE_MISSIONLIB_PYTHON_DOC);
@@ -64,8 +61,7 @@ static inline PyObject* CFE_MissionLib_Python_InstantiateModule(void)
 
 #endif
 
-
-PyObject* CFE_MissionLib_Python_CreateModule(void)
+PyObject *CFE_MissionLib_Python_CreateModule(void)
 {
     PyObject *m = NULL;
 
@@ -74,9 +70,9 @@ PyObject* CFE_MissionLib_Python_CreateModule(void)
         /*
          * Prepare all of the types defined here
          */
-        if (PyType_Ready(&CFE_MissionLib_Python_DatabaseType) != 0 ||
-            PyType_Ready(&CFE_MissionLib_Python_InterfaceType) != 0 ||
-            PyType_Ready(&CFE_MissionLib_Python_TopicType) != 0)
+        if (PyType_Ready(&CFE_MissionLib_Python_DatabaseType) != 0
+            || PyType_Ready(&CFE_MissionLib_Python_InterfaceType) != 0
+            || PyType_Ready(&CFE_MissionLib_Python_TopicType) != 0)
         {
             break;
         }
@@ -99,11 +95,10 @@ PyObject* CFE_MissionLib_Python_CreateModule(void)
         /*
          * Add appropriate types so object instances can be constructed
          */
-        PyModule_AddObject(m, "Database", (PyObject*)&CFE_MissionLib_Python_DatabaseType);
-        PyModule_AddObject(m, "Interface", (PyObject*)&CFE_MissionLib_Python_InterfaceType);
-        PyModule_AddObject(m, "Topic", (PyObject*)&CFE_MissionLib_Python_TopicType);
-    }
-    while(0);
+        PyModule_AddObject(m, "Database", (PyObject *)&CFE_MissionLib_Python_DatabaseType);
+        PyModule_AddObject(m, "Interface", (PyObject *)&CFE_MissionLib_Python_InterfaceType);
+        PyModule_AddObject(m, "Topic", (PyObject *)&CFE_MissionLib_Python_TopicType);
+    } while (0);
 
     return m;
 }

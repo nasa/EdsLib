@@ -161,8 +161,8 @@ bool CFE_EDSMSG_Dispatch_CheckComponentMatch(EdsLib_Id_t ComponentId, CFE_Missio
  * This just finds the base type using the information in the EDS DB only
  *
  *-----------------------------------------------------------------*/
-CFE_Status_t CFE_EDSMSG_Dispatch_FindArgBaseType(EdsLib_Id_t DeclIntfId, EdsLib_Id_t CompIntfId,
-                                                 EdsLib_Id_t *ArgTypeBuf)
+CFE_Status_t
+CFE_EDSMSG_Dispatch_FindArgBaseType(EdsLib_Id_t DeclIntfId, EdsLib_Id_t CompIntfId, EdsLib_Id_t *ArgTypeBuf)
 {
     const EdsLib_DatabaseObject_t *GD;
     EdsLib_Id_t                    CommandEdsId;
@@ -199,8 +199,9 @@ CFE_Status_t CFE_EDSMSG_Dispatch_FindArgBaseType(EdsLib_Id_t DeclIntfId, EdsLib_
  * expected/defined size in EDS
  *
  *-----------------------------------------------------------------*/
-CFE_Status_t CFE_EDSMSG_Dispatch_CheckActualBufferType(const CFE_SB_Buffer_t *Buffer, EdsLib_Id_t *EdsId,
-                                                       uint32_t *DispatchTblPosition)
+CFE_Status_t CFE_EDSMSG_Dispatch_CheckActualBufferType(const CFE_SB_Buffer_t *Buffer,
+                                                       EdsLib_Id_t           *EdsId,
+                                                       uint32_t              *DispatchTblPosition)
 {
     const EdsLib_DatabaseObject_t           *GD;
     EdsLib_DataTypeDB_TypeInfo_t             TypeInfo;
@@ -254,8 +255,10 @@ CFE_Status_t CFE_EDSMSG_Dispatch_CheckActualBufferType(const CFE_SB_Buffer_t *Bu
  * Completely look up the data type from the supplied interface IDs
  *
  *-----------------------------------------------------------------*/
-CFE_Status_t CFE_EDSMSG_Dispatch_FindArgType(EdsLib_Id_t DeclIntfId, EdsLib_Id_t ParentIntfId,
-                                             const CFE_SB_Buffer_t *Buffer, uint32_t *DispatchPosition)
+CFE_Status_t CFE_EDSMSG_Dispatch_FindArgType(EdsLib_Id_t            DeclIntfId,
+                                             EdsLib_Id_t            ParentIntfId,
+                                             const CFE_SB_Buffer_t *Buffer,
+                                             uint32_t              *DispatchPosition)
 {
     CFE_Status_t ReturnCode;
     EdsLib_Id_t  ArgType;
@@ -281,15 +284,15 @@ CFE_Status_t CFE_EDSMSG_Dispatch_FindArgType(EdsLib_Id_t DeclIntfId, EdsLib_Id_t
  * Finds the matching handler function from the dispatch table
  *
  *-----------------------------------------------------------------*/
-CFE_EDSMSG_DispatchFunc_t CFE_EDSMSG_Dispatch_LookupHandler(const void *DispatchTable, size_t DispatchStartOffset,
-                                                            uint32_t DispatchPosition)
+CFE_EDSMSG_DispatchFunc_t
+CFE_EDSMSG_Dispatch_LookupHandler(const void *DispatchTable, size_t DispatchStartOffset, uint32_t DispatchPosition)
 {
     const uint8                     *MemAddr;
     const CFE_EDSMSG_DispatchFunc_t *DispatchTbl;
 
     /* calculate the address of the first handler routine for this intf
      * Note the START offsets are in bytes, so this must be done in uint8* logic */
-    MemAddr = (const uint8 *)DispatchTable;
+    MemAddr  = (const uint8 *)DispatchTable;
     MemAddr += DispatchStartOffset;
 
     /* now shift to the correct type (function pointer) and apply the position offset */
@@ -304,8 +307,10 @@ CFE_EDSMSG_DispatchFunc_t CFE_EDSMSG_Dispatch_LookupHandler(const void *Dispatch
  * Dispatch the message based on the IDs and dispatch table
  *
  *-----------------------------------------------------------------*/
-CFE_Status_t CFE_EDSMSG_Dispatch(EdsLib_Id_t DeclIntfId, EdsLib_Id_t ComponentId, const CFE_SB_Buffer_t *Buffer,
-                                 const void *DispatchTable)
+CFE_Status_t CFE_EDSMSG_Dispatch(EdsLib_Id_t            DeclIntfId,
+                                 EdsLib_Id_t            ComponentId,
+                                 const CFE_SB_Buffer_t *Buffer,
+                                 const void            *DispatchTable)
 {
     CFE_Status_t               ReturnCode;
     CFE_MissionLib_TopicInfo_t TopicInfo;
