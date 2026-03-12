@@ -407,6 +407,7 @@ static PyObject *CFE_MissionLib_Python_InterfaceIterator_iternext(PyObject *obj)
     CFE_MissionLib_Python_Interface_t         *intf = NULL;
     char                                       Buffer[128];
     CFE_MissionLib_TopicInfo_t                 TopicInfo;
+    EdsLib_IntfDB_InterfaceInfo_t              IntfInfo;
     int32_t                                    Status;
     PyObject                                  *key     = NULL;
     PyObject                                  *topicid = NULL;
@@ -432,11 +433,26 @@ static PyObject *CFE_MissionLib_Python_InterfaceIterator_iternext(PyObject *obj)
             break;
         }
 
-        /* This fails quickly if passed an invalid identifier - it will not assemble the string */
-        Status = EdsLib_IntfDB_GetFullName(CFE_MissionLib_GetParent(intf->DbObj->IntfDb),
-                                           TopicInfo.ParentIntfId,
-                                           Buffer,
-                                           sizeof(Buffer));
+        Status = EdsLib_IntfDB_GetComponentInterfaceInfo(CFE_MissionLib_GetParent(intf->DbObj->IntfDb),
+                                                         TopicInfo.ParentIntfId,
+                                                         &IntfInfo);
+        if (Status == EDSLIB_SUCCESS)
+        {
+            /* Only look at entries associated with this interface (Bypass topics from other interfaces) */
+            if (IntfInfo.IntfTypeEdsId != intf->DeclEdsId)
+            {
+                Status = EDSLIB_NO_MATCHING_VALUE;
+            }
+            else
+            {
+                /* This fails quickly if passed an invalid identifier - it will not assemble the string */
+                Status = EdsLib_IntfDB_GetFullName(CFE_MissionLib_GetParent(intf->DbObj->IntfDb),
+                                                   TopicInfo.ParentIntfId,
+                                                   Buffer,
+                                                   sizeof(Buffer));
+            }
+        }
+
     } while (Status != EDSLIB_SUCCESS);
 
     if (Status == EDSLIB_SUCCESS)

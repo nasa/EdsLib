@@ -525,7 +525,9 @@ static PyObject *CFE_MissionLib_Python_Set_PubSub(PyObject *obj, PyObject *args)
     EdsComponent_CFE_SB_Listener_t           Params;
     EdsInterface_CFE_SB_SoftwareBus_PubSub_t PubSub;
 
-    if (!PyArg_UnpackTuple(args, "DecodeEdsId", 3, 3, &arg1, &arg2, &arg3))
+    CFE_MissionLib_Python_Database_t *IntfDb = (CFE_MissionLib_Python_Database_t *)obj;
+
+    if (!PyArg_UnpackTuple(args, "SetPubSub", 3, 3, &arg1, &arg2, &arg3))
     {
         PyErr_Format(PyExc_RuntimeError, "Arguments expected: InstanceNumber, TopicId, and SpacePacket Message");
         return Py_False;
@@ -535,18 +537,44 @@ static PyObject *CFE_MissionLib_Python_Set_PubSub(PyObject *obj, PyObject *args)
     Py_INCREF(arg2);
     Py_INCREF(arg3);
 
+    tempargs = NULL;
+    memset(&Params, 0, sizeof(Params));
+
     do
     {
         if (PyNumber_Check(arg1))
         {
             tempargs = PyNumber_Long(arg1);
-
-            Params.Telecommand.InstanceNumber = PyLong_AsUnsignedLong(tempargs);
-            Py_DECREF(tempargs);
+        }
+        else if (PyUnicode_Check(arg1))
+        {
+            /* Do a lookup but make sure the string is plain ASCII */
+            tempargs = PyUnicode_AsASCIIString(arg1);
         }
         else
         {
-            PyErr_Format(PyExc_RuntimeError, "InstanceNumber needs to be an integer");
+            tempargs = PyObject_ASCII(arg1);
+        }
+
+        if (tempargs != NULL)
+        {
+            if (PyNumber_Check(arg1))
+            {
+                Params.Telecommand.InstanceNumber = PyLong_AsUnsignedLong(tempargs);
+            }
+            else
+            {
+                Params.Telecommand.InstanceNumber =
+                    CFE_MissionLib_GetInstanceNumber(IntfDb->IntfDb, PyBytes_AsString(tempargs));
+            }
+
+            Py_DECREF(tempargs);
+            tempargs = NULL;
+        }
+
+        if (Params.Telecommand.InstanceNumber == 0)
+        {
+            PyErr_Format(PyExc_ValueError, "Cannot convert %R to an instance number", arg1);
             break;
         }
 
@@ -559,7 +587,8 @@ static PyObject *CFE_MissionLib_Python_Set_PubSub(PyObject *obj, PyObject *args)
         }
         else
         {
-            PyErr_Format(PyExc_RuntimeError, "TopicId needs to be an integer");
+            /* In theory this could accept a named topic as well, if needed */
+            PyErr_Format(PyExc_TypeError, "TopicId needs to be an integer");
             break;
         }
 
