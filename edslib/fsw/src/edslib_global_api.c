@@ -62,8 +62,10 @@ uint16_t EdsLib_GetNumPackages(const EdsLib_DatabaseObject_t *GD)
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_FindPackageIdxBySubstring(const EdsLib_DatabaseObject_t *GD, const char *MatchString, size_t MatchLen,
-                                         uint8_t *IdxOut)
+int32_t EdsLib_FindPackageIdxBySubstring(const EdsLib_DatabaseObject_t *GD,
+                                         const char                    *MatchString,
+                                         size_t                         MatchLen,
+                                         uint8_t                       *IdxOut)
 {
     const char *NamePtr;
     int32_t     Status;

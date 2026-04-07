@@ -139,8 +139,9 @@ extern "C"
      * @param[out] TopicInfo output buffer for detail information, if successful
      * @return CFE_MISSIONLIB_SUCCESS if successful, error code if unsuccessful
      */
-    int32_t CFE_MissionLib_GetTopicInfo(const CFE_MissionLib_SoftwareBus_Interface_t *SBDB, uint16_t TopicId,
-                                        CFE_MissionLib_TopicInfo_t *TopicInfo);
+    int32_t CFE_MissionLib_GetTopicInfo(const CFE_MissionLib_SoftwareBus_Interface_t *SBDB,
+                                        uint16_t                                      TopicId,
+                                        CFE_MissionLib_TopicInfo_t                   *TopicInfo);
 
     /**
      * Get the instance name corresponding to an instance number
@@ -196,7 +197,8 @@ extern "C"
      * @param[inout] OpaqueArg an argument that is passed to the callback, may be NULL if not needed
      */
     void CFE_MissionLib_EnumerateTopics(const CFE_MissionLib_SoftwareBus_Interface_t *SBDB,
-                                        CFE_MissionLib_TopicInfo_Callback_t Callback, void *OpaqueArg);
+                                        CFE_MissionLib_TopicInfo_Callback_t           Callback,
+                                        void                                         *OpaqueArg);
 
     /**
      * Finds a topic ID matching the given interface ID
@@ -210,7 +212,8 @@ extern "C"
      * @return CFE_MISSIONLIB_SUCCESS if successful, error code if unsuccessful
      */
     int32_t CFE_MissionLib_FindTopicIdFromIntfId(const CFE_MissionLib_SoftwareBus_Interface_t *SBDB,
-                                                 EdsLib_Id_t IntfEdsId, uint16_t *TopicIdBuffer);
+                                                 EdsLib_Id_t                                   IntfEdsId,
+                                                 uint16_t                                     *TopicIdBuffer);
 
 #ifdef __cplusplus
 } /* extern "C" */

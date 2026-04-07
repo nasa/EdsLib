@@ -43,7 +43,7 @@
 #include "cfe_missionlib_lua_softwarebus.h"
 
 /* HACK - this is passed direct to Lua, so it must be a native path, not an OSAL path */
-#define SCRIPTENGINE_TESTFILE "./cf/testscript.lua"
+#define SCRIPTENGINE_TESTFILE       "./cf/testscript.lua"
 #define SCRIPTENGINE_ERRHANDLER_IDX 1
 
 SCRIPTENGINE_Global_t SCRIPTENGINE_Global;
@@ -78,7 +78,8 @@ static void *SCRIPTENGINE_NewEdsObjectBase(lua_State *lua, EdsLib_Id_t EdsId, si
     return DescObj;
 }
 
-static EdsLib_Binding_DescriptorObject_t *SCRIPTENGINE_NewEdsObjectWrapper(lua_State *lua, EdsLib_Id_t EdsId, void *DataPtr)
+static EdsLib_Binding_DescriptorObject_t *
+SCRIPTENGINE_NewEdsObjectWrapper(lua_State *lua, EdsLib_Id_t EdsId, void *DataPtr)
 {
     struct ContentWrapper
     {
@@ -94,7 +95,8 @@ static EdsLib_Binding_DescriptorObject_t *SCRIPTENGINE_NewEdsObjectWrapper(lua_S
     return &ObjectUserData->DescObj;
 }
 
-static EdsLib_Binding_DescriptorObject_t *SCRIPTENGINE_NewEdsObjectWithContent(lua_State *lua, EdsLib_Id_t EdsId, size_t MaxContentSize)
+static EdsLib_Binding_DescriptorObject_t *
+SCRIPTENGINE_NewEdsObjectWithContent(lua_State *lua, EdsLib_Id_t EdsId, size_t MaxContentSize)
 {
     struct ContentWrapper
     {
@@ -103,7 +105,10 @@ static EdsLib_Binding_DescriptorObject_t *SCRIPTENGINE_NewEdsObjectWithContent(l
         EdsLib_GenericValueUnion_t        ContentStart;
     } *ObjectUserData;
 
-    ObjectUserData = SCRIPTENGINE_NewEdsObjectBase(lua, EdsId, sizeof(struct ContentWrapper) + MaxContentSize - sizeof(EdsLib_GenericValueUnion_t));
+    ObjectUserData = SCRIPTENGINE_NewEdsObjectBase(lua,
+                                                   EdsId,
+                                                   sizeof(struct ContentWrapper) + MaxContentSize
+                                                       - sizeof(EdsLib_GenericValueUnion_t));
 
     EdsLib_Binding_InitUnmanagedBuffer(&ObjectUserData->BufObj, &ObjectUserData->ContentStart, MaxContentSize);
     EdsLib_Binding_SetDescBuffer(&ObjectUserData->DescObj, &ObjectUserData->BufObj);
@@ -113,7 +118,7 @@ static EdsLib_Binding_DescriptorObject_t *SCRIPTENGINE_NewEdsObjectWithContent(l
 
 static int SCRIPTENGINE_SendMsg(lua_State *lua)
 {
-    void *ObjPtr;
+    void  *ObjPtr;
     size_t ObjSize;
 
     EdsLib_LuaBinding_GetNativeObject(lua, 1, &ObjPtr, &ObjSize);
@@ -128,8 +133,8 @@ static int SCRIPTENGINE_SendMsg(lua_State *lua)
 
 static int SCRIPTENGINE_CreatePipe(lua_State *lua)
 {
-    lua_Integer Depth = luaL_checkinteger(lua, 1);
-    const char *PipeName = luaL_checkstring(lua, 2);
+    lua_Integer      Depth    = luaL_checkinteger(lua, 1);
+    const char      *PipeName = luaL_checkstring(lua, 2);
     CFE_SB_PipeId_t *PipeObj;
 
     PipeObj = lua_newuserdata(lua, sizeof(*PipeObj));
@@ -157,22 +162,21 @@ static int SCRIPTENGINE_DeletePipe(lua_State *lua)
     return 0;
 }
 
-
 static int SCRIPTENGINE_WaitFor(lua_State *lua)
 {
     CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj = luaL_checkudata(lua, 1, "CFE_MissionLib_Lua_Interface");
-    CFE_SB_PipeId_t *PipeObj = luaL_checkudata(lua, 2, "CFE_SB_PipeId");
-    lua_Integer timeout = luaL_optinteger(lua, 3, 1000);
+    CFE_SB_PipeId_t                         *PipeObj = luaL_checkudata(lua, 2, "CFE_SB_PipeId");
+    lua_Integer                              timeout = luaL_optinteger(lua, 3, 1000);
     EdsInterface_CFE_SB_SoftwareBus_PubSub_t PubSub;
-    CFE_SB_Buffer_t *BufPtr;
-    CFE_MSG_Size_t MsgSize;
-    EdsLib_Binding_DescriptorObject_t *ObjectUserData;
+    CFE_SB_Buffer_t                         *BufPtr;
+    CFE_MSG_Size_t                           MsgSize;
+    EdsLib_Binding_DescriptorObject_t       *ObjectUserData;
     EdsLib_DataTypeDB_DerivativeObjectInfo_t DerivObjInfo;
-    int32 RcvStatus;
-    void *LuaObj;
-    int nret;
+    int32                                    RcvStatus;
+    void                                    *LuaObj;
+    int                                      nret;
 
-    nret = 0;
+    nret   = 0;
     BufPtr = NULL;
 
     /* Map the Intf to a MsgID */
@@ -199,14 +203,15 @@ static int SCRIPTENGINE_WaitFor(lua_State *lua)
     if (RcvStatus == CFE_SUCCESS)
     {
         CFE_MSG_GetSize(&BufPtr->Msg, &MsgSize);
-        if (EdsLib_DataTypeDB_IdentifyBuffer(&EDS_DATABASE, IntfObj->IndicationBaseArg, BufPtr, &DerivObjInfo) != EDSLIB_SUCCESS)
+        if (EdsLib_DataTypeDB_IdentifyBuffer(&EDS_DATABASE, IntfObj->IndicationBaseArg, BufPtr, &DerivObjInfo)
+            != EDSLIB_SUCCESS)
         {
             /* This is OK and may mean that the object simply isn't derived; use the original type */
             DerivObjInfo.EdsId = IntfObj->IndicationBaseArg;
         }
 
         ObjectUserData = SCRIPTENGINE_NewEdsObjectWithContent(lua, DerivObjInfo.EdsId, MsgSize);
-        LuaObj = EdsLib_Binding_GetNativeObject(ObjectUserData);
+        LuaObj         = EdsLib_Binding_GetNativeObject(ObjectUserData);
 
         if (LuaObj != NULL)
         {
@@ -216,11 +221,11 @@ static int SCRIPTENGINE_WaitFor(lua_State *lua)
         }
 
         /*
-        * Now release the reference by calling to CFE_SB_ReceiveBuffer() on the same pipe.
-        * Problem is, this will also return the next message if the pipe is not empty. So
-        * this needs to be done in a loop until it is empty.  But that will likely be the
-        * case on the first call since nothing is supposed to be subscribed right now.
-        */
+         * Now release the reference by calling to CFE_SB_ReceiveBuffer() on the same pipe.
+         * Problem is, this will also return the next message if the pipe is not empty. So
+         * this needs to be done in a loop until it is empty.  But that will likely be the
+         * case on the first call since nothing is supposed to be subscribed right now.
+         */
         while (CFE_SB_ReceiveBuffer(&BufPtr, *PipeObj, CFE_SB_POLL) == CFE_SUCCESS)
         {
             /* do nothing, just repeat */
@@ -263,8 +268,6 @@ static void SCRIPTENGINE_Setup(lua_State *lua)
     }
     lua_pop(lua, 1);
 
-
-
     lua_newtable(lua);
     lua_pushstring(lua, "SendMsg");
     lua_pushcfunction(lua, SCRIPTENGINE_SendMsg);
@@ -278,9 +281,7 @@ static void SCRIPTENGINE_Setup(lua_State *lua)
     lua_pushcfunction(lua, SCRIPTENGINE_WaitFor);
     lua_settable(lua, -3);
 
-
     lua_setglobal(lua, "CFE");
-
 
     /* Stack index 1 will be the error handler function (used for protected calls) */
     /* This can just sit there at the bottom of the stack, useful for when pcall() is used later */
@@ -321,14 +322,14 @@ static int32 SCRIPTENGINE_DoLoad(lua_State *lua, const char *Filename)
 
 static int32 SCRIPTENGINE_DoCall(lua_State *lua, const char *Function, void *ArgData, EdsLib_Id_t ArgEdsId)
 {
-    int   stack_top;
-    int   nargs;
-    int32 status;
+    int                                stack_top;
+    int                                nargs;
+    int32                              status;
     EdsLib_Binding_DescriptorObject_t *ObjectUserData;
 
-    nargs = 0;
+    nargs          = 0;
     ObjectUserData = NULL;
-    stack_top = lua_gettop(lua);
+    stack_top      = lua_gettop(lua);
 
     lua_getglobal(lua, Function);
 
@@ -357,7 +358,6 @@ static int32 SCRIPTENGINE_DoCall(lua_State *lua, const char *Function, void *Arg
     {
         EdsLib_Binding_SetDescBuffer(ObjectUserData, NULL);
     }
-
 
     /* Always return the stack to where it was */
     lua_settop(lua, stack_top);

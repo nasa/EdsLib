@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     seds_plugin.c
  * \ingroup  tool
@@ -65,10 +64,9 @@
  */
 typedef struct
 {
-    void *dlhandle;         /**< actual handle from dlopen() */
+    void          *dlhandle; /**< actual handle from dlopen() */
     seds_integer_t refcount;
 } seds_c_plugin_t;
-
 
 /**
  * An object to simplify dynamically loaded symbol lookups
@@ -78,8 +76,8 @@ typedef struct
  */
 typedef union
 {
-    void *symaddr;                  /**< symbol address from dlsym() */
-    lua_CFunction lua_func;         /**< address as a Lua function */
+    void         *symaddr;  /**< symbol address from dlsym() */
+    lua_CFunction lua_func; /**< address as a Lua function */
     void (*simple_func)(void);
     void (*singlearg_func)(void *arg);
     void (*dualarg_func)(void *arg1, void *arg2);
@@ -87,15 +85,13 @@ typedef union
 
 /* slight cheat here - default the path to the same place as the C source.
  * if not overridden, then this is passed to dirname() to get the default. */
-static char SEDS_DEFAULT_SOURCE_PATH[] = __FILE__;
-static const char SEDS_PLUGIN_TABLE_KEY;            /**< Key for Lua registry table containing plugin objects */
+static char       SEDS_DEFAULT_SOURCE_PATH[] = __FILE__;
+static const char SEDS_PLUGIN_TABLE_KEY; /**< Key for Lua registry table containing plugin objects */
 
 /*******************************************************************************/
 /*                      Internal / static Helper Functions                     */
 /*                  (these are not referenced outside this unit)               */
 /*******************************************************************************/
-
-
 
 /* ------------------------------------------------------------------- */
 /**
@@ -120,36 +116,36 @@ static void *lua_value_to_cptr(lua_State *lua, int narg)
 {
     union
     {
-        void *vptr;
-        const char *vstr;   /* For strings */
-        ptrdiff_t vint;     /* "ptrdiff_t" should be a signed integer type with the same width as void* */
+        void       *vptr;
+        const char *vstr; /* For strings */
+        ptrdiff_t   vint; /* "ptrdiff_t" should be a signed integer type with the same width as void* */
     } value;
 
-    switch(lua_type(lua,narg))
+    switch (lua_type(lua, narg))
     {
-    case LUA_TBOOLEAN:
-        value.vint = lua_toboolean(lua, narg);
-        break;
-    case LUA_TNUMBER:
-        value.vint = lua_tointeger(lua, narg);
-        break;
-    case LUA_TUSERDATA:
-    {
-        EdsLib_LuaBinding_GetNativeObject(lua, narg, &value.vptr, NULL);
-        break;
-    }
-    case LUA_TLIGHTUSERDATA:
-        value.vptr = lua_touserdata(lua, narg);
-        break;
-    case LUA_TSTRING:
-        value.vstr = lua_tostring(lua, narg);
-        break;
-    case LUA_TTABLE:
-    case LUA_TNIL:
-    case LUA_TFUNCTION:
-    default:
-        value.vptr = NULL;
-        break;
+        case LUA_TBOOLEAN:
+            value.vint = lua_toboolean(lua, narg);
+            break;
+        case LUA_TNUMBER:
+            value.vint = lua_tointeger(lua, narg);
+            break;
+        case LUA_TUSERDATA:
+        {
+            EdsLib_LuaBinding_GetNativeObject(lua, narg, &value.vptr, NULL);
+            break;
+        }
+        case LUA_TLIGHTUSERDATA:
+            value.vptr = lua_touserdata(lua, narg);
+            break;
+        case LUA_TSTRING:
+            value.vstr = lua_tostring(lua, narg);
+            break;
+        case LUA_TTABLE:
+        case LUA_TNIL:
+        case LUA_TFUNCTION:
+        default:
+            value.vptr = NULL;
+            break;
     }
 
     return value.vptr;
@@ -178,8 +174,8 @@ static void *lua_value_to_cptr(lua_State *lua, int narg)
  */
 static int seds_c_symbol_call(lua_State *lua)
 {
-    seds_c_symbol_t *c_sym = luaL_checkudata(lua, 1, "c_symbol");
-    int stack_top = lua_gettop(lua);
+    seds_c_symbol_t *c_sym     = luaL_checkudata(lua, 1, "c_symbol");
+    int              stack_top = lua_gettop(lua);
 
     if (stack_top == 1)
     {
@@ -191,8 +187,7 @@ static int seds_c_symbol_call(lua_State *lua)
     }
     else
     {
-        c_sym->dualarg_func(lua_value_to_cptr(lua, 2),
-                lua_value_to_cptr(lua, 3));
+        c_sym->dualarg_func(lua_value_to_cptr(lua, 2), lua_value_to_cptr(lua, 3));
     }
 
     return 0;
@@ -231,8 +226,8 @@ static seds_c_symbol_t *seds_new_symbol_obj(lua_State *lua)
 static int seds_c_plugin_get_symbol(lua_State *lua)
 {
     seds_c_plugin_t *plugin = luaL_checkudata(lua, 1, "c_plugin");
-    const char *tmpstr;
-    void *sym;
+    const char      *tmpstr;
+    void            *sym;
 
     if (lua_type(lua, 2) != LUA_TSTRING)
     {
@@ -240,7 +235,7 @@ static int seds_c_plugin_get_symbol(lua_State *lua)
     }
 
     dlerror();
-    sym = dlsym(plugin->dlhandle, lua_tostring(lua, 2));
+    sym    = dlsym(plugin->dlhandle, lua_tostring(lua, 2));
     tmpstr = dlerror();
     if (tmpstr != NULL)
     {
@@ -258,7 +253,7 @@ static int seds_c_plugin_get_symbol(lua_State *lua)
     {
         /* Success - return the symbol as a user data */
         seds_c_symbol_t *c_sym = seds_new_symbol_obj(lua);
-        c_sym->symaddr = sym;
+        c_sym->symaddr         = sym;
         ++plugin->refcount;
     }
     return 1;
@@ -340,7 +335,6 @@ static int seds_lua_load_plugin_module(lua_State *lua)
 /*      (referenced outside this unit and prototyped in a separate header)     */
 /*******************************************************************************/
 
-
 /*
  * ------------------------------------------------------
  * External API function - see full details in prototype.
@@ -348,14 +342,14 @@ static int seds_lua_load_plugin_module(lua_State *lua)
  */
 void seds_plugin_load_so(lua_State *lua, const char *filename)
 {
-    void *dlhandle;
-    const char *tmpstr;
+    void           *dlhandle;
+    const char     *tmpstr;
     seds_c_symbol_t c_sym;
 
     seds_user_message_printf(SEDS_USER_MESSAGE_INFO, NULL, 0, "LOADING PLUGIN: %s", filename);
     dlerror();
     dlhandle = dlopen(filename, RTLD_NOW | RTLD_LOCAL);
-    tmpstr = dlerror();
+    tmpstr   = dlerror();
     if (dlhandle == NULL && tmpstr == NULL)
     {
         tmpstr = "Unknown";
@@ -377,7 +371,7 @@ void seds_plugin_load_so(lua_State *lua, const char *filename)
          * the value of that symbol as a light user data.
          */
         c_sym.symaddr = dlsym(dlhandle, "lua_plugin_init");
-        tmpstr = dlerror();
+        tmpstr        = dlerror();
         if (c_sym.symaddr != NULL && tmpstr == NULL)
         {
             lua_pushcfunction(lua, c_sym.lua_func);
@@ -386,8 +380,8 @@ void seds_plugin_load_so(lua_State *lua, const char *filename)
         else
         {
             seds_c_plugin_t *plugin = seds_new_plugin_obj(lua);
-            plugin->dlhandle = dlhandle;
-            plugin->refcount = 0;
+            plugin->dlhandle        = dlhandle;
+            plugin->refcount        = 0;
         }
     }
 }
@@ -400,15 +394,14 @@ void seds_plugin_load_so(lua_State *lua, const char *filename)
 void seds_plugin_load_lua(lua_State *lua, const char *runtime_file)
 {
     char runtime_file_buffer[512];
-    int top_start = lua_gettop(lua);
+    int  top_start = lua_gettop(lua);
 
     if (sedstool.user_runtime_path == NULL)
     {
         sedstool.user_runtime_path = dirname(SEDS_DEFAULT_SOURCE_PATH);
     }
 
-    snprintf(runtime_file_buffer, sizeof(runtime_file_buffer), "%s/%s",
-            sedstool.user_runtime_path, runtime_file);
+    snprintf(runtime_file_buffer, sizeof(runtime_file_buffer), "%s/%s", sedstool.user_runtime_path, runtime_file);
 
     if (luaL_loadfile(lua, runtime_file_buffer) != LUA_OK)
     {
@@ -438,7 +431,7 @@ void seds_plugin_register_globals(lua_State *lua)
      *
      * This simplifies future symbol lookups.
      */
-    mainprog = seds_new_plugin_obj(lua);
+    mainprog           = seds_new_plugin_obj(lua);
     mainprog->dlhandle = NULL;
     lua_pop(lua, 1);
 

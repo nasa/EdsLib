@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_init.h
  * \ingroup  fsw
@@ -38,5 +37,4 @@
  */
 void EdsLib_Initialize(void);
 
-#endif  /* _EDSLIB_INIT_H_ */
-
+#endif /* _EDSLIB_INIT_H_ */

@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_id.h
  * \ingroup  fsw
@@ -45,13 +44,13 @@
  *  +-----------------+-----------------+-----------------+-----------------+
  *  |      | CpuNum   |  AppId          |            |  Format Identifier   |
  *
- * G = Genre Identifier (2 bit) => If (0), this refers to an EDS-defined data type and 
+ * G = Genre Identifier (2 bit) => If (0), this refers to an EDS-defined data type and
  *     should be used with the EdsLib_DataTypeDB API.  If (1) this refers to a interface and
  *     should be used with the EdsLib_IntfDB API.  Values 2 and 3 are reserved for use in
  *     additional user-defined database(s).
  * C = Cpu Number (5 bits) => Instance number in the range of 1-31.  (0 = any)
  *     This field is ignored for data types, as data types are never instance-specific.  The
- *     field should be set 0 on all data type references.  For interface/component references, 0 may be 
+ *     field should be set 0 on all data type references.  For interface/component references, 0 may be
  *     used as a placeholder value to indicate "any".  Valid instance numbers are in the
  *     range of 1-31.
  * A = App Number (7 bits) => EDS APP number in the range of 1-127 (0 = reserved/invalid)
@@ -80,7 +79,7 @@ typedef uint32_t EdsLib_Id_t;
  * Because the appid of 0 is reserved, a valid EdsLib_Id_t can
  * never be all zero.
  */
-#define EDSLIB_ID_INVALID   ((EdsLib_Id_t)0)
+#define EDSLIB_ID_INVALID ((EdsLib_Id_t)0)
 
 /**
  * Some constants for interpreting the uint32_t.  User applications
@@ -89,22 +88,21 @@ typedef uint32_t EdsLib_Id_t;
  */
 enum
 {
-   EDSLIB_ID_SHIFT_INDEX      = 0,
-   EDSLIB_ID_SHIFT_APP        = 16,
-   EDSLIB_ID_SHIFT_CPUNUM     = 24,
-   EDSLIB_ID_SHIFT_GENRE      = 29,
+    EDSLIB_ID_SHIFT_INDEX  = 0,
+    EDSLIB_ID_SHIFT_APP    = 16,
+    EDSLIB_ID_SHIFT_CPUNUM = 24,
+    EDSLIB_ID_SHIFT_GENRE  = 29,
 
-   EDSLIB_ID_MASK_INDEX       = 0x3FF,
-   EDSLIB_ID_MASK_APP         = 0x7F,
-   EDSLIB_ID_MASK_CPUNUM      = 0x1F,
-   EDSLIB_ID_MASK_GENRE       = 0x3,
+    EDSLIB_ID_MASK_INDEX  = 0x3FF,
+    EDSLIB_ID_MASK_APP    = 0x7F,
+    EDSLIB_ID_MASK_CPUNUM = 0x1F,
+    EDSLIB_ID_MASK_GENRE  = 0x3,
 
-   EDSLIB_ID_INDEX_BITS       = EDSLIB_ID_MASK_INDEX << EDSLIB_ID_SHIFT_INDEX,
-   EDSLIB_ID_APP_BITS         = EDSLIB_ID_MASK_APP << EDSLIB_ID_SHIFT_APP,
-   EDSLIB_ID_CPUNUM_BITS      = EDSLIB_ID_MASK_CPUNUM << EDSLIB_ID_SHIFT_CPUNUM,
-   EDSLIB_ID_GENRE_BITS       = EDSLIB_ID_MASK_GENRE << EDSLIB_ID_SHIFT_GENRE,
+    EDSLIB_ID_INDEX_BITS  = EDSLIB_ID_MASK_INDEX << EDSLIB_ID_SHIFT_INDEX,
+    EDSLIB_ID_APP_BITS    = EDSLIB_ID_MASK_APP << EDSLIB_ID_SHIFT_APP,
+    EDSLIB_ID_CPUNUM_BITS = EDSLIB_ID_MASK_CPUNUM << EDSLIB_ID_SHIFT_CPUNUM,
+    EDSLIB_ID_GENRE_BITS  = EDSLIB_ID_MASK_GENRE << EDSLIB_ID_SHIFT_GENRE,
 };
-
 
 /* Note, the bits for datatype are chosen so it will be the default if no genre is set */
 /* The other possible values for Genre are reserved for use in derivative products (user-defined) */
@@ -112,7 +110,6 @@ enum
 #define EDSLIB_ID_GENRE_INTF_BITS     0x1
 #define EDSLIB_ID_GENRE_USERDEF1_BITS 0x2
 #define EDSLIB_ID_GENRE_USERDEF2_BITS 0x3
-
 
 /***************************************************************************************
  * INITIALIZERS
@@ -123,7 +120,7 @@ enum
 
 /**
  * Initialize an EdsLib_Id referring to a data type.
- * 
+ *
  * The CPU number will be set to 0 (any) and the format type will be set
  * to indicate a generic data structure.
  *
@@ -131,14 +128,14 @@ enum
  * @param FormatIdx A value from the app-specific data dictionary enumeration.  These
  *        are the values from the APP_eds_defines.h file.
  */
-#define EDSLIB_MAKE_ID(AppIdx, FormatIdx)                             \
-   ((EDSLIB_ID_GENRE_DATATYPE_BITS << EDSLIB_ID_SHIFT_GENRE) |        \
-    ((uint32_t)((AppIdx) & EDSLIB_ID_MASK_APP) << EDSLIB_ID_SHIFT_APP) |        \
-    ((uint32_t)((FormatIdx) & EDSLIB_ID_MASK_INDEX) << EDSLIB_ID_SHIFT_INDEX))
+#define EDSLIB_MAKE_ID(AppIdx, FormatIdx)                                 \
+    ((EDSLIB_ID_GENRE_DATATYPE_BITS << EDSLIB_ID_SHIFT_GENRE)             \
+     | ((uint32_t)((AppIdx) & EDSLIB_ID_MASK_APP) << EDSLIB_ID_SHIFT_APP) \
+     | ((uint32_t)((FormatIdx) & EDSLIB_ID_MASK_INDEX) << EDSLIB_ID_SHIFT_INDEX))
 
 /**
  * Initialize an EdsLib_Id referring to an interface.
- * 
+ *
  * The CPU number will be set to 0 (any) and the format type will be set
  * to the specified interface
  *
@@ -146,12 +143,10 @@ enum
  * @param IntfIdx A value from the app-specific interface enumeration.  These
  *        are the values from the APP_eds_defines.h file.
  */
-#define EDSLIB_INTF_ID(AppIdx, IntfIdx)                              \
-   ((EDSLIB_ID_GENRE_INTF_BITS << EDSLIB_ID_SHIFT_GENRE) |           \
-    ((uint32_t)((AppIdx) & EDSLIB_ID_MASK_APP) << EDSLIB_ID_SHIFT_APP) |       \
-    ((uint32_t)((IntfIdx) & EDSLIB_ID_MASK_INDEX) << EDSLIB_ID_SHIFT_INDEX))
-
-
+#define EDSLIB_INTF_ID(AppIdx, IntfIdx)                                   \
+    ((EDSLIB_ID_GENRE_INTF_BITS << EDSLIB_ID_SHIFT_GENRE)                 \
+     | ((uint32_t)((AppIdx) & EDSLIB_ID_MASK_APP) << EDSLIB_ID_SHIFT_APP) \
+     | ((uint32_t)((IntfIdx) & EDSLIB_ID_MASK_INDEX) << EDSLIB_ID_SHIFT_INDEX))
 
 /***************************************************************************************
  * BASIC ACCESSORS
@@ -165,7 +160,7 @@ enum
  */
 static inline uint8_t EdsLib_Get_Genre(EdsLib_Id_t EdsId)
 {
-   return (EdsId >> EDSLIB_ID_SHIFT_GENRE) & EDSLIB_ID_MASK_GENRE;
+    return (EdsId >> EDSLIB_ID_SHIFT_GENRE) & EDSLIB_ID_MASK_GENRE;
 }
 
 /**
@@ -173,8 +168,8 @@ static inline uint8_t EdsLib_Get_Genre(EdsLib_Id_t EdsId)
  */
 static inline void EdsLib_Set_Genre(EdsLib_Id_t *EdsId, uint8_t Genre)
 {
-   *EdsId &= ~EDSLIB_ID_GENRE_BITS;
-   *EdsId |= (Genre & EDSLIB_ID_MASK_GENRE) << EDSLIB_ID_SHIFT_GENRE;
+    *EdsId &= ~EDSLIB_ID_GENRE_BITS;
+    *EdsId |= (Genre & EDSLIB_ID_MASK_GENRE) << EDSLIB_ID_SHIFT_GENRE;
 }
 
 /**
@@ -182,7 +177,7 @@ static inline void EdsLib_Set_Genre(EdsLib_Id_t *EdsId, uint8_t Genre)
  */
 static inline bool EdsLib_Is_DataType(EdsLib_Id_t EdsId)
 {
-   return EdsLib_Get_Genre(EdsId) == EDSLIB_ID_GENRE_DATATYPE_BITS;
+    return EdsLib_Get_Genre(EdsId) == EDSLIB_ID_GENRE_DATATYPE_BITS;
 }
 
 /**
@@ -190,7 +185,7 @@ static inline bool EdsLib_Is_DataType(EdsLib_Id_t EdsId)
  */
 static inline bool EdsLib_Is_Interface(EdsLib_Id_t EdsId)
 {
-   return EdsLib_Get_Genre(EdsId) == EDSLIB_ID_GENRE_INTF_BITS;
+    return EdsLib_Get_Genre(EdsId) == EDSLIB_ID_GENRE_INTF_BITS;
 }
 
 /**
@@ -198,7 +193,7 @@ static inline bool EdsLib_Is_Interface(EdsLib_Id_t EdsId)
  */
 static inline uint16_t EdsLib_Get_CpuNumber(EdsLib_Id_t EdsId)
 {
-   return (EdsId >> EDSLIB_ID_SHIFT_CPUNUM) & EDSLIB_ID_MASK_CPUNUM;
+    return (EdsId >> EDSLIB_ID_SHIFT_CPUNUM) & EDSLIB_ID_MASK_CPUNUM;
 }
 
 /**
@@ -206,8 +201,8 @@ static inline uint16_t EdsLib_Get_CpuNumber(EdsLib_Id_t EdsId)
  */
 static inline void EdsLib_Set_CpuNumber(EdsLib_Id_t *EdsId, uint16_t CpuNum)
 {
-   *EdsId &= ~EDSLIB_ID_CPUNUM_BITS;
-   *EdsId |= (CpuNum & EDSLIB_ID_MASK_CPUNUM) << EDSLIB_ID_SHIFT_CPUNUM;
+    *EdsId &= ~EDSLIB_ID_CPUNUM_BITS;
+    *EdsId |= (CpuNum & EDSLIB_ID_MASK_CPUNUM) << EDSLIB_ID_SHIFT_CPUNUM;
 }
 
 /**
@@ -215,7 +210,7 @@ static inline void EdsLib_Set_CpuNumber(EdsLib_Id_t *EdsId, uint16_t CpuNum)
  */
 static inline uint16_t EdsLib_Get_AppIdx(EdsLib_Id_t EdsId)
 {
-   return (EdsId >> EDSLIB_ID_SHIFT_APP) & EDSLIB_ID_MASK_APP;
+    return (EdsId >> EDSLIB_ID_SHIFT_APP) & EDSLIB_ID_MASK_APP;
 }
 
 /**
@@ -223,8 +218,8 @@ static inline uint16_t EdsLib_Get_AppIdx(EdsLib_Id_t EdsId)
  */
 static inline void EdsLib_Set_AppIdx(EdsLib_Id_t *EdsId, uint16_t AppIdx)
 {
-   *EdsId &= ~EDSLIB_ID_APP_BITS;
-   *EdsId |= (AppIdx & EDSLIB_ID_MASK_APP) << EDSLIB_ID_SHIFT_APP;
+    *EdsId &= ~EDSLIB_ID_APP_BITS;
+    *EdsId |= (AppIdx & EDSLIB_ID_MASK_APP) << EDSLIB_ID_SHIFT_APP;
 }
 
 /**
@@ -232,7 +227,7 @@ static inline void EdsLib_Set_AppIdx(EdsLib_Id_t *EdsId, uint16_t AppIdx)
  */
 static inline uint16_t EdsLib_Get_FormatIdx(EdsLib_Id_t EdsId)
 {
-   return ((EdsId >> EDSLIB_ID_SHIFT_INDEX) & EDSLIB_ID_MASK_INDEX);
+    return ((EdsId >> EDSLIB_ID_SHIFT_INDEX) & EDSLIB_ID_MASK_INDEX);
 }
 
 /**
@@ -240,8 +235,8 @@ static inline uint16_t EdsLib_Get_FormatIdx(EdsLib_Id_t EdsId)
  */
 static inline void EdsLib_Set_FormatIdx(EdsLib_Id_t *EdsId, uint16_t FormatIdx)
 {
-   *EdsId &= ~EDSLIB_ID_INDEX_BITS;
-   *EdsId |= ((FormatIdx & EDSLIB_ID_MASK_INDEX) << EDSLIB_ID_SHIFT_INDEX);
+    *EdsId &= ~EDSLIB_ID_INDEX_BITS;
+    *EdsId |= ((FormatIdx & EDSLIB_ID_MASK_INDEX) << EDSLIB_ID_SHIFT_INDEX);
 }
 
 /**
@@ -254,7 +249,7 @@ static inline void EdsLib_Set_FormatIdx(EdsLib_Id_t *EdsId, uint16_t FormatIdx)
  */
 static inline bool EdsLib_Is_Valid(EdsLib_Id_t EdsId)
 {
-   return ((EdsId & (EDSLIB_ID_INDEX_BITS | EDSLIB_ID_APP_BITS)) != 0);
+    return ((EdsId & (EDSLIB_ID_INDEX_BITS | EDSLIB_ID_APP_BITS)) != 0);
 }
 
 /**
@@ -266,7 +261,7 @@ static inline bool EdsLib_Is_Valid(EdsLib_Id_t EdsId)
  */
 static inline bool EdsLib_Is_Similar(EdsLib_Id_t EdsId1, EdsLib_Id_t EdsId2)
 {
-   return (((EdsId1 ^ EdsId2) & (EDSLIB_ID_GENRE_BITS | EDSLIB_ID_INDEX_BITS | EDSLIB_ID_APP_BITS)) == 0);
+    return (((EdsId1 ^ EdsId2) & (EDSLIB_ID_GENRE_BITS | EDSLIB_ID_INDEX_BITS | EDSLIB_ID_APP_BITS)) == 0);
 }
 
 /**
@@ -278,9 +273,7 @@ static inline bool EdsLib_Is_Similar(EdsLib_Id_t EdsId1, EdsLib_Id_t EdsId2)
  */
 static inline bool EdsLib_Is_Match(EdsLib_Id_t EdsId1, EdsLib_Id_t EdsId2)
 {
-   return (EdsId1 == EdsId2);
+    return (EdsId1 == EdsId2);
 }
 
-
-#endif  /* _EDSLIB_ID_H_ */
-
+#endif /* _EDSLIB_ID_H_ */

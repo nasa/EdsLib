@@ -47,7 +47,8 @@ void CFE_MissionLib_Get_PubSub_Parameters(EdsInterface_CFE_SB_SoftwareBus_PubSub
     UT_GenStub_AddParam(CFE_MissionLib_Get_PubSub_Parameters, EdsInterface_CFE_SB_SoftwareBus_PubSub_t *, Params);
     UT_GenStub_AddParam(CFE_MissionLib_Get_PubSub_Parameters, const EdsDataType_CFE_HDR_Message_t *, Packet);
 
-    UT_GenStub_Execute(CFE_MissionLib_Get_PubSub_Parameters, Basic,
+    UT_GenStub_Execute(CFE_MissionLib_Get_PubSub_Parameters,
+                       Basic,
                        UT_DefaultHandler_CFE_MissionLib_Get_PubSub_Parameters);
 }
 
@@ -62,7 +63,8 @@ void CFE_MissionLib_MapListenerComponent(EdsInterface_CFE_SB_SoftwareBus_PubSub_
     UT_GenStub_AddParam(CFE_MissionLib_MapListenerComponent, EdsInterface_CFE_SB_SoftwareBus_PubSub_t *, Output);
     UT_GenStub_AddParam(CFE_MissionLib_MapListenerComponent, const EdsComponent_CFE_SB_Listener_t *, Input);
 
-    UT_GenStub_Execute(CFE_MissionLib_MapListenerComponent, Basic,
+    UT_GenStub_Execute(CFE_MissionLib_MapListenerComponent,
+                       Basic,
                        UT_DefaultHandler_CFE_MissionLib_MapListenerComponent);
 }
 
@@ -77,7 +79,8 @@ void CFE_MissionLib_MapPublisherComponent(EdsInterface_CFE_SB_SoftwareBus_PubSub
     UT_GenStub_AddParam(CFE_MissionLib_MapPublisherComponent, EdsInterface_CFE_SB_SoftwareBus_PubSub_t *, Output);
     UT_GenStub_AddParam(CFE_MissionLib_MapPublisherComponent, const EdsComponent_CFE_SB_Publisher_t *, Input);
 
-    UT_GenStub_Execute(CFE_MissionLib_MapPublisherComponent, Basic,
+    UT_GenStub_Execute(CFE_MissionLib_MapPublisherComponent,
+                       Basic,
                        UT_DefaultHandler_CFE_MissionLib_MapPublisherComponent);
 }
 
@@ -90,10 +93,12 @@ bool CFE_MissionLib_PubSub_IsListenerComponent(const EdsInterface_CFE_SB_Softwar
 {
     UT_GenStub_SetupReturnBuffer(CFE_MissionLib_PubSub_IsListenerComponent, bool);
 
-    UT_GenStub_AddParam(CFE_MissionLib_PubSub_IsListenerComponent, const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *,
+    UT_GenStub_AddParam(CFE_MissionLib_PubSub_IsListenerComponent,
+                        const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *,
                         Params);
 
-    UT_GenStub_Execute(CFE_MissionLib_PubSub_IsListenerComponent, Basic,
+    UT_GenStub_Execute(CFE_MissionLib_PubSub_IsListenerComponent,
+                       Basic,
                        UT_DefaultHandler_CFE_MissionLib_PubSub_IsListenerComponent);
 
     return UT_GenStub_GetReturnValue(CFE_MissionLib_PubSub_IsListenerComponent, bool);
@@ -108,10 +113,12 @@ bool CFE_MissionLib_PubSub_IsPublisherComponent(const EdsInterface_CFE_SB_Softwa
 {
     UT_GenStub_SetupReturnBuffer(CFE_MissionLib_PubSub_IsPublisherComponent, bool);
 
-    UT_GenStub_AddParam(CFE_MissionLib_PubSub_IsPublisherComponent, const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *,
+    UT_GenStub_AddParam(CFE_MissionLib_PubSub_IsPublisherComponent,
+                        const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *,
                         Params);
 
-    UT_GenStub_Execute(CFE_MissionLib_PubSub_IsPublisherComponent, Basic,
+    UT_GenStub_Execute(CFE_MissionLib_PubSub_IsPublisherComponent,
+                       Basic,
                        UT_DefaultHandler_CFE_MissionLib_PubSub_IsPublisherComponent);
 
     return UT_GenStub_GetReturnValue(CFE_MissionLib_PubSub_IsPublisherComponent, bool);
@@ -128,7 +135,8 @@ void CFE_MissionLib_Set_PubSub_Parameters(EdsDataType_CFE_HDR_Message_t         
     UT_GenStub_AddParam(CFE_MissionLib_Set_PubSub_Parameters, EdsDataType_CFE_HDR_Message_t *, Packet);
     UT_GenStub_AddParam(CFE_MissionLib_Set_PubSub_Parameters, const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *, Params);
 
-    UT_GenStub_Execute(CFE_MissionLib_Set_PubSub_Parameters, Basic,
+    UT_GenStub_Execute(CFE_MissionLib_Set_PubSub_Parameters,
+                       Basic,
                        UT_DefaultHandler_CFE_MissionLib_Set_PubSub_Parameters);
 }
 
@@ -143,7 +151,8 @@ void CFE_MissionLib_UnmapListenerComponent(EdsComponent_CFE_SB_Listener_t       
     UT_GenStub_AddParam(CFE_MissionLib_UnmapListenerComponent, EdsComponent_CFE_SB_Listener_t *, Output);
     UT_GenStub_AddParam(CFE_MissionLib_UnmapListenerComponent, const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *, Input);
 
-    UT_GenStub_Execute(CFE_MissionLib_UnmapListenerComponent, Basic,
+    UT_GenStub_Execute(CFE_MissionLib_UnmapListenerComponent,
+                       Basic,
                        UT_DefaultHandler_CFE_MissionLib_UnmapListenerComponent);
 }
 
@@ -156,9 +165,11 @@ void CFE_MissionLib_UnmapPublisherComponent(EdsComponent_CFE_SB_Publisher_t     
                                             const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Input)
 {
     UT_GenStub_AddParam(CFE_MissionLib_UnmapPublisherComponent, EdsComponent_CFE_SB_Publisher_t *, Output);
-    UT_GenStub_AddParam(CFE_MissionLib_UnmapPublisherComponent, const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *,
+    UT_GenStub_AddParam(CFE_MissionLib_UnmapPublisherComponent,
+                        const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *,
                         Input);
 
-    UT_GenStub_Execute(CFE_MissionLib_UnmapPublisherComponent, Basic,
+    UT_GenStub_Execute(CFE_MissionLib_UnmapPublisherComponent,
+                       Basic,
                        UT_DefaultHandler_CFE_MissionLib_UnmapPublisherComponent);
 }

@@ -19,7 +19,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_displaydb_api.c
  * \ingroup  fsw
@@ -73,7 +72,7 @@ void EdsLib_DisplayDB_Initialize(void)
 const char *EdsLib_DisplayDB_GetEdsName(const EdsLib_DatabaseObject_t *GD, uint16_t AppId)
 {
     EdsLib_DisplayDB_t DisplayDBPtr;
-    const char *Result;
+    const char        *Result;
 
     DisplayDBPtr = EdsLib_DisplayDB_GetTopLevel(GD, AppId);
     if (DisplayDBPtr != NULL)
@@ -103,8 +102,8 @@ const char *EdsLib_DisplayDB_GetEdsName(const EdsLib_DatabaseObject_t *GD, uint1
 const char *EdsLib_DisplayDB_GetBaseName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId)
 {
     const EdsLib_DisplayDB_Entry_t *DispInfo;
-    EdsLib_DatabaseRef_t TempRef;
-    const char *Result;
+    EdsLib_DatabaseRef_t            TempRef;
+    const char                     *Result;
 
     EdsLib_Decode_StructId(&TempRef, EdsId);
     DispInfo = EdsLib_DisplayDB_GetEntry(GD, &TempRef);
@@ -133,12 +132,13 @@ const char *EdsLib_DisplayDB_GetBaseName(const EdsLib_DatabaseObject_t *GD, EdsL
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-const char *EdsLib_DisplayDB_GetTypeName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, char *Buffer, uint32_t BufferSize)
+const char *
+EdsLib_DisplayDB_GetTypeName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, char *Buffer, uint32_t BufferSize)
 {
     const EdsLib_DisplayDB_Entry_t *DispInfo;
-    EdsLib_DatabaseRef_t TempRef;
-    const char *Result;
-    const char *Namespace;
+    EdsLib_DatabaseRef_t            TempRef;
+    const char                     *Result;
+    const char                     *Namespace;
 
     /* Should not return NULL, which allows safe use in printf() statements */
     if (Buffer == NULL || BufferSize == 0)
@@ -147,7 +147,7 @@ const char *EdsLib_DisplayDB_GetTypeName(const EdsLib_DatabaseObject_t *GD, EdsL
     }
 
     EdsLib_Decode_StructId(&TempRef, EdsId);
-    DispInfo = EdsLib_DisplayDB_GetEntry(GD, &TempRef);
+    DispInfo  = EdsLib_DisplayDB_GetEntry(GD, &TempRef);
     Buffer[0] = 0;
 
     if (DispInfo != NULL)
@@ -156,11 +156,11 @@ const char *EdsLib_DisplayDB_GetTypeName(const EdsLib_DatabaseObject_t *GD, EdsL
 
         if (Namespace != NULL && DispInfo->Name != NULL)
         {
-            snprintf(Buffer,BufferSize,"%s/%s", Namespace, DispInfo->Name);
+            snprintf(Buffer, BufferSize, "%s/%s", Namespace, DispInfo->Name);
         }
         else if (DispInfo->Name != NULL)
         {
-            snprintf(Buffer,BufferSize,"%s", DispInfo->Name);
+            snprintf(Buffer, BufferSize, "%s", DispInfo->Name);
         }
     }
 
@@ -185,7 +185,7 @@ const char *EdsLib_DisplayDB_GetTypeName(const EdsLib_DatabaseObject_t *GD, EdsL
 const char *EdsLib_DisplayDB_GetNamespace(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId)
 {
     EdsLib_DatabaseRef_t TempRef;
-    const char *Result;
+    const char          *Result;
 
     EdsLib_Decode_StructId(&TempRef, EdsId);
 
@@ -211,8 +211,8 @@ const char *EdsLib_DisplayDB_GetNamespace(const EdsLib_DatabaseObject_t *GD, Eds
 EdsLib_DisplayHint_t EdsLib_DisplayDB_GetDisplayHint(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId)
 {
     const EdsLib_DisplayDB_Entry_t *DisplayInf;
-    EdsLib_DatabaseRef_t TempRef;
-    EdsLib_DisplayHint_t HintType;
+    EdsLib_DatabaseRef_t            TempRef;
+    EdsLib_DisplayHint_t            HintType;
 
     EdsLib_Decode_StructId(&TempRef, EdsId);
     DisplayInf = EdsLib_DisplayDB_GetEntry(GD, &TempRef);
@@ -238,12 +238,15 @@ EdsLib_DisplayHint_t EdsLib_DisplayDB_GetDisplayHint(const EdsLib_DatabaseObject
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DisplayDB_GetIndexByName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, const char *Name, uint16_t *SubIndex)
+int32_t EdsLib_DisplayDB_GetIndexByName(const EdsLib_DatabaseObject_t *GD,
+                                        EdsLib_Id_t                    EdsId,
+                                        const char                    *Name,
+                                        uint16_t                      *SubIndex)
 {
-    const EdsLib_DisplayDB_Entry_t *DisplayInf;
+    const EdsLib_DisplayDB_Entry_t  *DisplayInf;
     const EdsLib_DataTypeDB_Entry_t *DataTypeInf;
-    EdsLib_DatabaseRef_t TempRef;
-    int32_t Status;
+    EdsLib_DatabaseRef_t             TempRef;
+    int32_t                          Status;
 
     EdsLib_Decode_StructId(&TempRef, EdsId);
     DataTypeInf = EdsLib_DataTypeDB_GetEntry(GD, &TempRef);
@@ -271,41 +274,43 @@ int32_t EdsLib_DisplayDB_GetIndexByName(const EdsLib_DatabaseObject_t *GD, EdsLi
         else
         {
             Status = EDSLIB_NAME_NOT_FOUND;
-            switch(DisplayInf->DisplayHint)
+            switch (DisplayInf->DisplayHint)
             {
-            case EDSLIB_DISPLAYHINT_ENUM_SYMTABLE:
-            {
-                const EdsLib_SymbolTableEntry_t *EnumSym =
+                case EDSLIB_DISPLAYHINT_ENUM_SYMTABLE:
+                {
+                    const EdsLib_SymbolTableEntry_t *EnumSym =
                         EdsLib_DisplaySymbolLookup_GetByName(DisplayInf->DisplayArg.SymTable,
-                                DisplayInf->DisplayArgTableSize, Name, strlen(Name));
-                if (EnumSym != NULL)
-                {
-                    *SubIndex = EnumSym->SymValue;
-                    Status = EDSLIB_SUCCESS;
-                }
-                break;
-            }
-            case EDSLIB_DISPLAYHINT_MEMBER_NAMETABLE:
-            {
-                const char * const *NameTable = DisplayInf->DisplayArg.NameTable;
-                uint16_t Idx;
-                for (Idx = 0; Idx < DisplayInf->DisplayArgTableSize; ++Idx)
-                {
-                    if (*NameTable != NULL)
+                                                             DisplayInf->DisplayArgTableSize,
+                                                             Name,
+                                                             strlen(Name));
+                    if (EnumSym != NULL)
                     {
-                        if(strcmp(*NameTable, Name) == 0)
-                        {
-                            *SubIndex = Idx;
-                            Status = EDSLIB_SUCCESS;
-                            break;
-                        }
+                        *SubIndex = EnumSym->SymValue;
+                        Status    = EDSLIB_SUCCESS;
                     }
-                    ++NameTable;
+                    break;
                 }
-                break;
-            }
-            default:
-                break;
+                case EDSLIB_DISPLAYHINT_MEMBER_NAMETABLE:
+                {
+                    const char *const *NameTable = DisplayInf->DisplayArg.NameTable;
+                    uint16_t           Idx;
+                    for (Idx = 0; Idx < DisplayInf->DisplayArgTableSize; ++Idx)
+                    {
+                        if (*NameTable != NULL)
+                        {
+                            if (strcmp(*NameTable, Name) == 0)
+                            {
+                                *SubIndex = Idx;
+                                Status    = EDSLIB_SUCCESS;
+                                break;
+                            }
+                        }
+                        ++NameTable;
+                    }
+                    break;
+                }
+                default:
+                    break;
             }
         }
     }
@@ -321,10 +326,10 @@ int32_t EdsLib_DisplayDB_GetIndexByName(const EdsLib_DatabaseObject_t *GD, EdsLi
  *-----------------------------------------------------------------*/
 const char *EdsLib_DisplayDB_GetNameByIndex(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, uint16_t SubIndex)
 {
-    const EdsLib_DisplayDB_Entry_t *DisplayInf;
+    const EdsLib_DisplayDB_Entry_t  *DisplayInf;
     const EdsLib_DataTypeDB_Entry_t *DataTypeInf;
-    EdsLib_DatabaseRef_t TempRef;
-    const char *result;
+    EdsLib_DatabaseRef_t             TempRef;
+    const char                      *result;
 
     result = NULL;
     EdsLib_Decode_StructId(&TempRef, EdsId);
@@ -340,30 +345,31 @@ const char *EdsLib_DisplayDB_GetNameByIndex(const EdsLib_DatabaseObject_t *GD, E
 
         if (DisplayInf != NULL)
         {
-            switch(DisplayInf->DisplayHint)
+            switch (DisplayInf->DisplayHint)
             {
-            case EDSLIB_DISPLAYHINT_ENUM_SYMTABLE:
-            {
-                const EdsLib_SymbolTableEntry_t *EnumSym =
+                case EDSLIB_DISPLAYHINT_ENUM_SYMTABLE:
+                {
+                    const EdsLib_SymbolTableEntry_t *EnumSym =
                         EdsLib_DisplaySymbolLookup_GetByValue(DisplayInf->DisplayArg.SymTable,
-                                DisplayInf->DisplayArgTableSize, SubIndex);
-                if (EnumSym != NULL)
-                {
-                    result = EnumSym->SymName;
+                                                              DisplayInf->DisplayArgTableSize,
+                                                              SubIndex);
+                    if (EnumSym != NULL)
+                    {
+                        result = EnumSym->SymName;
+                    }
+                    break;
                 }
-                break;
-            }
-            case EDSLIB_DISPLAYHINT_MEMBER_NAMETABLE:
-            {
-                /* direct lookup */
-                if (SubIndex < DisplayInf->DisplayArgTableSize)
+                case EDSLIB_DISPLAYHINT_MEMBER_NAMETABLE:
                 {
-                    result = DisplayInf->DisplayArg.NameTable[SubIndex];
+                    /* direct lookup */
+                    if (SubIndex < DisplayInf->DisplayArgTableSize)
+                    {
+                        result = DisplayInf->DisplayArg.NameTable[SubIndex];
+                    }
+                    break;
                 }
-                break;
-            }
-            default:
-                break;
+                default:
+                    break;
             }
         }
     }
@@ -377,23 +383,26 @@ const char *EdsLib_DisplayDB_GetNameByIndex(const EdsLib_DatabaseObject_t *GD, E
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-void EdsLib_DisplayDB_IterateAllEntities(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, EdsLib_EntityCallback_t Callback, void *Arg)
+void EdsLib_DisplayDB_IterateAllEntities(const EdsLib_DatabaseObject_t *GD,
+                                         EdsLib_Id_t                    EdsId,
+                                         EdsLib_EntityCallback_t        Callback,
+                                         void                          *Arg)
 {
-    EdsLib_DisplayUserIterator_FullName_StackEntry_t NameStack[EDSLIB_ITERATOR_MAX_DEEP_DEPTH];
+    EdsLib_DisplayUserIterator_FullName_StackEntry_t   NameStack[EDSLIB_ITERATOR_MAX_DEEP_DEPTH];
     EdsLib_DisplayUserIterator_FullName_ControlBlock_t CtrlBlock;
 
     EDSLIB_DECLARE_DISPLAY_ITERATOR_CB(IteratorState,
-            EDSLIB_ITERATOR_MAX_DEEP_DEPTH,
-            EdsLib_DisplayUserIterator_FullName_Callback,
-            &CtrlBlock);
+                                       EDSLIB_ITERATOR_MAX_DEEP_DEPTH,
+                                       EdsLib_DisplayUserIterator_FullName_Callback,
+                                       &CtrlBlock);
 
     EDSLIB_RESET_DISPLAY_ITERATOR_FROM_EDSID(IteratorState, EdsId);
 
     memset(&CtrlBlock, 0, sizeof(CtrlBlock));
-    CtrlBlock.NextEntry = NameStack;
+    CtrlBlock.NextEntry            = NameStack;
     CtrlBlock.ScratchNameBuffer[0] = 0;
-    CtrlBlock.Base.UserCallback = Callback;
-    CtrlBlock.Base.UserArg = Arg;
+    CtrlBlock.Base.UserCallback    = Callback;
+    CtrlBlock.Base.UserArg         = Arg;
 
     EdsLib_DataTypeIterator_Impl(GD, &IteratorState.BaseIter.Cb);
 }
@@ -404,20 +413,23 @@ void EdsLib_DisplayDB_IterateAllEntities(const EdsLib_DatabaseObject_t *GD, EdsL
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-void EdsLib_DisplayDB_IterateBaseEntities(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, EdsLib_EntityCallback_t Callback, void *Arg)
+void EdsLib_DisplayDB_IterateBaseEntities(const EdsLib_DatabaseObject_t *GD,
+                                          EdsLib_Id_t                    EdsId,
+                                          EdsLib_EntityCallback_t        Callback,
+                                          void                          *Arg)
 {
     EdsLib_DisplayUserIterator_BaseName_ControlBlock_t CtrlBlock;
 
     EDSLIB_DECLARE_DISPLAY_ITERATOR_CB(IteratorState,
-            EDSLIB_ITERATOR_MAX_BASETYPE_DEPTH,
-            EdsLib_DisplayUserIterator_BaseName_Callback,
-            &CtrlBlock);
+                                       EDSLIB_ITERATOR_MAX_BASETYPE_DEPTH,
+                                       EdsLib_DisplayUserIterator_BaseName_Callback,
+                                       &CtrlBlock);
 
     EDSLIB_RESET_DISPLAY_ITERATOR_FROM_EDSID(IteratorState, EdsId);
 
     memset(&CtrlBlock, 0, sizeof(CtrlBlock));
     CtrlBlock.UserCallback = Callback;
-    CtrlBlock.UserArg = Arg;
+    CtrlBlock.UserArg      = Arg;
     EdsLib_DataTypeIterator_Impl(GD, &IteratorState.BaseIter.Cb);
 }
 
@@ -427,23 +439,26 @@ void EdsLib_DisplayDB_IterateBaseEntities(const EdsLib_DatabaseObject_t *GD, Eds
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DisplayDB_LocateSubEntity(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, const char *Name, EdsLib_DataTypeDB_EntityInfo_t *CompInfo)
+int32_t EdsLib_DisplayDB_LocateSubEntity(const EdsLib_DatabaseObject_t  *GD,
+                                         EdsLib_Id_t                     EdsId,
+                                         const char                     *Name,
+                                         EdsLib_DataTypeDB_EntityInfo_t *CompInfo)
 {
     EdsLib_DisplayLocateMember_ControlBlock_t CtrlBlock;
-    const char *CurrTokenPos;
-    int32_t Status;
+    const char                               *CurrTokenPos;
+    int32_t                                   Status;
 
     memset(CompInfo, 0, sizeof(*CompInfo));
     memset(&CtrlBlock, 0, sizeof(CtrlBlock));
     EdsLib_Decode_StructId(&CtrlBlock.RefObj, EdsId);
     CurrTokenPos = Name;
-    Status = EDSLIB_FAILURE;
+    Status       = EDSLIB_FAILURE;
 
     while (1)
     {
-        CtrlBlock.ContentPos = CurrTokenPos;
-        CtrlBlock.NextTokenPos = NULL;
-        CtrlBlock.MatchQuality = EDSLIB_MATCHQUALITY_NONE;
+        CtrlBlock.ContentPos    = CurrTokenPos;
+        CtrlBlock.NextTokenPos  = NULL;
+        CtrlBlock.MatchQuality  = EDSLIB_MATCHQUALITY_NONE;
         CtrlBlock.ContentLength = 0;
 
         EdsLib_DisplayLocateMember_Impl(GD, &CtrlBlock);
@@ -461,10 +476,10 @@ int32_t EdsLib_DisplayDB_LocateSubEntity(const EdsLib_DatabaseObject_t *GD, EdsL
 
         if (*CurrTokenPos == 0)
         {
-            Status = EDSLIB_SUCCESS;
-            CompInfo->Offset = CtrlBlock.StartOffset;
+            Status            = EDSLIB_SUCCESS;
+            CompInfo->Offset  = CtrlBlock.StartOffset;
             CompInfo->MaxSize = CtrlBlock.MaxSize;
-            CompInfo->EdsId = EdsLib_Encode_StructId(&CtrlBlock.RefObj);
+            CompInfo->EdsId   = EdsLib_Encode_StructId(&CtrlBlock.RefObj);
             break;
         }
     }
@@ -480,40 +495,40 @@ int32_t EdsLib_DisplayDB_LocateSubEntity(const EdsLib_DatabaseObject_t *GD, EdsL
  *-----------------------------------------------------------------*/
 void EdsLib_Generate_Hexdump(void *output, const uint8_t *DataPtr, uint16_t DisplayOffset, uint16_t Count)
 {
-   uint16_t i;
-   char display[20];
-   FILE *fp = output;
+    uint16_t i;
+    char     display[20];
+    FILE    *fp = output;
 
-   fprintf(fp, "Data Segment Length=%u:",Count);
-   memset(display,0,sizeof(display));
-   for (i = 0; i < Count; ++i)
-   {
-      if ((i & 0x0F) == 0)
-      {
-         fprintf(fp, "  %s\n  %03x:",display,DisplayOffset);
-         memset(display,0,sizeof(display));
-      }
-      fprintf(fp, " %02x",*DataPtr);
-      if (isprint(*DataPtr))
-      {
-         display[i & 0x0F] = *DataPtr;
-      }
-      else
-      {
-         display[i & 0x0F] = '.';
-      }
-      ++DataPtr;
-      ++DisplayOffset;
-   }
-   if (i > 0)
-   {
-      while (i & 0xF)
-      {
-         fprintf(fp, "   ");
-         ++i;
-      }
-   }
-   fprintf(fp, "  %s\n", display);
+    fprintf(fp, "Data Segment Length=%u:", Count);
+    memset(display, 0, sizeof(display));
+    for (i = 0; i < Count; ++i)
+    {
+        if ((i & 0x0F) == 0)
+        {
+            fprintf(fp, "  %s\n  %03x:", display, DisplayOffset);
+            memset(display, 0, sizeof(display));
+        }
+        fprintf(fp, " %02x", *DataPtr);
+        if (isprint(*DataPtr))
+        {
+            display[i & 0x0F] = *DataPtr;
+        }
+        else
+        {
+            display[i & 0x0F] = '.';
+        }
+        ++DataPtr;
+        ++DisplayOffset;
+    }
+    if (i > 0)
+    {
+        while (i & 0xF)
+        {
+            fprintf(fp, "   ");
+            ++i;
+        }
+    }
+    fprintf(fp, "  %s\n", display);
 }
 
 /*----------------------------------------------------------------
@@ -522,14 +537,21 @@ void EdsLib_Generate_Hexdump(void *output, const uint8_t *DataPtr, uint16_t Disp
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_Scalar_ToString(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, char *OutputBuffer, uint32_t BufferSize, const void *SrcPtr)
+int32_t EdsLib_Scalar_ToString(const EdsLib_DatabaseObject_t *GD,
+                               EdsLib_Id_t                    EdsId,
+                               char                          *OutputBuffer,
+                               uint32_t                       BufferSize,
+                               const void                    *SrcPtr)
 {
     EdsLib_DatabaseRef_t TempRef;
 
     EdsLib_Decode_StructId(&TempRef, EdsId);
 
-    return EdsLib_DisplayScalarConv_ToString_Impl(EdsLib_DataTypeDB_GetEntry(GD, &TempRef), EdsLib_DisplayDB_GetEntry(GD, &TempRef),
-            OutputBuffer, BufferSize, SrcPtr);
+    return EdsLib_DisplayScalarConv_ToString_Impl(EdsLib_DataTypeDB_GetEntry(GD, &TempRef),
+                                                  EdsLib_DisplayDB_GetEntry(GD, &TempRef),
+                                                  OutputBuffer,
+                                                  BufferSize,
+                                                  SrcPtr);
 }
 
 /*----------------------------------------------------------------
@@ -538,14 +560,17 @@ int32_t EdsLib_Scalar_ToString(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t Ed
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_Scalar_FromString(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, void *DestPtr, const char *SrcString)
+int32_t
+EdsLib_Scalar_FromString(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, void *DestPtr, const char *SrcString)
 {
     EdsLib_DatabaseRef_t TempRef;
 
     EdsLib_Decode_StructId(&TempRef, EdsId);
 
-    return EdsLib_DisplayScalarConv_FromString_Impl(EdsLib_DataTypeDB_GetEntry(GD, &TempRef), EdsLib_DisplayDB_GetEntry(GD, &TempRef),
-            DestPtr, SrcString);
+    return EdsLib_DisplayScalarConv_FromString_Impl(EdsLib_DataTypeDB_GetEntry(GD, &TempRef),
+                                                    EdsLib_DisplayDB_GetEntry(GD, &TempRef),
+                                                    DestPtr,
+                                                    SrcString);
 }
 
 /*----------------------------------------------------------------
@@ -554,28 +579,32 @@ int32_t EdsLib_Scalar_FromString(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t 
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-const char *EdsLib_DisplayDB_GetEnumLabel(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, const EdsLib_GenericValueBuffer_t *ValueBuffer)
+const char *EdsLib_DisplayDB_GetEnumLabel(const EdsLib_DatabaseObject_t     *GD,
+                                          EdsLib_Id_t                        EdsId,
+                                          const EdsLib_GenericValueBuffer_t *ValueBuffer)
 {
-    EdsLib_DatabaseRef_t TempRef;
-    const EdsLib_DisplayDB_Entry_t *DisplayInfoPtr;
+    EdsLib_DatabaseRef_t             TempRef;
+    const EdsLib_DisplayDB_Entry_t  *DisplayInfoPtr;
     const EdsLib_SymbolTableEntry_t *TableEnt;
 
     TableEnt = NULL;
     EdsLib_Decode_StructId(&TempRef, EdsId);
     DisplayInfoPtr = EdsLib_DisplayDB_GetEntry(GD, &TempRef);
 
-    if (ValueBuffer != NULL && DisplayInfoPtr != NULL &&
-            DisplayInfoPtr->DisplayHint == EDSLIB_DISPLAYHINT_ENUM_SYMTABLE)
+    if (ValueBuffer != NULL && DisplayInfoPtr != NULL
+        && DisplayInfoPtr->DisplayHint == EDSLIB_DISPLAYHINT_ENUM_SYMTABLE)
     {
         if (ValueBuffer->ValueType == EDSLIB_BASICTYPE_SIGNED_INT)
         {
             TableEnt = EdsLib_DisplaySymbolLookup_GetByValue(DisplayInfoPtr->DisplayArg.SymTable,
-                    DisplayInfoPtr->DisplayArgTableSize, ValueBuffer->Value.SignedInteger);
+                                                             DisplayInfoPtr->DisplayArgTableSize,
+                                                             ValueBuffer->Value.SignedInteger);
         }
         else if (ValueBuffer->ValueType == EDSLIB_BASICTYPE_UNSIGNED_INT)
         {
             TableEnt = EdsLib_DisplaySymbolLookup_GetByValue(DisplayInfoPtr->DisplayArg.SymTable,
-                    DisplayInfoPtr->DisplayArgTableSize, ValueBuffer->Value.UnsignedInteger);
+                                                             DisplayInfoPtr->DisplayArgTableSize,
+                                                             ValueBuffer->Value.UnsignedInteger);
         }
     }
 
@@ -593,37 +622,41 @@ const char *EdsLib_DisplayDB_GetEnumLabel(const EdsLib_DatabaseObject_t *GD, Eds
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-void EdsLib_DisplayDB_GetEnumValue(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, const char *String, EdsLib_GenericValueBuffer_t *ValueBuffer)
+void EdsLib_DisplayDB_GetEnumValue(const EdsLib_DatabaseObject_t *GD,
+                                   EdsLib_Id_t                    EdsId,
+                                   const char                    *String,
+                                   EdsLib_GenericValueBuffer_t   *ValueBuffer)
 {
-    EdsLib_DatabaseRef_t TempRef;
-    const EdsLib_DisplayDB_Entry_t *DisplayInfoPtr;
+    EdsLib_DatabaseRef_t             TempRef;
+    const EdsLib_DisplayDB_Entry_t  *DisplayInfoPtr;
     const EdsLib_SymbolTableEntry_t *Symbol;
 
     EdsLib_Decode_StructId(&TempRef, EdsId);
-    Symbol = NULL;
+    Symbol         = NULL;
     DisplayInfoPtr = EdsLib_DisplayDB_GetEntry(GD, &TempRef);
 
     if (DisplayInfoPtr != NULL && DisplayInfoPtr->DisplayHint == EDSLIB_DISPLAYHINT_ENUM_SYMTABLE)
     {
         Symbol = EdsLib_DisplaySymbolLookup_GetByName(DisplayInfoPtr->DisplayArg.SymTable,
-                    DisplayInfoPtr->DisplayArgTableSize, String, strlen(String));
+                                                      DisplayInfoPtr->DisplayArgTableSize,
+                                                      String,
+                                                      strlen(String));
     }
     else
     {
         Symbol = NULL;
     }
 
-
     if (ValueBuffer != NULL)
     {
         if (Symbol == NULL)
         {
-            ValueBuffer->ValueType = EDSLIB_BASICTYPE_NONE;
+            ValueBuffer->ValueType           = EDSLIB_BASICTYPE_NONE;
             ValueBuffer->Value.SignedInteger = 0;
         }
         else
         {
-            ValueBuffer->ValueType = EDSLIB_BASICTYPE_SIGNED_INT;
+            ValueBuffer->ValueType           = EDSLIB_BASICTYPE_SIGNED_INT;
             ValueBuffer->Value.SignedInteger = Symbol->SymValue;
         }
     }
@@ -635,28 +668,31 @@ void EdsLib_DisplayDB_GetEnumValue(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-void EdsLib_DisplayDB_IterateEnumValues(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, EdsLib_SymbolCallback_t Callback, void *Arg)
+void EdsLib_DisplayDB_IterateEnumValues(const EdsLib_DatabaseObject_t *GD,
+                                        EdsLib_Id_t                    EdsId,
+                                        EdsLib_SymbolCallback_t        Callback,
+                                        void                          *Arg)
 {
-    EdsLib_DatabaseRef_t TempRef;
-    const EdsLib_DisplayDB_Entry_t *DisplayInfoPtr;
+    EdsLib_DatabaseRef_t             TempRef;
+    const EdsLib_DisplayDB_Entry_t  *DisplayInfoPtr;
     const EdsLib_SymbolTableEntry_t *Symbol;
-    uint16_t SymbolCount;
+    uint16_t                         SymbolCount;
 
     EdsLib_Decode_StructId(&TempRef, EdsId);
     DisplayInfoPtr = EdsLib_DisplayDB_GetEntry(GD, &TempRef);
 
     if (DisplayInfoPtr != NULL && DisplayInfoPtr->DisplayHint == EDSLIB_DISPLAYHINT_ENUM_SYMTABLE)
     {
-        Symbol = DisplayInfoPtr->DisplayArg.SymTable;
+        Symbol      = DisplayInfoPtr->DisplayArg.SymTable;
         SymbolCount = DisplayInfoPtr->DisplayArgTableSize;
     }
     else
     {
-        Symbol = NULL;
+        Symbol      = NULL;
         SymbolCount = 0;
     }
 
-    while(Symbol != NULL && SymbolCount > 0)
+    while (Symbol != NULL && SymbolCount > 0)
     {
         Callback(Arg, Symbol->SymName, Symbol->SymValue);
         ++Symbol;
@@ -670,40 +706,44 @@ void EdsLib_DisplayDB_IterateEnumValues(const EdsLib_DatabaseObject_t *GD, EdsLi
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-const char * EdsLib_DisplayDB_GetEnumLabelByIndex(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, uint16_t Index, char *Buffer, uint32_t BufferSize)
+const char *EdsLib_DisplayDB_GetEnumLabelByIndex(const EdsLib_DatabaseObject_t *GD,
+                                                 EdsLib_Id_t                    EdsId,
+                                                 uint16_t                       Index,
+                                                 char                          *Buffer,
+                                                 uint32_t                       BufferSize)
 {
-	EdsLib_DatabaseRef_t TempRef;
-	const EdsLib_DisplayDB_Entry_t *DisplayInfoPtr;
-	const EdsLib_SymbolTableEntry_t *Symbol;
-	uint16_t SymbolCount;
-	const char * Result;
+    EdsLib_DatabaseRef_t             TempRef;
+    const EdsLib_DisplayDB_Entry_t  *DisplayInfoPtr;
+    const EdsLib_SymbolTableEntry_t *Symbol;
+    uint16_t                         SymbolCount;
+    const char                      *Result;
 
-	EdsLib_Decode_StructId(&TempRef, EdsId);
-	DisplayInfoPtr = EdsLib_DisplayDB_GetEntry(GD, &TempRef);
+    EdsLib_Decode_StructId(&TempRef, EdsId);
+    DisplayInfoPtr = EdsLib_DisplayDB_GetEntry(GD, &TempRef);
 
-	if (DisplayInfoPtr != NULL && DisplayInfoPtr->DisplayHint == EDSLIB_DISPLAYHINT_ENUM_SYMTABLE)
-	{
-		Symbol = DisplayInfoPtr->DisplayArg.SymTable;
-		SymbolCount = DisplayInfoPtr->DisplayArgTableSize;
-	}
+    if (DisplayInfoPtr != NULL && DisplayInfoPtr->DisplayHint == EDSLIB_DISPLAYHINT_ENUM_SYMTABLE)
+    {
+        Symbol      = DisplayInfoPtr->DisplayArg.SymTable;
+        SymbolCount = DisplayInfoPtr->DisplayArgTableSize;
+    }
     else
     {
-        Symbol = NULL;
+        Symbol      = NULL;
         SymbolCount = 0;
     }
 
-	if (Symbol != NULL && Index < SymbolCount)
-	{
-		Symbol = Symbol + Index;
-        snprintf(Buffer, BufferSize,"%s", Symbol->SymName);
+    if (Symbol != NULL && Index < SymbolCount)
+    {
+        Symbol = Symbol + Index;
+        snprintf(Buffer, BufferSize, "%s", Symbol->SymName);
         Result = Buffer;
-	}
-	else
-	{
-		Result = UNDEF_STRING;
-	}
+    }
+    else
+    {
+        Result = UNDEF_STRING;
+    }
 
-	return Result;
+    return Result;
 }
 
 /*----------------------------------------------------------------
@@ -714,37 +754,37 @@ const char * EdsLib_DisplayDB_GetEnumLabelByIndex(const EdsLib_DatabaseObject_t 
  *-----------------------------------------------------------------*/
 intmax_t EdsLib_DisplayDB_GetEnumValueByIndex(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, uint16_t Index)
 {
-	EdsLib_DatabaseRef_t TempRef;
-	const EdsLib_DisplayDB_Entry_t *DisplayInfoPtr;
-	const EdsLib_SymbolTableEntry_t *Symbol;
-	uint16_t SymbolCount;
-	intmax_t Result;
+    EdsLib_DatabaseRef_t             TempRef;
+    const EdsLib_DisplayDB_Entry_t  *DisplayInfoPtr;
+    const EdsLib_SymbolTableEntry_t *Symbol;
+    uint16_t                         SymbolCount;
+    intmax_t                         Result;
 
-	EdsLib_Decode_StructId(&TempRef, EdsId);
-	DisplayInfoPtr = EdsLib_DisplayDB_GetEntry(GD, &TempRef);
+    EdsLib_Decode_StructId(&TempRef, EdsId);
+    DisplayInfoPtr = EdsLib_DisplayDB_GetEntry(GD, &TempRef);
 
-	if (DisplayInfoPtr != NULL && DisplayInfoPtr->DisplayHint == EDSLIB_DISPLAYHINT_ENUM_SYMTABLE)
-	{
-		Symbol = DisplayInfoPtr->DisplayArg.SymTable;
-		SymbolCount = DisplayInfoPtr->DisplayArgTableSize;
-	}
+    if (DisplayInfoPtr != NULL && DisplayInfoPtr->DisplayHint == EDSLIB_DISPLAYHINT_ENUM_SYMTABLE)
+    {
+        Symbol      = DisplayInfoPtr->DisplayArg.SymTable;
+        SymbolCount = DisplayInfoPtr->DisplayArgTableSize;
+    }
     else
     {
-        Symbol = NULL;
+        Symbol      = NULL;
         SymbolCount = 0;
     }
 
-	if (Symbol != NULL && Index < SymbolCount)
-	{
-		Symbol = Symbol + Index;
-		Result = Symbol->SymValue;
-	}
-	else
-	{
-		Result = (intmax_t) EDSLIB_FAILURE;
-	}
+    if (Symbol != NULL && Index < SymbolCount)
+    {
+        Symbol = Symbol + Index;
+        Result = Symbol->SymValue;
+    }
+    else
+    {
+        Result = (intmax_t)EDSLIB_FAILURE;
+    }
 
-	return Result;
+    return Result;
 }
 
 /*----------------------------------------------------------------
@@ -755,16 +795,16 @@ intmax_t EdsLib_DisplayDB_GetEnumValueByIndex(const EdsLib_DatabaseObject_t *GD,
  *-----------------------------------------------------------------*/
 EdsLib_Id_t EdsLib_DisplayDB_LookupTypeName(const EdsLib_DatabaseObject_t *GD, const char *String)
 {
-    EdsLib_DisplayDB_t NameDict;
-    EdsLib_DataTypeDB_t DataDict;
+    EdsLib_DisplayDB_t              NameDict;
+    EdsLib_DataTypeDB_t             DataDict;
     const EdsLib_DisplayDB_Entry_t *DisplayInfo;
-    const char *EndPtr;
-    size_t PartLength;
-    uint16_t InstanceNum;
-    uint16_t AppIdx;
-    uint16_t StructId;
-    EdsLib_Id_t Result;
-    const char *Namespace;
+    const char                     *EndPtr;
+    size_t                          PartLength;
+    uint16_t                        InstanceNum;
+    uint16_t                        AppIdx;
+    uint16_t                        StructId;
+    EdsLib_Id_t                     Result;
+    const char                     *Namespace;
 
     /*
      * A global structure ID is different than a message ID in two ways:
@@ -772,8 +812,8 @@ EdsLib_Id_t EdsLib_DisplayDB_LookupTypeName(const EdsLib_DatabaseObject_t *GD, c
      *  - the format index goes directly into the map table
      */
 
-    Result = EDSLIB_ID_INVALID;
-    NameDict = NULL;
+    Result      = EDSLIB_ID_INVALID;
+    NameDict    = NULL;
     InstanceNum = 0;
 
     if (GD->DisplayDB_Table != NULL && GD->DataTypeDB_Table != NULL)
@@ -789,8 +829,7 @@ EdsLib_Id_t EdsLib_DisplayDB_LookupTypeName(const EdsLib_DatabaseObject_t *GD, c
         {
             DataDict = GD->DataTypeDB_Table[AppIdx];
             NameDict = GD->DisplayDB_Table[AppIdx];
-            if (NameDict == NULL || DataDict == NULL ||
-                    NameDict->DisplayInfoTable == NULL)
+            if (NameDict == NULL || DataDict == NULL || NameDict->DisplayInfoTable == NULL)
             {
                 continue;
             }
@@ -804,15 +843,13 @@ EdsLib_Id_t EdsLib_DisplayDB_LookupTypeName(const EdsLib_DatabaseObject_t *GD, c
                 if (Namespace != NULL)
                 {
                     PartLength = strlen(Namespace);
-                    if (strncmp(Namespace, String, PartLength) != 0 ||
-                            String[PartLength] != '/')
+                    if (strncmp(Namespace, String, PartLength) != 0 || String[PartLength] != '/')
                     {
                         continue;
                     }
                     EndPtr += PartLength + 1;
                 }
-                if (DisplayInfo->Name != NULL &&
-                        strcmp(DisplayInfo->Name,EndPtr) == 0)
+                if (DisplayInfo->Name != NULL && strcmp(DisplayInfo->Name, EndPtr) == 0)
                 {
                     /* Initialize the Global ID with the result */
                     Result = EDSLIB_MAKE_ID(AppIdx, StructId);

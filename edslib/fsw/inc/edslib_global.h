@@ -84,8 +84,10 @@ extern "C"
      * @param[out] IdxOut output buffer for the Package/Application index value, if successful
      * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
      */
-    int32_t EdsLib_FindPackageIdxBySubstring(const EdsLib_DatabaseObject_t *GD, const char *MatchString,
-                                             size_t MatchLen, uint8_t *IdxOut);
+    int32_t EdsLib_FindPackageIdxBySubstring(const EdsLib_DatabaseObject_t *GD,
+                                             const char                    *MatchString,
+                                             size_t                         MatchLen,
+                                             uint8_t                       *IdxOut);
 
     /**
      * Find an EDS package index by name

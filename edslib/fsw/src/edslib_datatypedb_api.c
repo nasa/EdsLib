@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_datatypedb_api.c
  * \ingroup  fsw
@@ -80,10 +79,8 @@ uint16_t EdsLib_DataTypeDB_GetAppIdx(const EdsLib_DataTypeDB_t AppDict)
  *-----------------------------------------------------------------*/
 int32_t EdsLib_DataTypeDB_Register(EdsLib_DatabaseObject_t *GD, EdsLib_DataTypeDB_t AppDict)
 {
-    if (GD == NULL ||
-            GD->DataTypeDB_Table == NULL ||
-            AppDict->MissionIdx >= GD->AppTableSize ||
-            GD->DataTypeDB_Table[AppDict->MissionIdx] != NULL)
+    if (GD == NULL || GD->DataTypeDB_Table == NULL || AppDict->MissionIdx >= GD->AppTableSize
+        || GD->DataTypeDB_Table[AppDict->MissionIdx] != NULL)
     {
         return EDSLIB_FAILURE;
     }
@@ -100,10 +97,8 @@ int32_t EdsLib_DataTypeDB_Register(EdsLib_DatabaseObject_t *GD, EdsLib_DataTypeD
  *-----------------------------------------------------------------*/
 int32_t EdsLib_DataTypeDB_Unregister(EdsLib_DatabaseObject_t *GD, uint16_t AppIdx)
 {
-    if (GD == NULL ||
-            GD->DataTypeDB_Table == NULL ||
-            AppIdx >= GD->AppTableSize ||
-            GD->DataTypeDB_Table[AppIdx] == NULL)
+    if (GD == NULL || GD->DataTypeDB_Table == NULL || AppIdx >= GD->AppTableSize
+        || GD->DataTypeDB_Table[AppIdx] == NULL)
     {
         return EDSLIB_FAILURE;
     }
@@ -111,7 +106,6 @@ int32_t EdsLib_DataTypeDB_Unregister(EdsLib_DatabaseObject_t *GD, uint16_t AppId
     GD->DataTypeDB_Table[AppIdx] = NULL;
     return EDSLIB_SUCCESS;
 }
-
 
 /*
  * *************************************************************************************
@@ -125,11 +119,13 @@ int32_t EdsLib_DataTypeDB_Unregister(EdsLib_DatabaseObject_t *GD, uint16_t AppId
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_GetTypeInfo(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, EdsLib_DataTypeDB_TypeInfo_t *TypeInfo)
+int32_t EdsLib_DataTypeDB_GetTypeInfo(const EdsLib_DatabaseObject_t *GD,
+                                      EdsLib_Id_t                    EdsId,
+                                      EdsLib_DataTypeDB_TypeInfo_t  *TypeInfo)
 {
-    EdsLib_DatabaseRef_t TempRef;
+    EdsLib_DatabaseRef_t             TempRef;
     const EdsLib_DataTypeDB_Entry_t *DataDictEntry;
-    int32_t Status;
+    int32_t                          Status;
 
     EdsLib_Decode_StructId(&TempRef, EdsId);
     DataDictEntry = EdsLib_DataTypeDB_GetEntry(GD, &TempRef);
@@ -160,15 +156,18 @@ int32_t EdsLib_DataTypeDB_GetTypeInfo(const EdsLib_DatabaseObject_t *GD, EdsLib_
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_GetMemberByIndex(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, uint16_t SubIndex, EdsLib_DataTypeDB_EntityInfo_t *CompInfo)
+int32_t EdsLib_DataTypeDB_GetMemberByIndex(const EdsLib_DatabaseObject_t  *GD,
+                                           EdsLib_Id_t                     EdsId,
+                                           uint16_t                        SubIndex,
+                                           EdsLib_DataTypeDB_EntityInfo_t *CompInfo)
 {
     const EdsLib_DataTypeDB_Entry_t *DataDict;
     const EdsLib_FieldDetailEntry_t *MemberDetail;
     const EdsLib_DataTypeDB_Entry_t *MemberDict;
-    const EdsLib_DatabaseRef_t *RefObj;
-    EdsLib_DatabaseRef_t TempRef;
-    uint16_t Idx;
-    int32_t Result;
+    const EdsLib_DatabaseRef_t      *RefObj;
+    EdsLib_DatabaseRef_t             TempRef;
+    uint16_t                         Idx;
+    int32_t                          Result;
 
     RefObj = NULL;
 
@@ -182,74 +181,73 @@ int32_t EdsLib_DataTypeDB_GetMemberByIndex(const EdsLib_DatabaseObject_t *GD, Ed
 
     if (DataDict != NULL && SubIndex < DataDict->NumSubElements)
     {
-        switch(DataDict->BasicType)
+        switch (DataDict->BasicType)
         {
-        case EDSLIB_BASICTYPE_CONTAINER:
-        case EDSLIB_BASICTYPE_COMPONENT:
-        {
-            RefObj = &DataDict->Detail.Container->EntryList[SubIndex].RefObj;
-
-            if (CompInfo != NULL)
+            case EDSLIB_BASICTYPE_CONTAINER:
+            case EDSLIB_BASICTYPE_COMPONENT:
             {
-                const EdsLib_SizeInfo_t *EndOffset;
+                RefObj = &DataDict->Detail.Container->EntryList[SubIndex].RefObj;
 
-                /* check if the item could be at a variable location */
-                if ((DataDict->Flags & EDSLIB_DATATYPE_FLAG_VARIABLE_SIZE) != 0)
+                if (CompInfo != NULL)
                 {
-                    for (Idx=0; Idx < SubIndex; ++Idx)
+                    const EdsLib_SizeInfo_t *EndOffset;
+
+                    /* check if the item could be at a variable location */
+                    if ((DataDict->Flags & EDSLIB_DATATYPE_FLAG_VARIABLE_SIZE) != 0)
                     {
-                        MemberDetail = &DataDict->Detail.Container->EntryList[Idx];
-                        MemberDict = EdsLib_DataTypeDB_GetEntry(GD, &MemberDetail->RefObj);
-                        if (MemberDict != NULL && (MemberDict->Flags & EDSLIB_DATATYPE_FLAG_VARIABLE_SIZE) != 0)
+                        for (Idx = 0; Idx < SubIndex; ++Idx)
                         {
-                            CompInfo->Flags |= EDSLIB_DATATYPE_FLAG_VARIABLE_LOCATION;
+                            MemberDetail = &DataDict->Detail.Container->EntryList[Idx];
+                            MemberDict   = EdsLib_DataTypeDB_GetEntry(GD, &MemberDetail->RefObj);
+                            if (MemberDict != NULL && (MemberDict->Flags & EDSLIB_DATATYPE_FLAG_VARIABLE_SIZE) != 0)
+                            {
+                                CompInfo->Flags |= EDSLIB_DATATYPE_FLAG_VARIABLE_LOCATION;
+                            }
                         }
                     }
-                }
 
-                MemberDetail = &DataDict->Detail.Container->EntryList[SubIndex];
+                    MemberDetail = &DataDict->Detail.Container->EntryList[SubIndex];
 
-                if (SubIndex < (DataDict->NumSubElements - 1))
-                {
-                    /* not the last entry in the container - peek to the next */
-                    EndOffset = &MemberDetail[1].Offset;
-                }
-                else
-                {
-                    /* last element -- use the parent size */
-                    EndOffset = &DataDict->SizeInfo;
-                }
+                    if (SubIndex < (DataDict->NumSubElements - 1))
+                    {
+                        /* not the last entry in the container - peek to the next */
+                        EndOffset = &MemberDetail[1].Offset;
+                    }
+                    else
+                    {
+                        /* last element -- use the parent size */
+                        EndOffset = &DataDict->SizeInfo;
+                    }
 
-                CompInfo->Offset = MemberDetail->Offset;
-                CompInfo->MaxSize.Bytes = (EndOffset->Bytes - CompInfo->Offset.Bytes);
-                CompInfo->MaxSize.Bits = (EndOffset->Bits - CompInfo->Offset.Bits);
+                    CompInfo->Offset        = MemberDetail->Offset;
+                    CompInfo->MaxSize.Bytes = (EndOffset->Bytes - CompInfo->Offset.Bytes);
+                    CompInfo->MaxSize.Bits  = (EndOffset->Bits - CompInfo->Offset.Bits);
+                }
+                break;
             }
-            break;
-        }
-        case EDSLIB_BASICTYPE_ARRAY:
-        {
-            RefObj = &DataDict->Detail.Array->ElementRefObj;
-
-            if (CompInfo != NULL)
+            case EDSLIB_BASICTYPE_ARRAY:
             {
-                /*
-                 * Calculating the start offset this way, although it involves division,
-                 * does not require that we actually _have_ the definition of the array
-                 * element type loaded.  The total byte size of the entire array _must_
-                 * be an integer multiple of the array length, by definition.
-                 */
+                RefObj = &DataDict->Detail.Array->ElementRefObj;
 
-                CompInfo->MaxSize.Bytes = (DataDict->SizeInfo.Bytes / DataDict->NumSubElements);
-                CompInfo->MaxSize.Bits = (DataDict->SizeInfo.Bits / DataDict->NumSubElements);
-                CompInfo->Offset.Bytes = CompInfo->MaxSize.Bytes * SubIndex;
-                CompInfo->Offset.Bits = CompInfo->MaxSize.Bits * SubIndex;
+                if (CompInfo != NULL)
+                {
+                    /*
+                     * Calculating the start offset this way, although it involves division,
+                     * does not require that we actually _have_ the definition of the array
+                     * element type loaded.  The total byte size of the entire array _must_
+                     * be an integer multiple of the array length, by definition.
+                     */
+
+                    CompInfo->MaxSize.Bytes = (DataDict->SizeInfo.Bytes / DataDict->NumSubElements);
+                    CompInfo->MaxSize.Bits  = (DataDict->SizeInfo.Bits / DataDict->NumSubElements);
+                    CompInfo->Offset.Bytes  = CompInfo->MaxSize.Bytes * SubIndex;
+                    CompInfo->Offset.Bits   = CompInfo->MaxSize.Bits * SubIndex;
+                }
+                break;
             }
-            break;
+            default:
+                break;
         }
-        default:
-            break;
-        }
-
     }
 
     if (RefObj != NULL)
@@ -274,11 +272,14 @@ int32_t EdsLib_DataTypeDB_GetMemberByIndex(const EdsLib_DatabaseObject_t *GD, Ed
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_GetMemberByNativeOffset(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, uint32_t ByteOffset, EdsLib_DataTypeDB_EntityInfo_t *CompInfo)
+int32_t EdsLib_DataTypeDB_GetMemberByNativeOffset(const EdsLib_DatabaseObject_t  *GD,
+                                                  EdsLib_Id_t                     EdsId,
+                                                  uint32_t                        ByteOffset,
+                                                  EdsLib_DataTypeDB_EntityInfo_t *CompInfo)
 {
     const EdsLib_DataTypeDB_Entry_t *DataDict;
-    EdsLib_DatabaseRef_t TempRef;
-    int32_t Result;
+    EdsLib_DatabaseRef_t             TempRef;
+    int32_t                          Result;
 
     memset(CompInfo, 0, sizeof(*CompInfo));
     EdsLib_Decode_StructId(&TempRef, EdsId);
@@ -299,23 +300,32 @@ int32_t EdsLib_DataTypeDB_GetMemberByNativeOffset(const EdsLib_DatabaseObject_t 
         }
         Result = EDSLIB_SUCCESS;
     }
-    else switch(DataDict->BasicType)
-    {
-    case EDSLIB_BASICTYPE_CONTAINER:
-    case EDSLIB_BASICTYPE_COMPONENT:
-    {
-        Result = EdsLib_DataTypeDB_FindContainerMember_Impl(GD, DataDict, &ByteOffset, EdsLib_OffsetCompareBytes, CompInfo);
-        break;
-    }
-    case EDSLIB_BASICTYPE_ARRAY:
-    {
-        Result = EdsLib_DataTypeDB_FindArrayMember_Impl(GD, DataDict, &ByteOffset, EdsLib_GetArrayIdxFromBytes, CompInfo);
-        break;
-    }
-    default:
-        Result = EDSLIB_INVALID_SIZE_OR_TYPE;
-        break;
-    }
+    else
+        switch (DataDict->BasicType)
+        {
+            case EDSLIB_BASICTYPE_CONTAINER:
+            case EDSLIB_BASICTYPE_COMPONENT:
+            {
+                Result = EdsLib_DataTypeDB_FindContainerMember_Impl(GD,
+                                                                    DataDict,
+                                                                    &ByteOffset,
+                                                                    EdsLib_OffsetCompareBytes,
+                                                                    CompInfo);
+                break;
+            }
+            case EDSLIB_BASICTYPE_ARRAY:
+            {
+                Result = EdsLib_DataTypeDB_FindArrayMember_Impl(GD,
+                                                                DataDict,
+                                                                &ByteOffset,
+                                                                EdsLib_GetArrayIdxFromBytes,
+                                                                CompInfo);
+                break;
+            }
+            default:
+                Result = EDSLIB_INVALID_SIZE_OR_TYPE;
+                break;
+        }
 
     return Result;
 }
@@ -326,11 +336,14 @@ int32_t EdsLib_DataTypeDB_GetMemberByNativeOffset(const EdsLib_DatabaseObject_t 
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_GetMemberByPackedOffset(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, uint32_t BitOffset, EdsLib_DataTypeDB_EntityInfo_t *CompInfo)
+int32_t EdsLib_DataTypeDB_GetMemberByPackedOffset(const EdsLib_DatabaseObject_t  *GD,
+                                                  EdsLib_Id_t                     EdsId,
+                                                  uint32_t                        BitOffset,
+                                                  EdsLib_DataTypeDB_EntityInfo_t *CompInfo)
 {
     const EdsLib_DataTypeDB_Entry_t *DataDict;
-    EdsLib_DatabaseRef_t TempRef;
-    int32_t Result;
+    EdsLib_DatabaseRef_t             TempRef;
+    int32_t                          Result;
 
     memset(CompInfo, 0, sizeof(*CompInfo));
     EdsLib_Decode_StructId(&TempRef, EdsId);
@@ -351,23 +364,32 @@ int32_t EdsLib_DataTypeDB_GetMemberByPackedOffset(const EdsLib_DatabaseObject_t 
         }
         Result = EDSLIB_SUCCESS;
     }
-    else switch(DataDict->BasicType)
-    {
-    case EDSLIB_BASICTYPE_CONTAINER:
-    case EDSLIB_BASICTYPE_COMPONENT:
-    {
-        Result = EdsLib_DataTypeDB_FindContainerMember_Impl(GD, DataDict, &BitOffset, EdsLib_OffsetCompareBits, CompInfo);
-        break;
-    }
-    case EDSLIB_BASICTYPE_ARRAY:
-    {
-        Result = EdsLib_DataTypeDB_FindArrayMember_Impl(GD, DataDict, &BitOffset, EdsLib_GetArrayIdxFromBits, CompInfo);
-        break;
-    }
-    default:
-        Result = EDSLIB_INVALID_SIZE_OR_TYPE;
-        break;
-    }
+    else
+        switch (DataDict->BasicType)
+        {
+            case EDSLIB_BASICTYPE_CONTAINER:
+            case EDSLIB_BASICTYPE_COMPONENT:
+            {
+                Result = EdsLib_DataTypeDB_FindContainerMember_Impl(GD,
+                                                                    DataDict,
+                                                                    &BitOffset,
+                                                                    EdsLib_OffsetCompareBits,
+                                                                    CompInfo);
+                break;
+            }
+            case EDSLIB_BASICTYPE_ARRAY:
+            {
+                Result = EdsLib_DataTypeDB_FindArrayMember_Impl(GD,
+                                                                DataDict,
+                                                                &BitOffset,
+                                                                EdsLib_GetArrayIdxFromBits,
+                                                                CompInfo);
+                break;
+            }
+            default:
+                Result = EDSLIB_INVALID_SIZE_OR_TYPE;
+                break;
+        }
 
     return Result;
 }
@@ -378,10 +400,13 @@ int32_t EdsLib_DataTypeDB_GetMemberByPackedOffset(const EdsLib_DatabaseObject_t 
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_GetDerivedTypeById(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, uint16_t DerivId, EdsLib_Id_t *DerivedEdsId)
+int32_t EdsLib_DataTypeDB_GetDerivedTypeById(const EdsLib_DatabaseObject_t *GD,
+                                             EdsLib_Id_t                    EdsId,
+                                             uint16_t                       DerivId,
+                                             EdsLib_Id_t                   *DerivedEdsId)
 {
     const EdsLib_DataTypeDB_Entry_t *DataDictPtr;
-    EdsLib_DatabaseRef_t TempRef;
+    EdsLib_DatabaseRef_t             TempRef;
 
     EdsLib_Decode_StructId(&TempRef, EdsId);
     DataDictPtr = EdsLib_DataTypeDB_GetEntry(GD, &TempRef);
@@ -407,19 +432,21 @@ int32_t EdsLib_DataTypeDB_GetDerivedTypeById(const EdsLib_DatabaseObject_t *GD, 
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_GetConstraintEntity(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, uint16_t ConstraintIdx, EdsLib_DataTypeDB_EntityInfo_t *MemberInfo)
+int32_t EdsLib_DataTypeDB_GetConstraintEntity(const EdsLib_DatabaseObject_t  *GD,
+                                              EdsLib_Id_t                     EdsId,
+                                              uint16_t                        ConstraintIdx,
+                                              EdsLib_DataTypeDB_EntityInfo_t *MemberInfo)
 {
-    EdsLib_DatabaseRef_t ParentObjRef;
-    const EdsLib_DataTypeDB_Entry_t *DataDictPtr;
-    const EdsLib_ConstraintEntity_t *ConstraintEntityPtr;
+    EdsLib_DatabaseRef_t                  ParentObjRef;
+    const EdsLib_DataTypeDB_Entry_t      *DataDictPtr;
+    const EdsLib_ConstraintEntity_t      *ConstraintEntityPtr;
     const EdsLib_IdentityCheckSequence_t *DerivativeCheck;
 
     memset(MemberInfo, 0, sizeof(*MemberInfo));
     EdsLib_Decode_StructId(&ParentObjRef, EdsId);
     DataDictPtr = EdsLib_DataTypeDB_GetEntry(GD, &ParentObjRef);
-    if (DataDictPtr == NULL ||
-        DataDictPtr->BasicType != EDSLIB_BASICTYPE_CONTAINER ||
-        DataDictPtr->Detail.Container == NULL)
+    if (DataDictPtr == NULL || DataDictPtr->BasicType != EDSLIB_BASICTYPE_CONTAINER
+        || DataDictPtr->Detail.Container == NULL)
     {
         return EDSLIB_FAILURE;
     }
@@ -432,14 +459,14 @@ int32_t EdsLib_DataTypeDB_GetConstraintEntity(const EdsLib_DatabaseObject_t *GD,
     }
 
     ConstraintEntityPtr = &DerivativeCheck->ConstraintEntityList[ConstraintIdx];
-    DataDictPtr = EdsLib_DataTypeDB_GetEntry(GD, &ConstraintEntityPtr->RefObj);
+    DataDictPtr         = EdsLib_DataTypeDB_GetEntry(GD, &ConstraintEntityPtr->RefObj);
     if (DataDictPtr == NULL)
     {
         return EDSLIB_FAILURE;
     }
 
-    MemberInfo->EdsId = EdsLib_Encode_StructId(&ConstraintEntityPtr->RefObj);
-    MemberInfo->Offset = ConstraintEntityPtr->Offset;
+    MemberInfo->EdsId   = EdsLib_Encode_StructId(&ConstraintEntityPtr->RefObj);
+    MemberInfo->Offset  = ConstraintEntityPtr->Offset;
     MemberInfo->MaxSize = DataDictPtr->SizeInfo;
 
     return EDSLIB_SUCCESS;
@@ -451,13 +478,15 @@ int32_t EdsLib_DataTypeDB_GetConstraintEntity(const EdsLib_DatabaseObject_t *GD,
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_GetDerivedInfo(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, EdsLib_DataTypeDB_DerivedTypeInfo_t *DerivInfo)
+int32_t EdsLib_DataTypeDB_GetDerivedInfo(const EdsLib_DatabaseObject_t       *GD,
+                                         EdsLib_Id_t                          EdsId,
+                                         EdsLib_DataTypeDB_DerivedTypeInfo_t *DerivInfo)
 {
-    const EdsLib_DataTypeDB_Entry_t *DataDictPtr;
+    const EdsLib_DataTypeDB_Entry_t      *DataDictPtr;
     const EdsLib_IdentityCheckSequence_t *DerivativeCheck;
-    EdsLib_DatabaseRef_t TempRef;
+    EdsLib_DatabaseRef_t                  TempRef;
 
-    memset(DerivInfo,0,sizeof(*DerivInfo));
+    memset(DerivInfo, 0, sizeof(*DerivInfo));
     EdsLib_Decode_StructId(&TempRef, EdsId);
     DataDictPtr = EdsLib_DataTypeDB_GetEntry(GD, &TempRef);
 
@@ -466,8 +495,7 @@ int32_t EdsLib_DataTypeDB_GetDerivedInfo(const EdsLib_DatabaseObject_t *GD, EdsL
         return EDSLIB_FAILURE;
     }
 
-    if (DataDictPtr->BasicType == EDSLIB_BASICTYPE_CONTAINER &&
-        DataDictPtr->Detail.Container != NULL)
+    if (DataDictPtr->BasicType == EDSLIB_BASICTYPE_CONTAINER && DataDictPtr->Detail.Container != NULL)
     {
         DerivInfo->NumDerivatives = DataDictPtr->Detail.Container->DerivativeListSize;
         if (DataDictPtr->Detail.Container->DerivativeListSize > 0)
@@ -499,22 +527,25 @@ int32_t EdsLib_DataTypeDB_GetDerivedInfo(const EdsLib_DatabaseObject_t *GD, EdsL
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_ConstraintIterator(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t BaseId,
-        EdsLib_Id_t DerivedId, EdsLib_ConstraintCallback_t Callback, void *CbArg)
+int32_t EdsLib_DataTypeDB_ConstraintIterator(const EdsLib_DatabaseObject_t *GD,
+                                             EdsLib_Id_t                    BaseId,
+                                             EdsLib_Id_t                    DerivedId,
+                                             EdsLib_ConstraintCallback_t    Callback,
+                                             void                          *CbArg)
 {
-    EdsLib_DataTypeDB_EntityInfo_t BaseInfo;
+    EdsLib_DataTypeDB_EntityInfo_t           BaseInfo;
     EdsLib_ConstraintIterator_ControlBlock_t CtlBlock;
-    EdsLib_DatabaseRef_t BaseRef;
-    uint32_t NumDerivs = 0;
-    int32_t Status = EDSLIB_FAILURE;
+    EdsLib_DatabaseRef_t                     BaseRef;
+    uint32_t                                 NumDerivs = 0;
+    int32_t                                  Status    = EDSLIB_FAILURE;
 
     memset(&CtlBlock, 0, sizeof(CtlBlock));
     CtlBlock.UserCallback = Callback;
-    CtlBlock.CbArg = CbArg;
+    CtlBlock.CbArg        = CbArg;
     memset(&BaseInfo, 0, sizeof(BaseInfo));
     BaseInfo.EdsId = DerivedId;
 
-    while(BaseInfo.EdsId != BaseId)
+    while (BaseInfo.EdsId != BaseId)
     {
         EdsLib_Decode_StructId(&CtlBlock.TargetRef, BaseInfo.EdsId);
 
@@ -594,17 +625,21 @@ int32_t EdsLib_DataTypeDB_BaseCheck(const EdsLib_DatabaseObject_t *GD, EdsLib_Id
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_PackPartialObjectVarSize(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t *EdsId,
-        void *DestBuffer, const void *SourceBuffer, const EdsLib_SizeInfo_t *MaxSize, EdsLib_SizeInfo_t *ProcessedSize)
+int32_t EdsLib_DataTypeDB_PackPartialObjectVarSize(const EdsLib_DatabaseObject_t *GD,
+                                                   EdsLib_Id_t                   *EdsId,
+                                                   void                          *DestBuffer,
+                                                   const void                    *SourceBuffer,
+                                                   const EdsLib_SizeInfo_t       *MaxSize,
+                                                   EdsLib_SizeInfo_t             *ProcessedSize)
 {
     EdsLib_DataTypePack_State_t PackState;
-    int32_t Status;
+    int32_t                     Status;
 
     memset(&PackState, 0, sizeof(PackState));
 
-    PackState.Common.HandleMember = EdsLib_DataTypePack_HandleMember;
+    PackState.Common.HandleMember    = EdsLib_DataTypePack_HandleMember;
     PackState.Common.NativeBufferPtr = SourceBuffer;
-    PackState.Common.MaxSize = *MaxSize;
+    PackState.Common.MaxSize         = *MaxSize;
     EdsLib_Decode_StructId(&PackState.Common.RefObj, *EdsId);
     PackState.PackedDstPtr = DestBuffer;
     PackState.NativeSrcPtr = SourceBuffer;
@@ -624,7 +659,7 @@ int32_t EdsLib_DataTypeDB_PackPartialObjectVarSize(const EdsLib_DatabaseObject_t
 
     if (ProcessedSize != NULL)
     {
-        ProcessedSize->Bits = PackState.Common.LastActualTailBitPos;
+        ProcessedSize->Bits  = PackState.Common.LastActualTailBitPos;
         ProcessedSize->Bytes = PackState.Common.LastNominalTail.Bytes;
     }
 
@@ -637,15 +672,20 @@ int32_t EdsLib_DataTypeDB_PackPartialObjectVarSize(const EdsLib_DatabaseObject_t
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_PackPartialObject(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t *EdsId,
-        void *DestBuffer, const void *SourceBuffer, uint32_t MaxPackedBitSize, uint32_t SourceByteSize, uint32_t StartingBit)
+int32_t EdsLib_DataTypeDB_PackPartialObject(const EdsLib_DatabaseObject_t *GD,
+                                            EdsLib_Id_t                   *EdsId,
+                                            void                          *DestBuffer,
+                                            const void                    *SourceBuffer,
+                                            uint32_t                       MaxPackedBitSize,
+                                            uint32_t                       SourceByteSize,
+                                            uint32_t                       StartingBit)
 {
-    EdsLib_SizeInfo_t MaxSize;
-    EdsLib_SizeInfo_t ProcessedSize;
+    EdsLib_SizeInfo_t              MaxSize;
+    EdsLib_SizeInfo_t              ProcessedSize;
     EdsLib_DataTypeDB_EntityInfo_t EntityInfo;
-    int32_t Status;
+    int32_t                        Status;
 
-    MaxSize.Bits = MaxPackedBitSize;
+    MaxSize.Bits  = MaxPackedBitSize;
     MaxSize.Bytes = SourceByteSize;
 
     memset(&ProcessedSize, 0, sizeof(ProcessedSize));
@@ -675,8 +715,8 @@ int32_t EdsLib_DataTypeDB_PackPartialObject(const EdsLib_DatabaseObject_t *GD, E
 
     if (Status == EDSLIB_SUCCESS)
     {
-        Status = EdsLib_DataTypeDB_PackPartialObjectVarSize(GD, EdsId,
-            DestBuffer, SourceBuffer, &MaxSize, &ProcessedSize);
+        Status =
+            EdsLib_DataTypeDB_PackPartialObjectVarSize(GD, EdsId, DestBuffer, SourceBuffer, &MaxSize, &ProcessedSize);
     }
 
     return Status;
@@ -688,16 +728,20 @@ int32_t EdsLib_DataTypeDB_PackPartialObject(const EdsLib_DatabaseObject_t *GD, E
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_FinalizePackedObjectVarSize(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, const void *NativeBuffer, void *PackedBuffer, const EdsLib_SizeInfo_t *ProcessedSize)
+int32_t EdsLib_DataTypeDB_FinalizePackedObjectVarSize(const EdsLib_DatabaseObject_t *GD,
+                                                      EdsLib_Id_t                    EdsId,
+                                                      const void                    *NativeBuffer,
+                                                      void                          *PackedBuffer,
+                                                      const EdsLib_SizeInfo_t       *ProcessedSize)
 {
     EdsLib_PackedPostProc_ControlBlock_t CtlBlock;
 
     memset(&CtlBlock, 0, sizeof(CtlBlock));
 
-    CtlBlock.Pack.Common.HandleMember = EdsLib_PackedObject_PostProc_Callback;
+    CtlBlock.Pack.Common.HandleMember    = EdsLib_PackedObject_PostProc_Callback;
     CtlBlock.Pack.Common.NativeBufferPtr = NativeBuffer;
-    CtlBlock.Pack.Common.MaxSize = *ProcessedSize;
-    CtlBlock.Pack.Common.MaxPasses = 1;
+    CtlBlock.Pack.Common.MaxSize         = *ProcessedSize;
+    CtlBlock.Pack.Common.MaxPasses       = 1;
     EdsLib_Decode_StructId(&CtlBlock.Pack.Common.RefObj, EdsId);
 
     CtlBlock.Pack.NativeSrcPtr = NativeBuffer;
@@ -721,7 +765,7 @@ int32_t EdsLib_DataTypeDB_FinalizePackedObjectVarSize(const EdsLib_DatabaseObjec
 int32_t EdsLib_DataTypeDB_FinalizePackedObject(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, void *PackedData)
 {
     EdsLib_DataTypeDB_TypeInfo_t TypeInfo;
-    int32_t Status;
+    int32_t                      Status;
 
     /*
      * This API gets the size from the DB, it is not passed via arguments.  Thus
@@ -747,15 +791,19 @@ int32_t EdsLib_DataTypeDB_FinalizePackedObject(const EdsLib_DatabaseObject_t *GD
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_PackCompleteObjectVarSize(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t *EdsId,
-        void *DestBuffer, const void *SourceBuffer, EdsLib_SizeInfo_t *PackedSize)
+int32_t EdsLib_DataTypeDB_PackCompleteObjectVarSize(const EdsLib_DatabaseObject_t *GD,
+                                                    EdsLib_Id_t                   *EdsId,
+                                                    void                          *DestBuffer,
+                                                    const void                    *SourceBuffer,
+                                                    EdsLib_SizeInfo_t             *PackedSize)
 {
-    int32_t Status;
+    int32_t           Status;
     EdsLib_SizeInfo_t ProcessedSize;
 
     memset(&ProcessedSize, 0, sizeof(ProcessedSize));
 
-    Status = EdsLib_DataTypeDB_PackPartialObjectVarSize(GD, EdsId, DestBuffer, SourceBuffer, PackedSize, &ProcessedSize);
+    Status =
+        EdsLib_DataTypeDB_PackPartialObjectVarSize(GD, EdsId, DestBuffer, SourceBuffer, PackedSize, &ProcessedSize);
     if (Status == EDSLIB_SUCCESS)
     {
         Status = EdsLib_DataTypeDB_FinalizePackedObjectVarSize(GD, *EdsId, SourceBuffer, DestBuffer, &ProcessedSize);
@@ -774,14 +822,18 @@ int32_t EdsLib_DataTypeDB_PackCompleteObjectVarSize(const EdsLib_DatabaseObject_
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_PackCompleteObject(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t *EdsId,
-        void *DestBuffer, const void *SourceBuffer, uint32_t MaxPackedBitSize, uint32_t SourceByteSize)
+int32_t EdsLib_DataTypeDB_PackCompleteObject(const EdsLib_DatabaseObject_t *GD,
+                                             EdsLib_Id_t                   *EdsId,
+                                             void                          *DestBuffer,
+                                             const void                    *SourceBuffer,
+                                             uint32_t                       MaxPackedBitSize,
+                                             uint32_t                       SourceByteSize)
 {
-    int32_t Status;
-    EdsLib_SizeInfo_t TotalPackedSize;
+    int32_t                      Status;
+    EdsLib_SizeInfo_t            TotalPackedSize;
     EdsLib_DataTypeDB_TypeInfo_t TypeInfo;
 
-    TotalPackedSize.Bits = MaxPackedBitSize;
+    TotalPackedSize.Bits  = MaxPackedBitSize;
     TotalPackedSize.Bytes = SourceByteSize;
 
     Status = EdsLib_DataTypeDB_PackCompleteObjectVarSize(GD, EdsId, DestBuffer, SourceBuffer, &TotalPackedSize);
@@ -800,7 +852,6 @@ int32_t EdsLib_DataTypeDB_PackCompleteObject(const EdsLib_DatabaseObject_t *GD, 
         }
     }
 
-
     return Status;
 }
 
@@ -810,17 +861,21 @@ int32_t EdsLib_DataTypeDB_PackCompleteObject(const EdsLib_DatabaseObject_t *GD, 
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_UnpackPartialObjectVarSize(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t *EdsId,
-        void *DestBuffer, const void *SourceBuffer, const EdsLib_SizeInfo_t *MaxSize, EdsLib_SizeInfo_t *ProcessedSize)
+int32_t EdsLib_DataTypeDB_UnpackPartialObjectVarSize(const EdsLib_DatabaseObject_t *GD,
+                                                     EdsLib_Id_t                   *EdsId,
+                                                     void                          *DestBuffer,
+                                                     const void                    *SourceBuffer,
+                                                     const EdsLib_SizeInfo_t       *MaxSize,
+                                                     EdsLib_SizeInfo_t             *ProcessedSize)
 {
     EdsLib_DataTypeUnpack_State_t UnpackState;
-    int32_t Status;
+    int32_t                       Status;
 
     memset(&UnpackState, 0, sizeof(UnpackState));
 
-    UnpackState.Common.HandleMember = EdsLib_DataTypeUnpack_HandleMember;
+    UnpackState.Common.HandleMember    = EdsLib_DataTypeUnpack_HandleMember;
     UnpackState.Common.NativeBufferPtr = DestBuffer;
-    UnpackState.Common.MaxSize = *MaxSize;
+    UnpackState.Common.MaxSize         = *MaxSize;
     EdsLib_Decode_StructId(&UnpackState.Common.RefObj, *EdsId);
 
     UnpackState.NativeDstPtr = DestBuffer;
@@ -841,7 +896,7 @@ int32_t EdsLib_DataTypeDB_UnpackPartialObjectVarSize(const EdsLib_DatabaseObject
 
     if (ProcessedSize != NULL)
     {
-        ProcessedSize->Bits = UnpackState.Common.LastActualTailBitPos;
+        ProcessedSize->Bits  = UnpackState.Common.LastActualTailBitPos;
         ProcessedSize->Bytes = UnpackState.Common.LastNominalTail.Bytes;
     }
 
@@ -854,15 +909,20 @@ int32_t EdsLib_DataTypeDB_UnpackPartialObjectVarSize(const EdsLib_DatabaseObject
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_UnpackPartialObject(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t *EdsId,
-        void *DestBuffer, const void *SourceBuffer, uint32_t MaxNativeByteSize, uint32_t SourceBitSize, uint32_t StartingByte)
+int32_t EdsLib_DataTypeDB_UnpackPartialObject(const EdsLib_DatabaseObject_t *GD,
+                                              EdsLib_Id_t                   *EdsId,
+                                              void                          *DestBuffer,
+                                              const void                    *SourceBuffer,
+                                              uint32_t                       MaxNativeByteSize,
+                                              uint32_t                       SourceBitSize,
+                                              uint32_t                       StartingByte)
 {
-    EdsLib_SizeInfo_t MaxSize;
-    EdsLib_SizeInfo_t ProcessedSize;
+    EdsLib_SizeInfo_t              MaxSize;
+    EdsLib_SizeInfo_t              ProcessedSize;
     EdsLib_DataTypeDB_EntityInfo_t EntityInfo;
-    int32_t Status;
+    int32_t                        Status;
 
-    MaxSize.Bits = SourceBitSize;
+    MaxSize.Bits  = SourceBitSize;
     MaxSize.Bytes = MaxNativeByteSize;
 
     memset(&ProcessedSize, 0, sizeof(ProcessedSize));
@@ -892,12 +952,12 @@ int32_t EdsLib_DataTypeDB_UnpackPartialObject(const EdsLib_DatabaseObject_t *GD,
 
     if (Status == EDSLIB_SUCCESS)
     {
-        Status = EdsLib_DataTypeDB_UnpackPartialObjectVarSize(GD, EdsId, DestBuffer, SourceBuffer, &MaxSize, &ProcessedSize);
+        Status =
+            EdsLib_DataTypeDB_UnpackPartialObjectVarSize(GD, EdsId, DestBuffer, SourceBuffer, &MaxSize, &ProcessedSize);
     }
 
     return Status;
 }
-
 
 /*----------------------------------------------------------------
  *
@@ -905,22 +965,27 @@ int32_t EdsLib_DataTypeDB_UnpackPartialObject(const EdsLib_DatabaseObject_t *GD,
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, void *NativeBuffer, const void *PackedBuffer, uint32_t RecomputeFields, const EdsLib_SizeInfo_t *ProcessedSize)
+int32_t EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize(const EdsLib_DatabaseObject_t *GD,
+                                                      EdsLib_Id_t                    EdsId,
+                                                      void                          *NativeBuffer,
+                                                      const void                    *PackedBuffer,
+                                                      uint32_t                       RecomputeFields,
+                                                      const EdsLib_SizeInfo_t       *ProcessedSize)
 {
     EdsLib_NativePostProc_ControlBlock_t CtlBlock;
 
     memset(&CtlBlock, 0, sizeof(CtlBlock));
 
-    CtlBlock.Unpack.Common.HandleMember = EdsLib_NativeObject_PostProc_Callback;
+    CtlBlock.Unpack.Common.HandleMember    = EdsLib_NativeObject_PostProc_Callback;
     CtlBlock.Unpack.Common.NativeBufferPtr = NativeBuffer;
-    CtlBlock.Unpack.Common.MaxSize = *ProcessedSize;
-    CtlBlock.Unpack.Common.MaxPasses = 1;
+    CtlBlock.Unpack.Common.MaxSize         = *ProcessedSize;
+    CtlBlock.Unpack.Common.MaxPasses       = 1;
     EdsLib_Decode_StructId(&CtlBlock.Unpack.Common.RefObj, EdsId);
 
     CtlBlock.Unpack.NativeDstPtr = NativeBuffer;
     CtlBlock.Unpack.PackedSrcPtr = PackedBuffer;
-    CtlBlock.RecomputeFields = RecomputeFields;
-    CtlBlock.CheckFields = EDSLIB_DATATYPEDB_RECOMPUTE_ALL;
+    CtlBlock.RecomputeFields     = RecomputeFields;
+    CtlBlock.CheckFields         = EDSLIB_DATATYPEDB_RECOMPUTE_ALL;
 
     EdsLib_DataTypePackUnpack_Impl(GD, &CtlBlock.Unpack.Common);
 
@@ -933,11 +998,14 @@ int32_t EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize(const EdsLib_DatabaseObjec
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_VerifyUnpackedObject(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId,
-        void *UnpackedObj, const void *PackedObj, uint32_t RecomputeFields)
+int32_t EdsLib_DataTypeDB_VerifyUnpackedObject(const EdsLib_DatabaseObject_t *GD,
+                                               EdsLib_Id_t                    EdsId,
+                                               void                          *UnpackedObj,
+                                               const void                    *PackedObj,
+                                               uint32_t                       RecomputeFields)
 {
     EdsLib_DataTypeDB_TypeInfo_t TypeInfo;
-    int32_t Status;
+    int32_t                      Status;
 
     /*
      * This API gets the size from the DB, it is not passed via arguments.  Thus
@@ -951,7 +1019,12 @@ int32_t EdsLib_DataTypeDB_VerifyUnpackedObject(const EdsLib_DatabaseObject_t *GD
     }
     else
     {
-        Status = EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize(GD, EdsId, UnpackedObj, PackedObj, RecomputeFields, &TypeInfo.Size);
+        Status = EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize(GD,
+                                                               EdsId,
+                                                               UnpackedObj,
+                                                               PackedObj,
+                                                               RecomputeFields,
+                                                               &TypeInfo.Size);
     }
 
     return Status;
@@ -963,13 +1036,14 @@ int32_t EdsLib_DataTypeDB_VerifyUnpackedObject(const EdsLib_DatabaseObject_t *GD
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-static void EdsLib_NativeObject_ConstraintInitCallback(const EdsLib_DatabaseObject_t *GD, const EdsLib_DataTypeDB_EntityInfo_t *MemberInfo, EdsLib_GenericValueBuffer_t *ConstraintValue, void *Arg)
+static void EdsLib_NativeObject_ConstraintInitCallback(const EdsLib_DatabaseObject_t        *GD,
+                                                       const EdsLib_DataTypeDB_EntityInfo_t *MemberInfo,
+                                                       EdsLib_GenericValueBuffer_t          *ConstraintValue,
+                                                       void                                 *Arg)
 {
     uint8_t *DataBuf = Arg;
 
-    EdsLib_DataTypeDB_StoreValue(GD, MemberInfo->EdsId,
-            &DataBuf[MemberInfo->Offset.Bytes],
-            ConstraintValue);
+    EdsLib_DataTypeDB_StoreValue(GD, MemberInfo->EdsId, &DataBuf[MemberInfo->Offset.Bytes], ConstraintValue);
 }
 
 /*----------------------------------------------------------------
@@ -978,23 +1052,24 @@ static void EdsLib_NativeObject_ConstraintInitCallback(const EdsLib_DatabaseObje
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_InitializeNativeObject(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, void *UnpackedObj)
+int32_t
+EdsLib_DataTypeDB_InitializeNativeObject(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, void *UnpackedObj)
 {
     EdsLib_NativePostProc_ControlBlock_t CtlBlock;
-    EdsLib_DataTypeDB_TypeInfo_t TypeInfo;
-    int32_t Status;
+    EdsLib_DataTypeDB_TypeInfo_t         TypeInfo;
+    int32_t                              Status;
 
     memset(&CtlBlock, 0, sizeof(CtlBlock));
     EdsLib_DataTypeDB_GetTypeInfo(GD, EdsId, &TypeInfo);
 
-    CtlBlock.Unpack.Common.HandleMember = EdsLib_NativeObject_PostProc_Callback;
+    CtlBlock.Unpack.Common.HandleMember    = EdsLib_NativeObject_PostProc_Callback;
     CtlBlock.Unpack.Common.NativeBufferPtr = UnpackedObj;
-    CtlBlock.Unpack.Common.MaxSize = TypeInfo.Size;
-    CtlBlock.Unpack.Common.MaxPasses = 1;
+    CtlBlock.Unpack.Common.MaxSize         = TypeInfo.Size;
+    CtlBlock.Unpack.Common.MaxPasses       = 1;
     EdsLib_Decode_StructId(&CtlBlock.Unpack.Common.RefObj, EdsId);
 
     CtlBlock.Unpack.NativeDstPtr = UnpackedObj;
-    CtlBlock.RecomputeFields = EDSLIB_DATATYPEDB_RECOMPUTE_FIXEDVALUE | EDSLIB_DATATYPEDB_RECOMPUTE_LENGTH;
+    CtlBlock.RecomputeFields     = EDSLIB_DATATYPEDB_RECOMPUTE_FIXEDVALUE | EDSLIB_DATATYPEDB_RECOMPUTE_LENGTH;
 
     EdsLib_DataTypePackUnpack_Impl(GD, &CtlBlock.Unpack.Common);
 
@@ -1002,8 +1077,11 @@ int32_t EdsLib_DataTypeDB_InitializeNativeObject(const EdsLib_DatabaseObject_t *
 
     if (Status == EDSLIB_SUCCESS)
     {
-        Status = EdsLib_DataTypeDB_ConstraintIterator(GD, EDSLIB_ID_INVALID, EdsId,
-            EdsLib_NativeObject_ConstraintInitCallback, UnpackedObj);
+        Status = EdsLib_DataTypeDB_ConstraintIterator(GD,
+                                                      EDSLIB_ID_INVALID,
+                                                      EdsId,
+                                                      EdsLib_NativeObject_ConstraintInitCallback,
+                                                      UnpackedObj);
     }
 
     return Status;
@@ -1015,23 +1093,31 @@ int32_t EdsLib_DataTypeDB_InitializeNativeObject(const EdsLib_DatabaseObject_t *
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_UnpackCompleteObject(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t *EdsId,
-        void *DestBuffer, const void *SourceBuffer, uint32_t MaxNativeByteSize, uint32_t SourceBitSize)
+int32_t EdsLib_DataTypeDB_UnpackCompleteObject(const EdsLib_DatabaseObject_t *GD,
+                                               EdsLib_Id_t                   *EdsId,
+                                               void                          *DestBuffer,
+                                               const void                    *SourceBuffer,
+                                               uint32_t                       MaxNativeByteSize,
+                                               uint32_t                       SourceBitSize)
 {
-    int32_t Status;
+    int32_t           Status;
     EdsLib_SizeInfo_t MaxSize;
     EdsLib_SizeInfo_t ProcessedSize;
 
-    MaxSize.Bits = SourceBitSize;
+    MaxSize.Bits  = SourceBitSize;
     MaxSize.Bytes = MaxNativeByteSize;
     memset(&ProcessedSize, 0, sizeof(ProcessedSize));
 
-    Status = EdsLib_DataTypeDB_UnpackPartialObjectVarSize(GD, EdsId, DestBuffer, SourceBuffer,
-            &MaxSize, &ProcessedSize);
+    Status =
+        EdsLib_DataTypeDB_UnpackPartialObjectVarSize(GD, EdsId, DestBuffer, SourceBuffer, &MaxSize, &ProcessedSize);
     if (Status == EDSLIB_SUCCESS)
     {
-        Status = EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize(GD, *EdsId, DestBuffer,
-                SourceBuffer, EDSLIB_DATATYPEDB_RECOMPUTE_NONE, &ProcessedSize);
+        Status = EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize(GD,
+                                                               *EdsId,
+                                                               DestBuffer,
+                                                               SourceBuffer,
+                                                               EDSLIB_DATATYPEDB_RECOMPUTE_NONE,
+                                                               &ProcessedSize);
     }
 
     return Status;
@@ -1043,11 +1129,14 @@ int32_t EdsLib_DataTypeDB_UnpackCompleteObject(const EdsLib_DatabaseObject_t *GD
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_LoadValue(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, EdsLib_GenericValueBuffer_t *DestBuffer, const void *SrcPtr)
+int32_t EdsLib_DataTypeDB_LoadValue(const EdsLib_DatabaseObject_t *GD,
+                                    EdsLib_Id_t                    EdsId,
+                                    EdsLib_GenericValueBuffer_t   *DestBuffer,
+                                    const void                    *SrcPtr)
 {
-    EdsLib_DatabaseRef_t TempRef;
+    EdsLib_DatabaseRef_t             TempRef;
     const EdsLib_DataTypeDB_Entry_t *DataDictPtr;
-    EdsLib_ConstPtr_t Src = { .Ptr = SrcPtr };
+    EdsLib_ConstPtr_t                Src = { .Ptr = SrcPtr };
 
     DestBuffer->ValueType = EDSLIB_BASICTYPE_NONE;
     EdsLib_Decode_StructId(&TempRef, EdsId);
@@ -1070,11 +1159,14 @@ int32_t EdsLib_DataTypeDB_LoadValue(const EdsLib_DatabaseObject_t *GD, EdsLib_Id
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_StoreValue(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, void *DestPtr, EdsLib_GenericValueBuffer_t *SrcBuffer)
+int32_t EdsLib_DataTypeDB_StoreValue(const EdsLib_DatabaseObject_t *GD,
+                                     EdsLib_Id_t                    EdsId,
+                                     void                          *DestPtr,
+                                     EdsLib_GenericValueBuffer_t   *SrcBuffer)
 {
-    EdsLib_DatabaseRef_t TempRef;
+    EdsLib_DatabaseRef_t             TempRef;
     const EdsLib_DataTypeDB_Entry_t *DataDictPtr;
-    EdsLib_Ptr_t Dest = { .Ptr = DestPtr };
+    EdsLib_Ptr_t                     Dest = { .Ptr = DestPtr };
 
     EdsLib_Decode_StructId(&TempRef, EdsId);
     DataDictPtr = EdsLib_DataTypeDB_GetEntry(GD, &TempRef);
@@ -1096,12 +1188,15 @@ int32_t EdsLib_DataTypeDB_StoreValue(const EdsLib_DatabaseObject_t *GD, EdsLib_I
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_IdentifyBufferWithSize(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, const void *BufferPtr,
-        size_t BufferSize, EdsLib_DataTypeDB_DerivativeObjectInfo_t *DerivObjInfo)
+int32_t EdsLib_DataTypeDB_IdentifyBufferWithSize(const EdsLib_DatabaseObject_t            *GD,
+                                                 EdsLib_Id_t                               EdsId,
+                                                 const void                               *BufferPtr,
+                                                 size_t                                    BufferSize,
+                                                 EdsLib_DataTypeDB_DerivativeObjectInfo_t *DerivObjInfo)
 {
     const EdsLib_DataTypeDB_Entry_t *DataDictPtr;
-    EdsLib_DatabaseRef_t ActualRef;
-    int32_t Status;
+    EdsLib_DatabaseRef_t             ActualRef;
+    int32_t                          Status;
 
     EdsLib_Decode_StructId(&ActualRef, EdsId);
     DataDictPtr = EdsLib_DataTypeDB_GetEntry(GD, &ActualRef);
@@ -1112,8 +1207,12 @@ int32_t EdsLib_DataTypeDB_IdentifyBufferWithSize(const EdsLib_DatabaseObject_t *
     }
     else
     {
-        Status = EdsLib_DataTypeIdentifyBuffer_Impl(GD, DataDictPtr, BufferPtr, BufferSize,
-                &DerivObjInfo->DerivativeTableIndex, &ActualRef);
+        Status = EdsLib_DataTypeIdentifyBuffer_Impl(GD,
+                                                    DataDictPtr,
+                                                    BufferPtr,
+                                                    BufferSize,
+                                                    &DerivObjInfo->DerivativeTableIndex,
+                                                    &ActualRef);
     }
 
     if (Status == EDSLIB_SUCCESS)
@@ -1135,12 +1234,14 @@ int32_t EdsLib_DataTypeDB_IdentifyBufferWithSize(const EdsLib_DatabaseObject_t *
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_IdentifyBuffer(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, const void *BufferPtr,
-        EdsLib_DataTypeDB_DerivativeObjectInfo_t *DerivObjInfo)
+int32_t EdsLib_DataTypeDB_IdentifyBuffer(const EdsLib_DatabaseObject_t            *GD,
+                                         EdsLib_Id_t                               EdsId,
+                                         const void                               *BufferPtr,
+                                         EdsLib_DataTypeDB_DerivativeObjectInfo_t *DerivObjInfo)
 {
     const EdsLib_DataTypeDB_Entry_t *DataDictPtr;
-    EdsLib_DatabaseRef_t ActualRef;
-    int32_t Status;
+    EdsLib_DatabaseRef_t             ActualRef;
+    int32_t                          Status;
 
     EdsLib_Decode_StructId(&ActualRef, EdsId);
     DataDictPtr = EdsLib_DataTypeDB_GetEntry(GD, &ActualRef);
@@ -1151,8 +1252,12 @@ int32_t EdsLib_DataTypeDB_IdentifyBuffer(const EdsLib_DatabaseObject_t *GD, EdsL
     }
     else
     {
-        Status = EdsLib_DataTypeIdentifyBuffer_Impl(GD, DataDictPtr, BufferPtr, DataDictPtr->SizeInfo.Bytes,
-                &DerivObjInfo->DerivativeTableIndex, &ActualRef);
+        Status = EdsLib_DataTypeIdentifyBuffer_Impl(GD,
+                                                    DataDictPtr,
+                                                    BufferPtr,
+                                                    DataDictPtr->SizeInfo.Bytes,
+                                                    &DerivObjInfo->DerivativeTableIndex,
+                                                    &ActualRef);
     }
 
     if (Status == EDSLIB_SUCCESS)

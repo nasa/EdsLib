@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     testexec.c
  * \ingroup  testexecutive
@@ -50,47 +49,44 @@
 #include "testexec.h"
 
 static lua_State *BaseState;
-static int BaseStackTop;
+static int        BaseStackTop;
 
 typedef struct
 {
     int32 FileId;
-    char DataBuffer[252];
+    char  DataBuffer[252];
 } TestExec_OsalLoadState_t;
-
 
 /*
 **  volume table.
 */
-OS_VolumeInfo_t OS_VolumeTable [OS_MAX_FILE_SYSTEMS] =
-{
-        /*
-         ** The following entry is a "pre-mounted" path to a non-volatile device
-         ** This is intended to contain the functional test scripts
-         */
-        { "ftest",   "./ftest", FS_BASED, FALSE, FALSE,  TRUE, "FT", "/ftest",   512  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  }
+OS_VolumeInfo_t OS_VolumeTable[OS_MAX_FILE_SYSTEMS] = {
+    /*
+     ** The following entry is a "pre-mounted" path to a non-volatile device
+     ** This is intended to contain the functional test scripts
+     */
+    { "ftest",  "./ftest", FS_BASED, FALSE, FALSE, TRUE,  "FT", "/ftest", 512 },
+    { "unused", "unused",  FS_BASED, TRUE,  TRUE,  FALSE, " ",  " ",      0   },
+    { "unused", "unused",  FS_BASED, TRUE,  TRUE,  FALSE, " ",  " ",      0   },
+    { "unused", "unused",  FS_BASED, TRUE,  TRUE,  FALSE, " ",  " ",      0   },
+    { "unused", "unused",  FS_BASED, TRUE,  TRUE,  FALSE, " ",  " ",      0   },
+    { "unused", "unused",  FS_BASED, TRUE,  TRUE,  FALSE, " ",  " ",      0   },
+    { "unused", "unused",  FS_BASED, TRUE,  TRUE,  FALSE, " ",  " ",      0   },
+    { "unused", "unused",  FS_BASED, TRUE,  TRUE,  FALSE, " ",  " ",      0   },
+    { "unused", "unused",  FS_BASED, TRUE,  TRUE,  FALSE, " ",  " ",      0   },
+    { "unused", "unused",  FS_BASED, TRUE,  TRUE,  FALSE, " ",  " ",      0   },
+    { "unused", "unused",  FS_BASED, TRUE,  TRUE,  FALSE, " ",  " ",      0   },
+    { "unused", "unused",  FS_BASED, TRUE,  TRUE,  FALSE, " ",  " ",      0   },
+    { "unused", "unused",  FS_BASED, TRUE,  TRUE,  FALSE, " ",  " ",      0   },
+    { "unused", "unused",  FS_BASED, TRUE,  TRUE,  FALSE, " ",  " ",      0   }
 };
-
 
 static const char *TestExec_Lua_FileReader(lua_State *lua, void *data, size_t *size)
 {
     TestExec_OsalLoadState_t *LoadState = data;
-    int32 Status;
+    int32                     Status;
 
-    Status = OS_read(LoadState->FileId, LoadState->DataBuffer, sizeof (LoadState->DataBuffer));
+    Status = OS_read(LoadState->FileId, LoadState->DataBuffer, sizeof(LoadState->DataBuffer));
     if (Status < 0)
     {
         *size = 0;
@@ -107,7 +103,7 @@ static int TestExec_Lua_DoAssert(lua_State *lua)
      *  @1 = condition  (boolean)
      *  @2 = message    (string)
      */
-    lua_Debug ar;
+    lua_Debug   ar;
     const char *filename;
 
     if (lua_getstack(lua, 1, &ar))
@@ -125,12 +121,16 @@ static int TestExec_Lua_DoAssert(lua_State *lua)
     }
     else
     {
-        filename = NULL;
+        filename       = NULL;
         ar.currentline = -1;
     }
 
-    UtAssertEx(lua_toboolean(lua, 1), UtAssert_GetContext(),
-            filename, ar.currentline, "%s", luaL_tolstring(lua, 2, NULL));
+    UtAssertEx(lua_toboolean(lua, 1),
+               UtAssert_GetContext(),
+               filename,
+               ar.currentline,
+               "%s",
+               luaL_tolstring(lua, 2, NULL));
 
     return 0;
 }
@@ -138,9 +138,9 @@ static int TestExec_Lua_DoAssert(lua_State *lua)
 static int TestExec_Lua_ErrorHandler(lua_State *lua)
 {
     /* Start stack: 1 = user string */
-    lua_Debug ar;
+    lua_Debug   ar;
     const char *file;
-    uint32 line;
+    uint32      line;
 
     file = NULL;
     line = 0;
@@ -165,12 +165,11 @@ static int TestExec_Lua_ErrorHandler(lua_State *lua)
     return 0;
 }
 
-
-static void TestExec_LoadScript (void)
+static void TestExec_LoadScript(void)
 {
-    const char *SegmentName = UtAssert_GetSegmentName();
+    const char              *SegmentName = UtAssert_GetSegmentName();
     TestExec_OsalLoadState_t LoadState;
-    int32 Status;
+    int32                    Status;
 
     Status = OS_open(SegmentName, OS_READ_ONLY, 0);
     if (Status < 0)
@@ -194,10 +193,9 @@ static void TestExec_LoadScript (void)
     {
         UtAssert_True(lua_isfunction(BaseState, -1), "Load test script: %s", SegmentName);
     }
-
 }
 
-static void TestExec_RunScript (void)
+static void TestExec_RunScript(void)
 {
     if (lua_type(BaseState, -1) == LUA_TFUNCTION)
     {
@@ -205,7 +203,7 @@ static void TestExec_RunScript (void)
     }
 }
 
-static void TestExec_ResetStack (void)
+static void TestExec_ResetStack(void)
 {
     lua_settop(BaseState, BaseStackTop);
 }
@@ -217,7 +215,7 @@ void OS_Application_Shutdown(void)
 
 void OS_Application_Startup(void)
 {
-    int32 i;
+    int32       i;
     const char *OptString;
 
     if (OS_API_Init() != OS_SUCCESS)
@@ -248,12 +246,11 @@ void OS_Application_Startup(void)
     lua_pushcfunction(BaseState, TestExec_Lua_ErrorHandler);
     BaseStackTop = lua_gettop(BaseState);
 
-    for (i=0; i < UT_BSP_GetTotalOptions(); ++i)
+    for (i = 0; i < UT_BSP_GetTotalOptions(); ++i)
     {
         OptString = UT_BSP_GetOptionString(i);
         if (OptString != NULL)
         {
-
             /* Check if the option has an assignment operator.
              * If so, pass it directly to Lua for interpretation
              * (it can e.g. set a global)
@@ -268,38 +265,35 @@ void OS_Application_Startup(void)
                 UtTest_Add(TestExec_RunScript, TestExec_LoadScript, TestExec_ResetStack, OptString);
             }
         }
-
     }
 
 #ifdef JPHFIX_CLIENT
-   OS_SocketAddrFromString(&SocketAddress, "127.0.0.1");
-   Status = OS_SocketConnect(SocketID, &SocketAddress, OS_PEND);
-   if (Status != OS_SUCCESS)
-   {
-       fprintf(stderr,"OS_SocketConnect() failed: %d\n", (int)Status);
-       return;
-   }
+    OS_SocketAddrFromString(&SocketAddress, "127.0.0.1");
+    Status = OS_SocketConnect(SocketID, &SocketAddress, OS_PEND);
+    if (Status != OS_SUCCESS)
+    {
+        fprintf(stderr, "OS_SocketConnect() failed: %d\n", (int)Status);
+        return;
+    }
 
-   while (1)
-   {
-       Status = OS_StreamRead(SocketID, DataBuf, sizeof(DataBuf)-1, OS_PEND);
-       if (Status < OS_SUCCESS)
-       {
-           fprintf(stderr,"OS_StreamRead() failed: %d\n", (int)Status);
-           break;
-       }
+    while (1)
+    {
+        Status = OS_StreamRead(SocketID, DataBuf, sizeof(DataBuf) - 1, OS_PEND);
+        if (Status < OS_SUCCESS)
+        {
+            fprintf(stderr, "OS_StreamRead() failed: %d\n", (int)Status);
+            break;
+        }
 
-       if (Status == 0)
-       {
-           printf("OS_StreamRead(): disconnect\n");
-           break;
-       }
+        if (Status == 0)
+        {
+            printf("OS_StreamRead(): disconnect\n");
+            break;
+        }
 
-       DataBuf[Status] = 0;
-       printf("OS_StreamRead(): %s\n", DataBuf);
-   }
+        DataBuf[Status] = 0;
+        printf("OS_StreamRead(): %s\n", DataBuf);
+    }
 #endif
 
-
 } /* end OS_Application Startup */
-

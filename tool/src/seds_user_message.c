@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     seds_user_message.c
  * \ingroup  tool
@@ -29,7 +28,6 @@
  * context information to be attached in a consistent way, and
  * aids the operator should things go wrong.
  */
-
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -43,9 +41,7 @@
 
 #include "seds_user_message.h"
 
-
 static seds_integer_t seds_global_message_counts[SEDS_USER_MESSAGE_MAX];
-
 
 /*******************************************************************************/
 /*                      Internal / static Helper Functions                     */
@@ -79,7 +75,7 @@ static int seds_lua_user_message(lua_State *lua)
 {
     const char *full_message = luaL_checkstring(lua, 1);
     const char *filename;
-    lua_Debug ar;
+    lua_Debug   ar;
 
     memset(&ar, 0, sizeof(ar));
     lua_getstack(lua, 1, &ar);
@@ -90,8 +86,7 @@ static int seds_lua_user_message(lua_State *lua)
     {
         ++filename;
     }
-    seds_user_message_preformat(lua_tointeger(lua, lua_upvalueindex(1)),
-            filename, ar.currentline, full_message, NULL);
+    seds_user_message_preformat(lua_tointeger(lua, lua_upvalueindex(1)), filename, ar.currentline, full_message, NULL);
 
     return 0;
 }
@@ -106,30 +101,34 @@ static int seds_lua_user_message(lua_State *lua)
  * External API function - see full details in prototype.
  * ------------------------------------------------------
  */
-void seds_user_message_preformat(seds_user_message_t msgtype, const char *file, unsigned long line, const char *message1, const char *message2)
+void seds_user_message_preformat(seds_user_message_t msgtype,
+                                 const char         *file,
+                                 unsigned long       line,
+                                 const char         *message1,
+                                 const char         *message2)
 {
     const char *msgtag;
 
-    switch(msgtype)
+    switch (msgtype)
     {
-    case SEDS_USER_MESSAGE_INFO:
-        msgtag = "info";
-        break;
-    case SEDS_USER_MESSAGE_WARNING:
-        msgtag = "warning";
-        break;
-    case SEDS_USER_MESSAGE_ERROR:
-        msgtag = "error";
-        break;
-    case SEDS_USER_MESSAGE_FATAL:
-        msgtag = "fatal";
-        break;
-    case SEDS_USER_MESSAGE_DEBUG:
-        msgtag = "debug";
-        break;
-    default:
-        msgtag = NULL;
-        break;
+        case SEDS_USER_MESSAGE_INFO:
+            msgtag = "info";
+            break;
+        case SEDS_USER_MESSAGE_WARNING:
+            msgtag = "warning";
+            break;
+        case SEDS_USER_MESSAGE_ERROR:
+            msgtag = "error";
+            break;
+        case SEDS_USER_MESSAGE_FATAL:
+            msgtag = "fatal";
+            break;
+        case SEDS_USER_MESSAGE_DEBUG:
+            msgtag = "debug";
+            break;
+        default:
+            msgtag = NULL;
+            break;
     }
 
     if (msgtag == NULL)
@@ -173,9 +172,13 @@ void seds_user_message_preformat(seds_user_message_t msgtype, const char *file, 
  * External API function - see full details in prototype.
  * ------------------------------------------------------
  */
-void seds_user_message_printf(seds_user_message_t msgtype, const char *file, unsigned long line, const char *format, ...)
+void seds_user_message_printf(seds_user_message_t msgtype,
+                              const char         *file,
+                              unsigned long       line,
+                              const char         *format,
+                              ...)
 {
-    char full_message[256];
+    char    full_message[256];
     va_list va;
 
     va_start(va, format);

@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     seds_tool_main.c
  * \ingroup  tool
@@ -51,8 +50,6 @@
 #include <string.h>
 #include <strings.h>
 
-
-
 /**
  * Lua source file containing the main implementation of the SEDS
  * tool basic routines.  This is loaded at runtime.
@@ -67,24 +64,13 @@ static const char SEDS_RUNTIME_SCRIPT_FILE[] = "seds_runtime.lua";
  */
 seds_toplevel_t sedstool;
 
-
 /*******************************************************************************/
 /*                      Internal / static Helper Functions                     */
 /*                  (these are not referenced outside this unit)               */
 /*******************************************************************************/
 
-static const char *SEDS_REQUIRED_GLOBALS[] =
-{
-    "EDSTOOL_OUTPUT_DIR",
-    "EDSTOOL_PROJECT_NAME",
-    "CC",
-    "LD",
-    "AR",
-    "CFLAGS",
-    "LDFLAGS",
-    "SRCDIR",
-    "INCDIR",
-    "OBJDIR"
+static const char *SEDS_REQUIRED_GLOBALS[] = {
+    "EDSTOOL_OUTPUT_DIR", "EDSTOOL_PROJECT_NAME", "CC", "LD", "AR", "CFLAGS", "LDFLAGS", "SRCDIR", "INCDIR", "OBJDIR"
 };
 
 static void seds_export_environment(lua_State *lua)
@@ -92,7 +78,7 @@ static void seds_export_environment(lua_State *lua)
     int i;
 
     lua_rawgetp(lua, LUA_REGISTRYINDEX, &sedstool.GLOBAL_SYMBOL_TABLE_KEY);
-    for (i=0; i < (sizeof(SEDS_REQUIRED_GLOBALS) / sizeof(SEDS_REQUIRED_GLOBALS[0])); ++i)
+    for (i = 0; i < (sizeof(SEDS_REQUIRED_GLOBALS) / sizeof(SEDS_REQUIRED_GLOBALS[0])); ++i)
     {
         lua_getfield(lua, -1, SEDS_REQUIRED_GLOBALS[i]);
 
@@ -110,11 +96,11 @@ static void seds_export_environment(lua_State *lua)
 static void seds_setup_base_environment(lua_State *lua)
 {
     const char *env_value;
-    size_t i;
+    size_t      i;
 
     lua_newtable(lua);
 
-    for (i=0; i < (sizeof(SEDS_REQUIRED_GLOBALS) / sizeof(SEDS_REQUIRED_GLOBALS[0])); ++i)
+    for (i = 0; i < (sizeof(SEDS_REQUIRED_GLOBALS) / sizeof(SEDS_REQUIRED_GLOBALS[0])); ++i)
     {
         env_value = getenv(SEDS_REQUIRED_GLOBALS[i]);
 
@@ -136,7 +122,7 @@ static void seds_setup_base_environment(lua_State *lua)
 static void seds_parse_commandline_symbol(lua_State *lua, const char *sym)
 {
     const char *valtxt;
-    size_t len;
+    size_t      len;
 
     /* Trim any leading space */
     while (*sym != 0 && isspace((int)sym[0]))
@@ -182,8 +168,8 @@ static void seds_parse_commandline_files(lua_State *lua, int argc, char **argv)
 {
     const char *fileext;
     const char *filename;
-    int arg;
-    int sedsmodule_pos;
+    int         arg;
+    int         sedsmodule_pos;
 
     /*
      * At the top of the stack should be the table which reflects
@@ -287,7 +273,7 @@ static void seds_parse_commandline_files(lua_State *lua, int argc, char **argv)
 
 static void seds_gencdecl_initialize_post_processing(lua_State *lua)
 {
-    const char *verbose_mode;
+    const char    *verbose_mode;
     seds_integer_t verbosity;
 
     verbose_mode = getenv("VERBOSE");
@@ -412,12 +398,12 @@ static void seds_usage_summary(void)
 int main(int argc, char *argv[])
 {
     lua_State *lua;
-    int arg;
+    int        arg;
 
     seds_checksum_init_table();
     EdsLib_Initialize();
 
-    memset(&sedstool,0,sizeof(sedstool));
+    memset(&sedstool, 0, sizeof(sedstool));
 
     /*
      * Create a new Lua state and load the standard libraries
@@ -437,37 +423,39 @@ int main(int argc, char *argv[])
 
     seds_setup_base_environment(lua);
 
-    while ((arg = getopt (argc, argv, "vD:s:")) != -1)
+    while ((arg = getopt(argc, argv, "vD:s:")) != -1)
     {
         switch (arg)
         {
-        case 'D':
-            lua_rawgetp(lua, LUA_REGISTRYINDEX, &sedstool.GLOBAL_SYMBOL_TABLE_KEY);
-            seds_parse_commandline_symbol(lua, optarg);
-            lua_rawset(lua, -3);
-            lua_pop(lua, 1);
-            break;
+            case 'D':
+                lua_rawgetp(lua, LUA_REGISTRYINDEX, &sedstool.GLOBAL_SYMBOL_TABLE_KEY);
+                seds_parse_commandline_symbol(lua, optarg);
+                lua_rawset(lua, -3);
+                lua_pop(lua, 1);
+                break;
 
-        case 'v':
-            ++sedstool.verbosity;
-            break;
+            case 'v':
+                ++sedstool.verbosity;
+                break;
 
-        case 's':
-            sedstool.user_runtime_path = optarg;
-            break;
+            case 's':
+                sedstool.user_runtime_path = optarg;
+                break;
 
-        default:
-            if (isprint (arg))
-            {
-                seds_user_message_printf(SEDS_USER_MESSAGE_ERROR, "cmdline", 0,
-                        "Unknown argument `-%c'.\n", arg);
-            }
-            else
-            {
-                seds_user_message_printf(SEDS_USER_MESSAGE_ERROR, "cmdline", 0,
-                        "Unknown argument character `\\x%x'.\n", arg);
-            }
-            break;
+            default:
+                if (isprint(arg))
+                {
+                    seds_user_message_printf(SEDS_USER_MESSAGE_ERROR, "cmdline", 0, "Unknown argument `-%c'.\n", arg);
+                }
+                else
+                {
+                    seds_user_message_printf(SEDS_USER_MESSAGE_ERROR,
+                                             "cmdline",
+                                             0,
+                                             "Unknown argument character `\\x%x'.\n",
+                                             arg);
+                }
+                break;
         }
     }
 
@@ -525,7 +513,7 @@ int main(int argc, char *argv[])
 
     seds_parse_commandline_files(lua, argc - optind, argv + optind);
 
-    lua_pop(lua, 1);    /* SEDS global, not needed on stack anymore */
+    lua_pop(lua, 1); /* SEDS global, not needed on stack anymore */
 
     seds_export_environment(lua);
 
@@ -537,11 +525,11 @@ int main(int argc, char *argv[])
     lua_close(lua);
 
     printf("SEDS tool complete -- %ld error(s) and %ld warning(s)\n",
-            (long)seds_user_message_get_count(SEDS_USER_MESSAGE_ERROR),
-            (long)seds_user_message_get_count(SEDS_USER_MESSAGE_WARNING));
+           (long)seds_user_message_get_count(SEDS_USER_MESSAGE_ERROR),
+           (long)seds_user_message_get_count(SEDS_USER_MESSAGE_WARNING));
 
-    if (seds_user_message_get_count(SEDS_USER_MESSAGE_ERROR) != 0 ||
-            seds_user_message_get_count(SEDS_USER_MESSAGE_FATAL) != 0)
+    if (seds_user_message_get_count(SEDS_USER_MESSAGE_ERROR) != 0
+        || seds_user_message_get_count(SEDS_USER_MESSAGE_FATAL) != 0)
     {
         return EXIT_FAILURE;
     }

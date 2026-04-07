@@ -106,8 +106,10 @@ extern "C"
      * @param[out] IdBuffer output buffer for the Eds ID, if successful
      * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
      */
-    int32_t EdsLib_IntfDB_FindComponentByLocalName(const EdsLib_DatabaseObject_t *GD, uint16_t AppIdx,
-                                                   const char *CompName, EdsLib_Id_t *IdBuffer);
+    int32_t EdsLib_IntfDB_FindComponentByLocalName(const EdsLib_DatabaseObject_t *GD,
+                                                   uint16_t                       AppIdx,
+                                                   const char                    *CompName,
+                                                   EdsLib_Id_t                   *IdBuffer);
 
     /**
      * Find an EDS declared interface by name
@@ -120,8 +122,10 @@ extern "C"
      * @param[out] IdBuffer output buffer for the Eds ID, if successful
      * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
      */
-    int32_t EdsLib_IntfDB_FindDeclaredInterfaceByLocalName(const EdsLib_DatabaseObject_t *GD, uint16_t AppIdx,
-                                                           const char *IntfName, EdsLib_Id_t *IdBuffer);
+    int32_t EdsLib_IntfDB_FindDeclaredInterfaceByLocalName(const EdsLib_DatabaseObject_t *GD,
+                                                           uint16_t                       AppIdx,
+                                                           const char                    *IntfName,
+                                                           EdsLib_Id_t                   *IdBuffer);
 
     /**
      * Find an EDS declared interface by name
@@ -133,8 +137,9 @@ extern "C"
      * @param[out] IdBuffer output buffer for the Eds ID, if successful
      * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
      */
-    int32_t EdsLib_IntfDB_FindDeclaredInterfaceByFullName(const EdsLib_DatabaseObject_t *GD, const char *IntfName,
-                                                          EdsLib_Id_t *IdBuffer);
+    int32_t EdsLib_IntfDB_FindDeclaredInterfaceByFullName(const EdsLib_DatabaseObject_t *GD,
+                                                          const char                    *IntfName,
+                                                          EdsLib_Id_t                   *IdBuffer);
 
     /**
      * Find an EDS component (utilized) interface by its localized name
@@ -151,8 +156,10 @@ extern "C"
      * @param[out] IdBuffer output buffer for the Eds ID, if successful
      * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
      */
-    int32_t EdsLib_IntfDB_FindComponentInterfaceByLocalName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t ComponentId,
-                                                            const char *IntfName, EdsLib_Id_t *IdBuffer);
+    int32_t EdsLib_IntfDB_FindComponentInterfaceByLocalName(const EdsLib_DatabaseObject_t *GD,
+                                                            EdsLib_Id_t                    ComponentId,
+                                                            const char                    *IntfName,
+                                                            EdsLib_Id_t                   *IdBuffer);
 
     /**
      * Find an EDS component (utilized) interface by fully qualified name
@@ -167,8 +174,9 @@ extern "C"
      * @param[out] IdBuffer output buffer for the Eds ID, if successful
      * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
      */
-    int32_t EdsLib_IntfDB_FindComponentInterfaceByFullName(const EdsLib_DatabaseObject_t *GD, const char *IntfName,
-                                                           EdsLib_Id_t *IdBuffer);
+    int32_t EdsLib_IntfDB_FindComponentInterfaceByFullName(const EdsLib_DatabaseObject_t *GD,
+                                                           const char                    *IntfName,
+                                                           EdsLib_Id_t                   *IdBuffer);
 
     /**
      * Find an EDS command by name
@@ -185,8 +193,10 @@ extern "C"
      * @param[out] IdBuffer output buffer for the Eds ID, if successful
      * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
      */
-    int32_t EdsLib_IntfDB_FindCommandByLocalName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t IntfId,
-                                                 const char *CmdName, EdsLib_Id_t *IdBuffer);
+    int32_t EdsLib_IntfDB_FindCommandByLocalName(const EdsLib_DatabaseObject_t *GD,
+                                                 EdsLib_Id_t                    IntfId,
+                                                 const char                    *CmdName,
+                                                 EdsLib_Id_t                   *IdBuffer);
 
     /**
      * Gets the EdsId for all EDS-defined commands within an interface
@@ -203,8 +213,10 @@ extern "C"
      * @param[in]  NumIdBufs the number of buffers in the IdBuffer array
      * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
      */
-    int32_t EdsLib_IntfDB_FindAllCommands(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t IntfId, EdsLib_Id_t *IdBuffer,
-                                          size_t NumIdBufs);
+    int32_t EdsLib_IntfDB_FindAllCommands(const EdsLib_DatabaseObject_t *GD,
+                                          EdsLib_Id_t                    IntfId,
+                                          EdsLib_Id_t                   *IdBuffer,
+                                          size_t                         NumIdBufs);
 
     /**
      * Map all command arguments to their actual data type
@@ -229,8 +241,11 @@ extern "C"
      * @param[in]  NumIdBufs the number of buffers in the IdBuffer array
      * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
      */
-    int32_t EdsLib_IntfDB_FindAllArgumentTypes(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t CmdEdsId,
-                                               EdsLib_Id_t CompIntfEdsId, EdsLib_Id_t *IdBuffer, size_t NumIdBufs);
+    int32_t EdsLib_IntfDB_FindAllArgumentTypes(const EdsLib_DatabaseObject_t *GD,
+                                               EdsLib_Id_t                    CmdEdsId,
+                                               EdsLib_Id_t                    CompIntfEdsId,
+                                               EdsLib_Id_t                   *IdBuffer,
+                                               size_t                         NumIdBufs);
 
     /**
      * Get details on an EDS declared interface
@@ -240,7 +255,8 @@ extern "C"
      * @param[out] IntfInfoBuffer output buffer for the information, if successful
      * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
      */
-    int32_t EdsLib_IntfDB_GetComponentInterfaceInfo(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t IntfId,
+    int32_t EdsLib_IntfDB_GetComponentInterfaceInfo(const EdsLib_DatabaseObject_t *GD,
+                                                    EdsLib_Id_t                    IntfId,
                                                     EdsLib_IntfDB_InterfaceInfo_t *IntfInfoBuffer);
 
     /**
@@ -251,7 +267,8 @@ extern "C"
      * @param[out] CompInfoBuffer output buffer for the component information, if successful
      * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
      */
-    int32_t EdsLib_IntfDB_GetComponentInfo(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t ComponentId,
+    int32_t EdsLib_IntfDB_GetComponentInfo(const EdsLib_DatabaseObject_t *GD,
+                                           EdsLib_Id_t                    ComponentId,
                                            EdsLib_IntfDB_ComponentInfo_t *CompInfoBuffer);
 
     /**
@@ -266,8 +283,8 @@ extern "C"
      * @param[in]  BufferLen length of the output buffer
      * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
      */
-    int32_t EdsLib_IntfDB_GetFullName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, char *BufferPtr,
-                                      size_t BufferLen);
+    int32_t
+    EdsLib_IntfDB_GetFullName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, char *BufferPtr, size_t BufferLen);
 
     /**
      * Get details on an EDS command
@@ -277,8 +294,9 @@ extern "C"
      * @param[out] CommandInfoBuffer output buffer for the component information, if successful
      * @return EDSLIB_SUCCESS if successful, error code if unsuccessful
      */
-    int32_t EdsLib_IntfDB_GetCommandInfo(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t CommandId,
-                                         EdsLib_IntfDB_CommandInfo_t *CommandInfoBuffer);
+    int32_t EdsLib_IntfDB_GetCommandInfo(const EdsLib_DatabaseObject_t *GD,
+                                         EdsLib_Id_t                    CommandId,
+                                         EdsLib_IntfDB_CommandInfo_t   *CommandInfoBuffer);
 
 #ifdef __cplusplus
 } /* extern "C" */

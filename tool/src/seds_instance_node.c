@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     seds_instance_node.c
  * \ingroup  tool
@@ -48,16 +47,12 @@
  * This module is loaded when the tree functions are registered.
  */
 static const char SEDS_INSTANCE_METHODS_SCRIPT_FILE[] = "seds_instance_methods.lua";
-static const char SEDS_INSTANCE_PROPERTIES_LUA_KEY = '\0';
-
-
+static const char SEDS_INSTANCE_PROPERTIES_LUA_KEY    = '\0';
 
 /*******************************************************************************/
 /*                      Internal / static Helper Functions                     */
 /*                  (these are not referenced outside this unit)               */
 /*******************************************************************************/
-
-
 
 /* ------------------------------------------------------------------- */
 /**
@@ -81,9 +76,7 @@ static int seds_instance_node_compare(lua_State *lua)
     lua_getuservalue(lua, 2);
     lua_getfield(lua, 3, "name");
     lua_getfield(lua, 4, "name");
-    if (lua_isnil(lua, 5) ||
-            lua_type(lua, 5) != lua_type(lua, 6) ||
-            lua_compare(lua, 5, 6, LUA_OPEQ))
+    if (lua_isnil(lua, 5) || lua_type(lua, 5) != lua_type(lua, 6) || lua_compare(lua, 5, 6, LUA_OPEQ))
     {
         lua_pop(lua, 2);
         lua_getfield(lua, 3, "id");
@@ -156,7 +149,7 @@ static int seds_new_component_instance(lua_State *lua)
     seds_node_t *compnode = luaL_checkudata(lua, 1, "seds_node");
     seds_node_t *rulenode = luaL_checkudata(lua, 2, "seds_node");
     seds_node_t *trigger;
-    int instance_pos;
+    int          instance_pos;
 
     if (lua_gettop(lua) >= 3)
     {
@@ -249,4 +242,3 @@ void seds_instance_node_register_globals(lua_State *lua)
 
     lua_rawsetp(lua, LUA_REGISTRYINDEX, &SEDS_INSTANCE_PROPERTIES_LUA_KEY);
 }
-

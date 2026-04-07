@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     seds_preprocess.c
  * \ingroup  tool
@@ -92,7 +91,7 @@ static const char SEDS_PREPROCESS_ENVIRONMENT;
 static seds_boolean_t seds_resolve_is_lua_quoting_required(const char *p)
 {
     seds_boolean_t quoting_required;
-    uint32_t token_size;
+    uint32_t       token_size;
     enum TokenType
     {
         TOKENTYPE_UNKNOWN,
@@ -100,12 +99,12 @@ static seds_boolean_t seds_resolve_is_lua_quoting_required(const char *p)
         TOKENTYPE_VALUE,
         TOKENTYPE_OPERATOR,
         TOKENTYPE_MAX
-    } curr_token, prev_token;
-
+    } curr_token,
+        prev_token;
 
     quoting_required = false;
     curr_token = prev_token = TOKENTYPE_UNKNOWN;
-    token_size = 0;
+    token_size              = 0;
     while (*p != 0)
     {
         if (strncasecmp(p, "false", 5) == 0)
@@ -144,8 +143,8 @@ static seds_boolean_t seds_resolve_is_lua_quoting_required(const char *p)
             token_size = 2;
             curr_token = TOKENTYPE_OPERATOR;
         }
-        else if (strncmp(p, "==", 2) == 0 || strncmp(p, "~=", 2) == 0 ||
-                strncmp(p, "<=", 2) == 0 || strncmp(p, ">=", 2) == 0)
+        else if (strncmp(p, "==", 2) == 0 || strncmp(p, "~=", 2) == 0 || strncmp(p, "<=", 2) == 0
+                 || strncmp(p, ">=", 2) == 0)
         {
             /* relational operators */
             token_size = 2;
@@ -154,7 +153,8 @@ static seds_boolean_t seds_resolve_is_lua_quoting_required(const char *p)
         else if (strncmp(p, "${", 2) == 0)
         {
             token_size = 2;
-            while (p[token_size] != '}' && p[token_size] != 0) ++token_size;
+            while (p[token_size] != '}' && p[token_size] != 0)
+                ++token_size;
             if (p[token_size] == '}')
             {
                 /* complete reference -- include the terminator itself */
@@ -171,14 +171,16 @@ static seds_boolean_t seds_resolve_is_lua_quoting_required(const char *p)
         else if (isblank(*p))
         {
             token_size = 1;
-            while (isblank(p[token_size])) ++token_size;
+            while (isblank(p[token_size]))
+                ++token_size;
             curr_token = TOKENTYPE_BLANK;
         }
         else if (strncmp(p, "0x", 2) == 0)
         {
             /* Hex literals start with 0x and only contain hex digits */
             token_size = 2;
-            while (isxdigit(p[token_size])) ++token_size;
+            while (isxdigit(p[token_size]))
+                ++token_size;
             if (token_size <= 2)
             {
                 /* if not followed by actual hex digits, it is not a valid literal */
@@ -194,7 +196,8 @@ static seds_boolean_t seds_resolve_is_lua_quoting_required(const char *p)
         {
             /* Decimal literals may contain decimal points and/or may be in scientific notation */
             token_size = 1;
-            while (isdigit(p[token_size]) || p[token_size] == '.') ++token_size;
+            while (isdigit(p[token_size]) || p[token_size] == '.')
+                ++token_size;
             if (p[token_size] == 'e')
             {
                 if (isdigit(p[token_size + 1]))
@@ -206,7 +209,8 @@ static seds_boolean_t seds_resolve_is_lua_quoting_required(const char *p)
                     token_size += 3;
                 }
 
-                while (isdigit(p[token_size])) ++token_size;
+                while (isdigit(p[token_size]))
+                    ++token_size;
             }
             curr_token = TOKENTYPE_VALUE;
         }
@@ -235,8 +239,8 @@ static seds_boolean_t seds_resolve_is_lua_quoting_required(const char *p)
          * Two values next to each other with no operator between them also
          * is an indicator that this should be a string
          */
-        if (token_size == 0 || curr_token == TOKENTYPE_UNKNOWN ||
-                (prev_token == TOKENTYPE_VALUE && curr_token == TOKENTYPE_VALUE))
+        if (token_size == 0 || curr_token == TOKENTYPE_UNKNOWN
+            || (prev_token == TOKENTYPE_VALUE && curr_token == TOKENTYPE_VALUE))
         {
             quoting_required = true;
             break;
@@ -267,12 +271,12 @@ static seds_boolean_t seds_resolve_is_lua_quoting_required(const char *p)
  */
 static int seds_resolve_luafy_seds_reference(lua_State *lua)
 {
-    luaL_Buffer buffer;
-    const char *input;
-    const char *p, *q;
+    luaL_Buffer    buffer;
+    const char    *input;
+    const char    *p, *q;
     seds_boolean_t quoting_required;
 
-    input = lua_tostring(lua, -1);
+    input            = lua_tostring(lua, -1);
     quoting_required = seds_resolve_is_lua_quoting_required(input);
 
     /* Note - As of Lua 5.4, this may push something onto the stack.
@@ -318,7 +322,8 @@ static int seds_resolve_luafy_seds_reference(lua_State *lua)
             if (*p == '{')
             {
                 q = p + 1;
-                while (*q != '}' && *q != 0) ++q;
+                while (*q != '}' && *q != 0)
+                    ++q;
             }
         }
 
@@ -363,7 +368,6 @@ static int seds_resolve_luafy_seds_reference(lua_State *lua)
                 /* Add concatenation operator and open a new string */
                 luaL_addstring(&buffer, " .. \"");
             }
-
         }
         else if (isprint(*input))
         {
@@ -451,7 +455,6 @@ static int seds_resolve_set_eval_func(lua_State *lua)
 /*                      Externally-Called Functions                            */
 /*      (referenced outside this unit and prototyped in a separate header)     */
 /*******************************************************************************/
-
 
 /*
  * ------------------------------------------------------

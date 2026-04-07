@@ -18,17 +18,16 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_python_packedobject.c
  * \ingroup  python
  * \author   joseph.p.hickey@nasa.gov
  *
-**   Implement "packed object" type
-**
-**   This is just a light wrapper around the standard Python Bytes type.  Its
-**   main purpose is to tell the difference between native bytes objects and
-**   bytes objects which are in the packed form, so they can be converted accordingly.
+ **   Implement "packed object" type
+ **
+ **   This is just a light wrapper around the standard Python Bytes type.  Its
+ **   main purpose is to tell the difference between native bytes objects and
+ **   bytes objects which are in the packed form, so they can be converted accordingly.
  */
 
 #include "edslib_python_internal.h"
@@ -37,8 +36,10 @@
  * but older versions need a small workaround */
 #if PY_VERSION_HEX < 0x030900A4 && !defined(Py_SET_TYPE)
 static inline void _Py_SET_TYPE(PyObject *ob, PyTypeObject *type)
-{ ob->ob_type = type; }
-#define Py_SET_TYPE(ob, type) _Py_SET_TYPE((PyObject*)(ob), type)
+{
+    ob->ob_type = type;
+}
+#define Py_SET_TYPE(ob, type) _Py_SET_TYPE((PyObject *)(ob), type)
 #endif
 /*
  * A shared scratch buffer for packing objects...
@@ -50,38 +51,34 @@ static inline void _Py_SET_TYPE(PyObject *ob, PyTypeObject *type)
 
 typedef struct
 {
-    void *ScratchPtr;
+    void      *ScratchPtr;
     Py_ssize_t ScratchSize;
     Py_ssize_t ContentSize;
 } EdsLib_Python_ObjectScratchArea_t;
-
 
 static EdsLib_Python_ObjectScratchArea_t EdsLib_Python_PackedObject_GLOBAL = { NULL, 0, 0 };
 
 static PyObject *EdsLib_Python_PackedObjectType_new(PyTypeObject *objtype, PyObject *args, PyObject *kwds);
 static PyObject *EdsLib_Python_PackedObjectType_repr(PyObject *obj);
 
-PyTypeObject EdsLib_Python_PackedObjectType =
-{
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = EDSLIB_PYTHON_ENTITY_NAME("PackedObject"),
-    .tp_basicsize = sizeof(PyBytesObject),
-    .tp_itemsize = 1,
-    .tp_base = &PyBytes_Type,
-    .tp_new = EdsLib_Python_PackedObjectType_new,
-    .tp_repr = EdsLib_Python_PackedObjectType_repr,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_doc = PyDoc_STR("EDS Packed Object Bytes Type")
-};
+PyTypeObject EdsLib_Python_PackedObjectType = { PyVarObject_HEAD_INIT(NULL, 0).tp_name =
+                                                    EDSLIB_PYTHON_ENTITY_NAME("PackedObject"),
+                                                .tp_basicsize = sizeof(PyBytesObject),
+                                                .tp_itemsize  = 1,
+                                                .tp_base      = &PyBytes_Type,
+                                                .tp_new       = EdsLib_Python_PackedObjectType_new,
+                                                .tp_repr      = EdsLib_Python_PackedObjectType_repr,
+                                                .tp_flags     = Py_TPFLAGS_DEFAULT,
+                                                .tp_doc       = PyDoc_STR("EDS Packed Object Bytes Type") };
 
-static int EdsLib_Python_InitScratchAreaFromEdsObject(EdsLib_Python_ObjectBase_t *srcobj,
-        EdsLib_Python_ObjectScratchArea_t *scratch)
+static int EdsLib_Python_InitScratchAreaFromEdsObject(EdsLib_Python_ObjectBase_t        *srcobj,
+                                                      EdsLib_Python_ObjectScratchArea_t *scratch)
 {
-    EdsLib_Binding_DescriptorObject_t viewdesc;
-    EdsLib_Python_DatabaseEntry_t *dbent;
+    EdsLib_Binding_DescriptorObject_t   viewdesc;
+    EdsLib_Python_DatabaseEntry_t      *dbent;
     EdsLib_DataTypeDB_DerivedTypeInfo_t DerivInfo;
-    size_t actualsz;
-    int32_t status;
+    size_t                              actualsz;
+    int32_t                             status;
 
     if (srcobj->StorageBuf == NULL)
     {
@@ -90,7 +87,7 @@ static int EdsLib_Python_InitScratchAreaFromEdsObject(EdsLib_Python_ObjectBase_t
     }
 
     scratch->ContentSize = 0;
-    dbent = (EdsLib_Python_DatabaseEntry_t *)Py_TYPE(srcobj);
+    dbent                = (EdsLib_Python_DatabaseEntry_t *)Py_TYPE(srcobj);
     EdsLib_DataTypeDB_GetDerivedInfo(dbent->EdsDb->GD, dbent->EdsId, &DerivInfo);
     actualsz = (DerivInfo.MaxSize.Bits + 7) / 8;
 
@@ -130,8 +127,7 @@ static int EdsLib_Python_InitScratchAreaFromEdsObject(EdsLib_Python_ObjectBase_t
         return 0;
     }
 
-    status = EdsLib_Binding_ExportToPackedBuffer(&viewdesc,
-            scratch->ScratchPtr, actualsz-1);
+    status = EdsLib_Binding_ExportToPackedBuffer(&viewdesc, scratch->ScratchPtr, actualsz - 1);
 
     EdsLib_Python_ReleaseObjectDesciptor(&viewdesc);
 
@@ -151,14 +147,14 @@ static int EdsLib_Python_InitScratchAreaFromEdsObject(EdsLib_Python_ObjectBase_t
 
 static PyObject *EdsLib_Python_PackedObjectType_new(PyTypeObject *objtype, PyObject *args, PyObject *kwds)
 {
-    PyObject *argobj;
+    PyObject      *argobj;
     PyBytesObject *result;
-    void *contentdata_src;
-    size_t contentdata_size;
+    void          *contentdata_src;
+    size_t         contentdata_size;
 
-    contentdata_src = NULL;
+    contentdata_src  = NULL;
     contentdata_size = 0;
-    result = NULL;
+    result           = NULL;
     if (!PyArg_ParseTuple(args, "O:PackedObjectType_new", &argobj))
     {
         return NULL;
@@ -173,17 +169,16 @@ static PyObject *EdsLib_Python_PackedObjectType_new(PyTypeObject *objtype, PyObj
      */
     if (PyObject_TypeCheck(Py_TYPE(argobj), &EdsLib_Python_DatabaseEntryType))
     {
-        if (EdsLib_Python_InitScratchAreaFromEdsObject(
-                (EdsLib_Python_ObjectBase_t *)argobj,
-                        &EdsLib_Python_PackedObject_GLOBAL))
+        if (EdsLib_Python_InitScratchAreaFromEdsObject((EdsLib_Python_ObjectBase_t *)argobj,
+                                                       &EdsLib_Python_PackedObject_GLOBAL))
         {
-            contentdata_src = EdsLib_Python_PackedObject_GLOBAL.ScratchPtr;
+            contentdata_src  = EdsLib_Python_PackedObject_GLOBAL.ScratchPtr;
             contentdata_size = EdsLib_Python_PackedObject_GLOBAL.ContentSize;
         }
     }
     else if (PyObject_TypeCheck(argobj, &PyBytes_Type))
     {
-        contentdata_src = PyBytes_AS_STRING(argobj);
+        contentdata_src  = PyBytes_AS_STRING(argobj);
         contentdata_size = PyBytes_GET_SIZE(argobj);
     }
     else
@@ -194,20 +189,21 @@ static PyObject *EdsLib_Python_PackedObjectType_new(PyTypeObject *objtype, PyObj
 
     if (contentdata_src != NULL)
     {
-        result = (PyBytesObject*)PyBytes_FromStringAndSize(contentdata_src, contentdata_size);
+        result = (PyBytesObject *)PyBytes_FromStringAndSize(contentdata_src, contentdata_size);
         if (result != NULL)
         {
-            /* This identifies it as an instance of the EdsLib.PackedObject type, as opposed to a vanilla bytes object */
+            /* This identifies it as an instance of the EdsLib.PackedObject type, as opposed to a vanilla bytes object
+             */
             Py_SET_TYPE(result, objtype);
         }
     }
 
-    return (PyObject*)result;
+    return (PyObject *)result;
 }
 
 static PyObject *EdsLib_Python_PackedObjectType_repr(PyObject *obj)
 {
-    PyObject *repr = EdsLib_Python_PackedObjectType.tp_base->tp_repr(obj);
+    PyObject *repr   = EdsLib_Python_PackedObjectType.tp_base->tp_repr(obj);
     PyObject *result = NULL;
 
     if (repr != NULL)
@@ -218,4 +214,3 @@ static PyObject *EdsLib_Python_PackedObjectType_repr(PyObject *obj)
 
     return result;
 }
-

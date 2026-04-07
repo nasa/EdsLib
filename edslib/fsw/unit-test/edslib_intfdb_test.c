@@ -229,13 +229,21 @@ void UtTest_Setup(void)
 {
     UtTest_Add(Test_EdsLib_IntfDB_Initialize, NULL, NULL, "EdsLib_IntfDB_Initialize");
     UtTest_Add(Test_EdsLib_IntfDB_FindComponentByLocalName, NULL, NULL, "EdsLib_IntfDB_FindComponentByLocalName");
-    UtTest_Add(Test_EdsLib_IntfDB_FindDeclaredInterfaceByLocalName, NULL, NULL,
+    UtTest_Add(Test_EdsLib_IntfDB_FindDeclaredInterfaceByLocalName,
+               NULL,
+               NULL,
                "EdsLib_IntfDB_FindDeclaredInterfaceByLocalName");
-    UtTest_Add(Test_EdsLib_IntfDB_FindDeclaredInterfaceByFullName, NULL, NULL,
+    UtTest_Add(Test_EdsLib_IntfDB_FindDeclaredInterfaceByFullName,
+               NULL,
+               NULL,
                "EdsLib_IntfDB_FindDeclaredInterfaceByFullName");
-    UtTest_Add(Test_EdsLib_IntfDB_FindComponentInterfaceByLocalName, NULL, NULL,
+    UtTest_Add(Test_EdsLib_IntfDB_FindComponentInterfaceByLocalName,
+               NULL,
+               NULL,
                "EdsLib_IntfDB_FindComponentInterfaceByLocalName");
-    UtTest_Add(Test_EdsLib_IntfDB_FindComponentInterfaceByFullName, NULL, NULL,
+    UtTest_Add(Test_EdsLib_IntfDB_FindComponentInterfaceByFullName,
+               NULL,
+               NULL,
                "EdsLib_IntfDB_FindComponentInterfaceByFullName");
     UtTest_Add(Test_EdsLib_IntfDB_FindCommandByLocalName, NULL, NULL, "EdsLib_IntfDB_FindCommandByLocalName");
     UtTest_Add(Test_EdsLib_IntfDB_FindAllCommands, NULL, NULL, "EdsLib_IntfDB_FindAllCommands");
