@@ -869,7 +869,15 @@ int EdsTableTool_WriteGenericFile(lua_State *lua)
         return luaL_error(lua, "%s: %s", lua_tostring(lua, 1), strerror(errno));
     }
 
-    EdsTableTool_PushEncodedSingleObject(lua);
+    if (lua_type(lua, -1) == LUA_TTABLE)
+    {
+        EdsTableTool_PushEncodedMultiObject(lua);
+    }
+    else
+    {
+        EdsTableTool_PushEncodedSingleObject(lua);
+    }
+
     fwrite(lua_tostring(lua, -1), lua_rawlen(lua, -1), 1, OutputFile);
     fclose(OutputFile);
     lua_pop(lua, 1);
