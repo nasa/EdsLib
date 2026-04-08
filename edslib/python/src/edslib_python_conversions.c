@@ -85,51 +85,6 @@ static int EdsLib_Python_InitBindingDescriptorObject(EdsLib_Python_ObjectBase_t 
     return 1;
 }
 
-static void EdsLib_Python_ConvertPyMembers_Callback(void *Arg, const EdsLib_EntityDescriptor_t *ParamDesc)
-{
-    EdsLib_Python_ObjectConversionState_t *ParentConv = Arg;
-    EdsLib_Python_ObjectConversionState_t  subpair;
-
-    /* Any conversion error should have set an exception/error context.
-     * To avoid triggering multiple exceptions, this is a no-op after the first error */
-    if (PyErr_Occurred() == NULL)
-    {
-        EdsLib_Binding_InitSubObject(&subpair.desc, &ParentConv->desc, &ParamDesc->EntityInfo);
-
-        /* If a named index is present in EDS, and the python object supports the
-         * mapping protocol, then use the mapping to relate the objects.  This use
-         * case is primarily for containers, but also applies to arrays where an enum
-         * type is used as the index.  */
-        if (ParamDesc->FullName != NULL && PyMapping_Check(ParentConv->pyobj))
-        {
-            /* new ref */
-            subpair.pyobj = PyMapping_GetItemString(ParentConv->pyobj, (char *)ParamDesc->FullName);
-        }
-        else if (PySequence_Check(ParentConv->pyobj) && ParamDesc->SeqNum < PySequence_Size(ParentConv->pyobj))
-        {
-            /* Use sequence protocol as a backup, which handles normal EDS arrays
-             * or python lists being assigned to EDS containers */
-            /*new ref*/
-            subpair.pyobj = PySequence_GetItem(ParentConv->pyobj, ParamDesc->SeqNum);
-        }
-        else
-        {
-            /* no common ground found, so no conversion is possible */
-            subpair.pyobj = NULL;
-        }
-
-        /*
-         * The absence of an object here is not necessarily an error;
-         * treat it as a no-op if that occurs.
-         */
-        if (subpair.pyobj != NULL)
-        {
-            EdsLib_Python_ConvertPythonToEdsObjectImpl(&subpair);
-            Py_DECREF(subpair.pyobj);
-        }
-    }
-}
-
 static void EdsLib_Python_ConvertEdsMembers_Callback(void *Arg, const EdsLib_EntityDescriptor_t *ParamDesc)
 {
     EdsLib_Python_ObjectConversionState_t *ParentConv = Arg;
@@ -281,6 +236,121 @@ static int EdsLib_Python_CopyEdsObjectDirect(EdsLib_Python_ObjectConversionState
     return 1;
 }
 
+static void EdsLib_Python_ConvertPythonSubObjectToEdsImpl(EdsLib_Binding_DescriptorObject_t *ParentDesc,
+                                                          uint16_t                           SubIndex,
+                                                          PyObject                          *MemberValue)
+{
+    EdsLib_DataTypeDB_EntityInfo_t        MemberInfo;
+    EdsLib_Python_ObjectConversionState_t subpair;
+    int32_t                               EdsStatus;
+
+    EdsStatus = EdsLib_DataTypeDB_GetMemberByIndex(ParentDesc->GD, ParentDesc->EdsId, SubIndex, &MemberInfo);
+    if (EdsStatus != EDSLIB_SUCCESS)
+    {
+        /* This means the subindex is not valid for this object */
+        PyErr_Format(PyExc_IndexError, "Invalid Index: %u, Status=%d", (unsigned int)SubIndex, (int)EdsStatus);
+    }
+    else
+    {
+        EdsLib_Binding_InitSubObject(&subpair.desc, ParentDesc, &MemberInfo);
+        subpair.pyobj = MemberValue;
+        EdsLib_Python_ConvertPythonToEdsObjectImpl(&subpair);
+    }
+}
+
+/*
+ * internal function, may be called recursively
+ */
+static void EdsLib_Python_ConvertPythonSequenceToEdsObjImpl(EdsLib_Python_ObjectConversionState_t *ConvPair)
+{
+    Py_ssize_t SeqSize;
+    Py_ssize_t idx;
+    PyObject  *MemberValue;
+
+    /* Any conversion error should have set an exception/error context.
+     * To avoid triggering multiple exceptions, this stops after the first error */
+    SeqSize = PySequence_Size(ConvPair->pyobj);
+    for (idx = 0; PyErr_Occurred() == NULL && idx < SeqSize; ++idx)
+    {
+        MemberValue = PySequence_GetItem(ConvPair->pyobj, idx);
+        if (MemberValue == NULL)
+        {
+            /* not expected */
+            break;
+        }
+
+        EdsLib_Python_ConvertPythonSubObjectToEdsImpl(&ConvPair->desc, idx, MemberValue);
+        Py_DECREF(MemberValue);
+    }
+}
+
+/*
+ * internal function, may be called recursively
+ */
+static void EdsLib_Python_ConvertPythonMappingToEdsObjImpl(EdsLib_Python_ObjectConversionState_t *ConvPair)
+{
+    PyObject  *MemberList;
+    PyObject  *MemberKey;
+    PyObject  *MemberValue;
+    Py_ssize_t MapSize;
+    Py_ssize_t idx;
+    int32_t    EdsStatus;
+    uint16_t   SubIndex;
+
+    MemberList = PyMapping_Keys(ConvPair->pyobj);
+    if (MemberList != NULL)
+    {
+        MapSize = PyList_GET_SIZE(MemberList);
+        /* Any conversion error should have set an exception/error context.
+         * To avoid triggering multiple exceptions, this stops after the first error */
+        for (idx = 0; PyErr_Occurred() == NULL && idx < MapSize; ++idx)
+        {
+            /* NOTE: this gets a borrowed ref */
+            MemberKey   = PyList_GET_ITEM(MemberList, idx);
+            MemberValue = PyObject_GetItem(ConvPair->pyobj, MemberKey);
+            if (MemberValue == NULL)
+            {
+                /* not expected */
+                break;
+            }
+
+            /* Do an EDS lookup but make sure the string is plain ASCII */
+            /* this drops the borrowed ref and replaces it with a strong ref */
+            if (PyUnicode_Check(MemberKey))
+            {
+                MemberKey = PyUnicode_AsASCIIString(MemberKey);
+            }
+            else
+            {
+                MemberKey = PyObject_ASCII(MemberKey);
+            }
+
+            if (MemberKey != NULL)
+            {
+                EdsStatus = EdsLib_DisplayDB_GetIndexByName(ConvPair->desc.GD,
+                                                            ConvPair->desc.EdsId,
+                                                            PyBytes_AsString(MemberKey),
+                                                            &SubIndex);
+                if (EdsStatus != EDSLIB_SUCCESS)
+                {
+                    /* This means the python object contained a key that does not exist */
+                    PyErr_Format(PyExc_KeyError, "Key does not exist in EDS object: %R", MemberKey);
+                }
+                else
+                {
+                    EdsLib_Python_ConvertPythonSubObjectToEdsImpl(&ConvPair->desc, SubIndex, MemberValue);
+                }
+
+                Py_DECREF(MemberKey);
+            }
+
+            Py_DECREF(MemberValue);
+        }
+
+        Py_DECREF(MemberList);
+    }
+}
+
 /*
  * internal function, may be called recursively
  */
@@ -298,13 +368,18 @@ static void EdsLib_Python_ConvertPythonToEdsObjectImpl(EdsLib_Python_ObjectConve
     {
         /* no-op */
     }
-    else if (ConvPair->desc.TypeInfo.NumSubElements > 0)
+    else if (PyList_Check(ConvPair->pyobj) || PyTuple_Check(ConvPair->pyobj))
     {
-        /* Convert all sub-entities (will recuse back to this function for each item) */
-        EdsLib_DisplayDB_IterateBaseEntities(ConvPair->desc.GD,
-                                             ConvPair->desc.EdsId,
-                                             EdsLib_Python_ConvertPyMembers_Callback,
-                                             ConvPair);
+        /* Note that this is specifically checking for List or Tuple here because
+         * the PySequence check is too broad; it also includes strings and Bytes
+         * objects which we do NOT want to interpret in this way */
+        EdsLib_Python_ConvertPythonSequenceToEdsObjImpl(ConvPair);
+    }
+    else if (PyAnySet_Check(ConvPair->pyobj) || PyDict_Check(ConvPair->pyobj))
+    {
+        /* As for sequences, the PyMapping_Check is too broad and will match
+         * unicode objects as well */
+        EdsLib_Python_ConvertPythonMappingToEdsObjImpl(ConvPair);
     }
     else
     {
