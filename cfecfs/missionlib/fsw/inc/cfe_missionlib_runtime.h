@@ -69,13 +69,13 @@ extern "C"
 {
 #endif
 
-    void CFE_MissionLib_MapListenerComponent(EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Output,
+    bool CFE_MissionLib_MapListenerComponent(EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Output,
                                              const EdsComponent_CFE_SB_Listener_t     *Input);
-    void CFE_MissionLib_UnmapListenerComponent(EdsComponent_CFE_SB_Listener_t                 *Output,
+    bool CFE_MissionLib_UnmapListenerComponent(EdsComponent_CFE_SB_Listener_t                 *Output,
                                                const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Input);
-    void CFE_MissionLib_MapPublisherComponent(EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Output,
+    bool CFE_MissionLib_MapPublisherComponent(EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Output,
                                               const EdsComponent_CFE_SB_Publisher_t    *Input);
-    void CFE_MissionLib_UnmapPublisherComponent(EdsComponent_CFE_SB_Publisher_t                *Output,
+    bool CFE_MissionLib_UnmapPublisherComponent(EdsComponent_CFE_SB_Publisher_t                *Output,
                                                 const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Input);
 
     bool CFE_MissionLib_PubSub_IsListenerComponent(const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Params);
