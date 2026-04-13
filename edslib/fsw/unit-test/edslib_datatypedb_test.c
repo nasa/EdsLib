@@ -38,14 +38,14 @@
 
 #include "edslib_datatypedb.h"
 
-const char         *UT_DYNAMIC_APPNAME_TABLE[UT_MAX_INDEX]    = {NULL};
-EdsLib_DataTypeDB_t UT_DYNAMIC_DATATYPEDB_TABLE[UT_MAX_INDEX] = {NULL};
+const char         *UT_DYNAMIC_APPNAME_TABLE[UT_MAX_INDEX]    = { NULL };
+EdsLib_DataTypeDB_t UT_DYNAMIC_DATATYPEDB_TABLE[UT_MAX_INDEX] = { NULL };
 
-EdsLib_DatabaseObject_t UT_DYNAMIC_DB = {.AppTableSize     = UT_MAX_INDEX,
-                                         .AppName_Table    = UT_DYNAMIC_APPNAME_TABLE,
-                                         .DataTypeDB_Table = UT_DYNAMIC_DATATYPEDB_TABLE,
-                                         .DisplayDB_Table  = NULL,
-                                         .IntfDB_Table     = NULL};
+EdsLib_DatabaseObject_t UT_DYNAMIC_DB = { .AppTableSize     = UT_MAX_INDEX,
+                                          .AppName_Table    = UT_DYNAMIC_APPNAME_TABLE,
+                                          .DataTypeDB_Table = UT_DYNAMIC_DATATYPEDB_TABLE,
+                                          .DisplayDB_Table  = NULL,
+                                          .IntfDB_Table     = NULL };
 
 void Test_EdsLib_DataTypeDB_Initialize(void)
 {
@@ -165,8 +165,10 @@ void Test_EdsLib_DataTypeDB_GetDerivedInfo(void)
     UtAssert_INT32_EQ(EdsLib_DataTypeDB_GetDerivedInfo(&UT_DATABASE, UT_EDS_CMDHDR_ID, &DerivInfo), EDSLIB_SUCCESS);
 }
 
-void UtConstraintCallback(const EdsLib_DatabaseObject_t *GD, const EdsLib_DataTypeDB_EntityInfo_t *MemberInfo,
-                          EdsLib_GenericValueBuffer_t *ConstraintValue, void *Arg)
+void UtConstraintCallback(const EdsLib_DatabaseObject_t        *GD,
+                          const EdsLib_DataTypeDB_EntityInfo_t *MemberInfo,
+                          EdsLib_GenericValueBuffer_t          *ConstraintValue,
+                          void                                 *Arg)
 {
 }
 
@@ -177,8 +179,11 @@ void Test_EdsLib_DataTypeDB_ConstraintIterator(void)
      * DerivedId, EdsLib_ConstraintCallback_t Callback, void *CbArg);
      */
 
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_ConstraintIterator(&UT_DATABASE, UT_EDS_CMDHDR_ID, UT_EDS_CMD1_ID,
-                                                           UtConstraintCallback, NULL),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_ConstraintIterator(&UT_DATABASE,
+                                                           UT_EDS_CMDHDR_ID,
+                                                           UT_EDS_CMD1_ID,
+                                                           UtConstraintCallback,
+                                                           NULL),
                       EDSLIB_SUCCESS);
 }
 
@@ -206,7 +211,11 @@ void Test_EdsLib_DataTypeDB_PackCompleteObject(void)
     memset(&PackBuf, 0xAA, sizeof(PackBuf));
     EdsId = UT_EDS_CMD1_ID;
 
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_PackCompleteObject(&UT_DATABASE, &EdsId, &PackBuf, &CmdBuf, sizeof(PackBuf) * 8,
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_PackCompleteObject(&UT_DATABASE,
+                                                           &EdsId,
+                                                           &PackBuf,
+                                                           &CmdBuf,
+                                                           sizeof(PackBuf) * 8,
                                                            sizeof(CmdBuf)),
                       EDSLIB_SUCCESS);
 }
@@ -252,8 +261,13 @@ void Test_EdsLib_DataTypeDB_PackPartialObject(void)
     memset(&PackBuf, 0xAA, sizeof(PackBuf));
     EdsId = UT_EDS_CMD1_ID;
 
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_PackPartialObject(&UT_DATABASE, &EdsId, &PackBuf, &CmdBuf, sizeof(PackBuf) * 8,
-                                                          sizeof(CmdBuf), 0),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_PackPartialObject(&UT_DATABASE,
+                                                          &EdsId,
+                                                          &PackBuf,
+                                                          &CmdBuf,
+                                                          sizeof(PackBuf) * 8,
+                                                          sizeof(CmdBuf),
+                                                          0),
                       EDSLIB_SUCCESS);
 }
 
@@ -271,7 +285,11 @@ void Test_EdsLib_DataTypeDB_UnpackCompleteObject(void)
     memset(&PackBuf, 0, sizeof(PackBuf));
     EdsId = UT_EDS_CMDHDR_ID;
 
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId, &CmdBuf, &PackBuf, sizeof(CmdBuf),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId,
+                                                             &CmdBuf,
+                                                             &PackBuf,
+                                                             sizeof(CmdBuf),
                                                              sizeof(PackBuf) * 8),
                       EDSLIB_SUCCESS);
 }
@@ -317,8 +335,13 @@ void Test_EdsLib_DataTypeDB_UnpackPartialObject(void)
     memset(&PackBuf, 0, sizeof(PackBuf));
     EdsId = UT_EDS_CMDHDR_ID;
 
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackPartialObject(&UT_DATABASE, &EdsId, &CmdBuf, &PackBuf, sizeof(CmdBuf),
-                                                            sizeof(PackBuf) * 8, 0),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackPartialObject(&UT_DATABASE,
+                                                            &EdsId,
+                                                            &CmdBuf,
+                                                            &PackBuf,
+                                                            sizeof(CmdBuf),
+                                                            sizeof(PackBuf) * 8,
+                                                            0),
                       EDSLIB_SUCCESS);
 }
 
@@ -372,7 +395,11 @@ void Test_EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize(void)
     ProcessedSize.Bits  = EdsLib_OCTETS_TO_BITS(sizeof(PackBuf));
     ProcessedSize.Bytes = sizeof(CmdBuf);
 
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize(&UT_DATABASE, UT_EDS_CMD1_ID, &CmdBuf, &PackBuf, 0,
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize(&UT_DATABASE,
+                                                                    UT_EDS_CMD1_ID,
+                                                                    &CmdBuf,
+                                                                    &PackBuf,
+                                                                    0,
                                                                     &ProcessedSize),
                       EDSLIB_SUCCESS);
 }
@@ -463,7 +490,10 @@ void Test_EdsLib_DataTypeDB_IdentifyBufferWithSize(void)
     /* Setup */
     UtAssert_INT32_EQ(EdsLib_DataTypeDB_InitializeNativeObject(&UT_DATABASE, UT_EDS_CMD1_ID, &CmdBuf), EDSLIB_SUCCESS);
 
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_IdentifyBufferWithSize(&UT_DATABASE, UT_EDS_CMDHDR_ID, &CmdBuf, sizeof(CmdBuf),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_IdentifyBufferWithSize(&UT_DATABASE,
+                                                               UT_EDS_CMDHDR_ID,
+                                                               &CmdBuf,
+                                                               sizeof(CmdBuf),
                                                                &DerivObjInfo),
                       EDSLIB_SUCCESS);
 
@@ -524,14 +554,22 @@ void UtTest_Setup(void)
     UtTest_Add(Test_EdsLib_DataTypeDB_ConstraintIterator, NULL, NULL, "EdsLib_DataTypeDB_ConstraintIterator");
     UtTest_Add(Test_EdsLib_DataTypeDB_BaseCheck, NULL, NULL, "EdsLib_DataTypeDB_BaseCheck");
     UtTest_Add(Test_EdsLib_DataTypeDB_PackCompleteObject, NULL, NULL, "EdsLib_DataTypeDB_PackCompleteObject");
-    UtTest_Add(Test_EdsLib_DataTypeDB_PackPartialObjectVarSize, NULL, NULL,
+    UtTest_Add(Test_EdsLib_DataTypeDB_PackPartialObjectVarSize,
+               NULL,
+               NULL,
                "EdsLib_DataTypeDB_PackPartialObjectVarSize");
     UtTest_Add(Test_EdsLib_DataTypeDB_UnpackCompleteObject, NULL, NULL, "EdsLib_DataTypeDB_UnpackCompleteObject");
-    UtTest_Add(Test_EdsLib_DataTypeDB_UnpackPartialObjectVarSize, NULL, NULL,
+    UtTest_Add(Test_EdsLib_DataTypeDB_UnpackPartialObjectVarSize,
+               NULL,
+               NULL,
                "EdsLib_DataTypeDB_UnpackPartialObjectVarSize");
-    UtTest_Add(Test_EdsLib_DataTypeDB_FinalizePackedObjectVarSize, NULL, NULL,
+    UtTest_Add(Test_EdsLib_DataTypeDB_FinalizePackedObjectVarSize,
+               NULL,
+               NULL,
                "EdsLib_DataTypeDB_FinalizePackedObjectVarSize");
-    UtTest_Add(Test_EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize, NULL, NULL,
+    UtTest_Add(Test_EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize,
+               NULL,
+               NULL,
                "EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize");
     UtTest_Add(Test_EdsLib_DataTypeDB_InitializeNativeObject, NULL, NULL, "EdsLib_DataTypeDB_InitializeNativeObject");
     UtTest_Add(Test_EdsLib_DataTypeDB_LoadValue, NULL, NULL, "EdsLib_DataTypeDB_LoadValue");

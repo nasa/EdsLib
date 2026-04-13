@@ -32,8 +32,11 @@
  * Generated stub function for EdsLib_IntfDB_FindAllArgumentTypes()
  * ----------------------------------------------------
  */
-int32_t EdsLib_IntfDB_FindAllArgumentTypes(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t CmdEdsId,
-                                           EdsLib_Id_t CompIntfEdsId, EdsLib_Id_t *IdBuffer, size_t NumIdBufs)
+int32_t EdsLib_IntfDB_FindAllArgumentTypes(const EdsLib_DatabaseObject_t *GD,
+                                           EdsLib_Id_t                    CmdEdsId,
+                                           EdsLib_Id_t                    CompIntfEdsId,
+                                           EdsLib_Id_t                   *IdBuffer,
+                                           size_t                         NumIdBufs)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_IntfDB_FindAllArgumentTypes, int32_t);
 
@@ -53,8 +56,10 @@ int32_t EdsLib_IntfDB_FindAllArgumentTypes(const EdsLib_DatabaseObject_t *GD, Ed
  * Generated stub function for EdsLib_IntfDB_FindAllCommands()
  * ----------------------------------------------------
  */
-int32_t EdsLib_IntfDB_FindAllCommands(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t IntfId, EdsLib_Id_t *IdBuffer,
-                                      size_t NumIdBufs)
+int32_t EdsLib_IntfDB_FindAllCommands(const EdsLib_DatabaseObject_t *GD,
+                                      EdsLib_Id_t                    IntfId,
+                                      EdsLib_Id_t                   *IdBuffer,
+                                      size_t                         NumIdBufs)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_IntfDB_FindAllCommands, int32_t);
 
@@ -73,8 +78,10 @@ int32_t EdsLib_IntfDB_FindAllCommands(const EdsLib_DatabaseObject_t *GD, EdsLib_
  * Generated stub function for EdsLib_IntfDB_FindCommandByLocalName()
  * ----------------------------------------------------
  */
-int32_t EdsLib_IntfDB_FindCommandByLocalName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t IntfId, const char *CmdName,
-                                             EdsLib_Id_t *IdBuffer)
+int32_t EdsLib_IntfDB_FindCommandByLocalName(const EdsLib_DatabaseObject_t *GD,
+                                             EdsLib_Id_t                    IntfId,
+                                             const char                    *CmdName,
+                                             EdsLib_Id_t                   *IdBuffer)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_IntfDB_FindCommandByLocalName, int32_t);
 
@@ -93,8 +100,10 @@ int32_t EdsLib_IntfDB_FindCommandByLocalName(const EdsLib_DatabaseObject_t *GD, 
  * Generated stub function for EdsLib_IntfDB_FindComponentByLocalName()
  * ----------------------------------------------------
  */
-int32_t EdsLib_IntfDB_FindComponentByLocalName(const EdsLib_DatabaseObject_t *GD, uint16_t AppIdx, const char *CompName,
-                                               EdsLib_Id_t *IdBuffer)
+int32_t EdsLib_IntfDB_FindComponentByLocalName(const EdsLib_DatabaseObject_t *GD,
+                                               uint16_t                       AppIdx,
+                                               const char                    *CompName,
+                                               EdsLib_Id_t                   *IdBuffer)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_IntfDB_FindComponentByLocalName, int32_t);
 
@@ -113,8 +122,9 @@ int32_t EdsLib_IntfDB_FindComponentByLocalName(const EdsLib_DatabaseObject_t *GD
  * Generated stub function for EdsLib_IntfDB_FindComponentInterfaceByFullName()
  * ----------------------------------------------------
  */
-int32_t EdsLib_IntfDB_FindComponentInterfaceByFullName(const EdsLib_DatabaseObject_t *GD, const char *IntfName,
-                                                       EdsLib_Id_t *IdBuffer)
+int32_t EdsLib_IntfDB_FindComponentInterfaceByFullName(const EdsLib_DatabaseObject_t *GD,
+                                                       const char                    *IntfName,
+                                                       EdsLib_Id_t                   *IdBuffer)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_IntfDB_FindComponentInterfaceByFullName, int32_t);
 
@@ -132,8 +142,10 @@ int32_t EdsLib_IntfDB_FindComponentInterfaceByFullName(const EdsLib_DatabaseObje
  * Generated stub function for EdsLib_IntfDB_FindComponentInterfaceByLocalName()
  * ----------------------------------------------------
  */
-int32_t EdsLib_IntfDB_FindComponentInterfaceByLocalName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t ComponentId,
-                                                        const char *IntfName, EdsLib_Id_t *IdBuffer)
+int32_t EdsLib_IntfDB_FindComponentInterfaceByLocalName(const EdsLib_DatabaseObject_t *GD,
+                                                        EdsLib_Id_t                    ComponentId,
+                                                        const char                    *IntfName,
+                                                        EdsLib_Id_t                   *IdBuffer)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_IntfDB_FindComponentInterfaceByLocalName, int32_t);
 
@@ -152,8 +164,9 @@ int32_t EdsLib_IntfDB_FindComponentInterfaceByLocalName(const EdsLib_DatabaseObj
  * Generated stub function for EdsLib_IntfDB_FindDeclaredInterfaceByFullName()
  * ----------------------------------------------------
  */
-int32_t EdsLib_IntfDB_FindDeclaredInterfaceByFullName(const EdsLib_DatabaseObject_t *GD, const char *IntfName,
-                                                      EdsLib_Id_t *IdBuffer)
+int32_t EdsLib_IntfDB_FindDeclaredInterfaceByFullName(const EdsLib_DatabaseObject_t *GD,
+                                                      const char                    *IntfName,
+                                                      EdsLib_Id_t                   *IdBuffer)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_IntfDB_FindDeclaredInterfaceByFullName, int32_t);
 
@@ -171,8 +184,10 @@ int32_t EdsLib_IntfDB_FindDeclaredInterfaceByFullName(const EdsLib_DatabaseObjec
  * Generated stub function for EdsLib_IntfDB_FindDeclaredInterfaceByLocalName()
  * ----------------------------------------------------
  */
-int32_t EdsLib_IntfDB_FindDeclaredInterfaceByLocalName(const EdsLib_DatabaseObject_t *GD, uint16_t AppIdx,
-                                                       const char *IntfName, EdsLib_Id_t *IdBuffer)
+int32_t EdsLib_IntfDB_FindDeclaredInterfaceByLocalName(const EdsLib_DatabaseObject_t *GD,
+                                                       uint16_t                       AppIdx,
+                                                       const char                    *IntfName,
+                                                       EdsLib_Id_t                   *IdBuffer)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_IntfDB_FindDeclaredInterfaceByLocalName, int32_t);
 
@@ -191,8 +206,9 @@ int32_t EdsLib_IntfDB_FindDeclaredInterfaceByLocalName(const EdsLib_DatabaseObje
  * Generated stub function for EdsLib_IntfDB_GetCommandInfo()
  * ----------------------------------------------------
  */
-int32_t EdsLib_IntfDB_GetCommandInfo(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t CommandId,
-                                     EdsLib_IntfDB_CommandInfo_t *CommandInfoBuffer)
+int32_t EdsLib_IntfDB_GetCommandInfo(const EdsLib_DatabaseObject_t *GD,
+                                     EdsLib_Id_t                    CommandId,
+                                     EdsLib_IntfDB_CommandInfo_t   *CommandInfoBuffer)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_IntfDB_GetCommandInfo, int32_t);
 
@@ -210,7 +226,8 @@ int32_t EdsLib_IntfDB_GetCommandInfo(const EdsLib_DatabaseObject_t *GD, EdsLib_I
  * Generated stub function for EdsLib_IntfDB_GetComponentInfo()
  * ----------------------------------------------------
  */
-int32_t EdsLib_IntfDB_GetComponentInfo(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t ComponentId,
+int32_t EdsLib_IntfDB_GetComponentInfo(const EdsLib_DatabaseObject_t *GD,
+                                       EdsLib_Id_t                    ComponentId,
                                        EdsLib_IntfDB_ComponentInfo_t *CompInfoBuffer)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_IntfDB_GetComponentInfo, int32_t);
@@ -229,7 +246,8 @@ int32_t EdsLib_IntfDB_GetComponentInfo(const EdsLib_DatabaseObject_t *GD, EdsLib
  * Generated stub function for EdsLib_IntfDB_GetComponentInterfaceInfo()
  * ----------------------------------------------------
  */
-int32_t EdsLib_IntfDB_GetComponentInterfaceInfo(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t IntfId,
+int32_t EdsLib_IntfDB_GetComponentInterfaceInfo(const EdsLib_DatabaseObject_t *GD,
+                                                EdsLib_Id_t                    IntfId,
                                                 EdsLib_IntfDB_InterfaceInfo_t *IntfInfoBuffer)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_IntfDB_GetComponentInterfaceInfo, int32_t);
@@ -248,8 +266,8 @@ int32_t EdsLib_IntfDB_GetComponentInterfaceInfo(const EdsLib_DatabaseObject_t *G
  * Generated stub function for EdsLib_IntfDB_GetFullName()
  * ----------------------------------------------------
  */
-int32_t EdsLib_IntfDB_GetFullName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, char *BufferPtr,
-                                  size_t BufferLen)
+int32_t
+EdsLib_IntfDB_GetFullName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, char *BufferPtr, size_t BufferLen)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_IntfDB_GetFullName, int32_t);
 
@@ -270,6 +288,5 @@ int32_t EdsLib_IntfDB_GetFullName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t
  */
 void EdsLib_IntfDB_Initialize(void)
 {
-
     UT_GenStub_Execute(EdsLib_IntfDB_Initialize, Basic, NULL);
 }

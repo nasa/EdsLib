@@ -18,41 +18,36 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_python_accessor.c
  * \ingroup  python
  * \author   joseph.p.hickey@nasa.gov
  *
-**   This is an object that combines an offset and buffer size along with a
-**   pointer to the associated EDS database entry.  It implements the Python
-**   "descriptor protocol".  Instances of this object are can be stored as
-**   attributes in other objects to describe EDS object instances within
-**   arbitrary memory buffers.
+ **   This is an object that combines an offset and buffer size along with a
+ **   pointer to the associated EDS database entry.  It implements the Python
+ **   "descriptor protocol".  Instances of this object are can be stored as
+ **   attributes in other objects to describe EDS object instances within
+ **   arbitrary memory buffers.
  */
 
 #include "edslib_python_internal.h"
 
-static PyObject *   EdsLib_Python_Accessor_descr_get(PyObject *obj, PyObject *refobj, PyObject *reftype);
-static int          EdsLib_Python_Accessor_descr_set(PyObject *obj, PyObject *refobj, PyObject *val);
-static PyObject *   EdsLib_Python_Accessor_new(PyTypeObject *obj, PyObject *args, PyObject *kwds);
-static void         EdsLib_Python_Accessor_dealloc(PyObject * obj);
-static PyObject *   EdsLib_Python_Accessor_repr(PyObject *obj);
+static PyObject *EdsLib_Python_Accessor_descr_get(PyObject *obj, PyObject *refobj, PyObject *reftype);
+static int       EdsLib_Python_Accessor_descr_set(PyObject *obj, PyObject *refobj, PyObject *val);
+static PyObject *EdsLib_Python_Accessor_new(PyTypeObject *obj, PyObject *args, PyObject *kwds);
+static void      EdsLib_Python_Accessor_dealloc(PyObject *obj);
+static PyObject *EdsLib_Python_Accessor_repr(PyObject *obj);
 
-PyTypeObject EdsLib_Python_AccessorType =
-{
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = EDSLIB_PYTHON_ENTITY_NAME("ElementAccessor"),
-    .tp_basicsize = sizeof(EdsLib_Python_Accessor_t),
-    .tp_dealloc = EdsLib_Python_Accessor_dealloc,
-    .tp_new = EdsLib_Python_Accessor_new,
-    .tp_repr = EdsLib_Python_Accessor_repr,
-    .tp_descr_get = EdsLib_Python_Accessor_descr_get,
-    .tp_descr_set = EdsLib_Python_Accessor_descr_set,
-    .tp_flags = Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE,
-    .tp_doc = PyDoc_STR("EDS Element Accessor Type")
-};
-
+PyTypeObject EdsLib_Python_AccessorType = { PyVarObject_HEAD_INIT(NULL, 0).tp_name =
+                                                EDSLIB_PYTHON_ENTITY_NAME("ElementAccessor"),
+                                            .tp_basicsize = sizeof(EdsLib_Python_Accessor_t),
+                                            .tp_dealloc   = EdsLib_Python_Accessor_dealloc,
+                                            .tp_new       = EdsLib_Python_Accessor_new,
+                                            .tp_repr      = EdsLib_Python_Accessor_repr,
+                                            .tp_descr_get = EdsLib_Python_Accessor_descr_get,
+                                            .tp_descr_set = EdsLib_Python_Accessor_descr_set,
+                                            .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+                                            .tp_doc       = PyDoc_STR("EDS Element Accessor Type") };
 
 PyObject *EdsLib_Python_ElementAccessor_CreateFromOffsetSize(EdsLib_Id_t EdsId, Py_ssize_t Offset, Py_ssize_t Length)
 {
@@ -63,33 +58,33 @@ PyObject *EdsLib_Python_ElementAccessor_CreateFromOffsetSize(EdsLib_Id_t EdsId, 
     {
         return NULL;
     }
-    self->EdsId = EdsId;
-    self->Offset = Offset;
+    self->EdsId       = EdsId;
+    self->Offset      = Offset;
     self->TotalLength = Length;
 
-    return (PyObject*)self;
+    return (PyObject *)self;
 }
 
 PyObject *EdsLib_Python_ElementAccessor_CreateFromEntityInfo(const EdsLib_DataTypeDB_EntityInfo_t *EntityInfo)
 {
     return EdsLib_Python_ElementAccessor_CreateFromOffsetSize(EntityInfo->EdsId,
-            EntityInfo->Offset.Bytes, EntityInfo->MaxSize.Bytes);
+                                                              EntityInfo->Offset.Bytes,
+                                                              EntityInfo->MaxSize.Bytes);
 }
 
-static void EdsLib_Python_Accessor_dealloc(PyObject * obj)
+static void EdsLib_Python_Accessor_dealloc(PyObject *obj)
 {
     obj->ob_type->tp_free(obj);
 }
 
-static PyObject * EdsLib_Python_Accessor_new(PyTypeObject *obj, PyObject *args, PyObject *kwds)
+static PyObject *EdsLib_Python_Accessor_new(PyTypeObject *obj, PyObject *args, PyObject *kwds)
 {
-    EdsLib_Python_Accessor_t *self = NULL;
-    Py_ssize_t Offset = 0;
-    Py_ssize_t BufferSize = 0;
-    unsigned long EdsId;
+    EdsLib_Python_Accessor_t *self       = NULL;
+    Py_ssize_t                Offset     = 0;
+    Py_ssize_t                BufferSize = 0;
+    unsigned long             EdsId;
 
-    if (!PyArg_ParseTuple(args, "kn|n:EdsLib_Python_Accessor_new",
-            &EdsId, &BufferSize, &Offset))
+    if (!PyArg_ParseTuple(args, "kn|n:EdsLib_Python_Accessor_new", &EdsId, &BufferSize, &Offset))
     {
         return NULL;
     }
@@ -104,33 +99,33 @@ static PyObject * EdsLib_Python_Accessor_new(PyTypeObject *obj, PyObject *args, 
      * By default, if not supplied, the assume the buffer size is
      * equal to the maximum possible size
      */
-    self->EdsId = EdsId;
-    self->Offset = Offset;
+    self->EdsId       = EdsId;
+    self->Offset      = Offset;
     self->TotalLength = BufferSize;
 
-    return (PyObject*)self;
+    return (PyObject *)self;
 }
 
-PyObject *   EdsLib_Python_Accessor_repr(PyObject *obj)
+PyObject *EdsLib_Python_Accessor_repr(PyObject *obj)
 {
-    EdsLib_Python_Accessor_t *self = (EdsLib_Python_Accessor_t *)obj;
-    PyObject *result = NULL;
+    EdsLib_Python_Accessor_t *self   = (EdsLib_Python_Accessor_t *)obj;
+    PyObject                 *result = NULL;
 
     result = PyUnicode_FromFormat("%s(%lu,%zd,%zd)",
-            obj->ob_type->tp_name,
-            (unsigned long)self->EdsId,
-            self->TotalLength,
-            self->Offset);
+                                  obj->ob_type->tp_name,
+                                  (unsigned long)self->EdsId,
+                                  self->TotalLength,
+                                  self->Offset);
 
     return result;
 }
 
 static PyObject *EdsLib_Python_Accessor_descr_get(PyObject *obj, PyObject *refobj, PyObject *reftype)
 {
-    EdsLib_Python_Accessor_t *self = (EdsLib_Python_Accessor_t *)obj;
+    EdsLib_Python_Accessor_t *self  = (EdsLib_Python_Accessor_t *)obj;
     EdsLib_Python_Database_t *edsdb = NULL;
-    PyTypeObject *subtype;
-    PyObject *result;
+    PyTypeObject             *subtype;
+    PyObject                 *result;
 
     result = NULL;
 
@@ -156,9 +151,9 @@ static PyObject *EdsLib_Python_Accessor_descr_get(PyObject *obj, PyObject *refob
     {
         edsdb = ((EdsLib_Python_DatabaseEntry_t *)refobj->ob_type)->EdsDb;
     }
-    else if (PyObject_IsInstance(refobj, (PyObject*)&EdsLib_Python_ObjectArrayType))
+    else if (PyObject_IsInstance(refobj, (PyObject *)&EdsLib_Python_ObjectArrayType))
     {
-        edsdb = ((EdsLib_Python_ObjectArray_t*)refobj)->RefDbEntry->EdsDb;
+        edsdb = ((EdsLib_Python_ObjectArray_t *)refobj)->RefDbEntry->EdsDb;
     }
 
     if (edsdb == NULL)
@@ -183,7 +178,7 @@ static PyObject *EdsLib_Python_Accessor_descr_get(PyObject *obj, PyObject *refob
 static int EdsLib_Python_Accessor_descr_set(PyObject *obj, PyObject *refobj, PyObject *val)
 {
     PyObject *dstobj = NULL;
-    int result = -1;
+    int       result = -1;
 
     do
     {
@@ -199,17 +194,15 @@ static int EdsLib_Python_Accessor_descr_set(PyObject *obj, PyObject *refobj, PyO
             break;
         }
 
-        if (!EdsLib_Python_ConvertPythonToEdsObject((EdsLib_Python_ObjectBase_t*)dstobj, val))
+        if (!EdsLib_Python_ConvertPythonToEdsObject((EdsLib_Python_ObjectBase_t *)dstobj, val))
         {
             break;
         }
 
         result = 0;
-    }
-    while(0);
+    } while (0);
 
     Py_XDECREF(dstobj);
 
     return result;
 }
-

@@ -39,80 +39,77 @@
 #include <structmember.h>
 #include "edslib_id.h"
 
-static void         CFE_MissionLib_Python_Topic_dealloc(PyObject * obj);
-static PyObject *   CFE_MissionLib_Python_Topic_new(PyTypeObject *obj, PyObject *args, PyObject *kwds);
-static PyObject *   CFE_MissionLib_Python_Topic_repr(PyObject *obj);
-static int          CFE_MissionLib_Python_Topic_traverse(PyObject *obj, visitproc visit, void *arg);
-static int          CFE_MissionLib_Python_Topic_clear(PyObject *obj);
-static PyObject *   CFE_MissionLib_Python_Topic_GetCmdEdsIdFromCode(PyObject *obj, PyObject *args);
+static void      CFE_MissionLib_Python_Topic_dealloc(PyObject *obj);
+static PyObject *CFE_MissionLib_Python_Topic_new(PyTypeObject *obj, PyObject *args, PyObject *kwds);
+static PyObject *CFE_MissionLib_Python_Topic_repr(PyObject *obj);
+static int       CFE_MissionLib_Python_Topic_traverse(PyObject *obj, visitproc visit, void *arg);
+static int       CFE_MissionLib_Python_Topic_clear(PyObject *obj);
+static PyObject *CFE_MissionLib_Python_Topic_GetCmdEdsIdFromCode(PyObject *obj, PyObject *args);
 
-static CFE_MissionLib_Python_Topic_t *CFE_MissionLib_Python_Topic_GetFromTopicId_Impl(PyTypeObject *obj, PyObject *intfobj, uint16_t TopicId);
+static CFE_MissionLib_Python_Topic_t *
+CFE_MissionLib_Python_Topic_GetFromTopicId_Impl(PyTypeObject *obj, PyObject *intfobj, uint16_t TopicId);
 
-static PyObject *   CFE_MissionLib_Python_Topic_iter(PyObject *obj);
-static void         CFE_MissionLib_Python_TopicIterator_dealloc(PyObject * obj);
-static int          CFE_MissionLib_Python_TopicIterator_traverse(PyObject *obj, visitproc visit, void *arg);
-static int          CFE_MissionLib_Python_TopicIterator_clear(PyObject *obj);
-static PyObject *   CFE_MissionLib_Python_TopicIterator_iternext(PyObject *obj);
+static PyObject *CFE_MissionLib_Python_Topic_iter(PyObject *obj);
+static void      CFE_MissionLib_Python_TopicIterator_dealloc(PyObject *obj);
+static int       CFE_MissionLib_Python_TopicIterator_traverse(PyObject *obj, visitproc visit, void *arg);
+static int       CFE_MissionLib_Python_TopicIterator_clear(PyObject *obj);
+static PyObject *CFE_MissionLib_Python_TopicIterator_iternext(PyObject *obj);
 
 struct CbArg
 {
-    uint8_t CommandCode;
+    uint8_t     CommandCode;
     EdsLib_Id_t PossibleId;
     EdsLib_Id_t EdsId;
 };
 
 typedef struct CbArg CbArg_t;
 
-void SubcommandCallback(const EdsLib_DatabaseObject_t *GD, const EdsLib_DataTypeDB_EntityInfo_t *MemberInfo,
-        EdsLib_GenericValueBuffer_t *ConstraintValue, void *Arg);
+void SubcommandCallback(const EdsLib_DatabaseObject_t        *GD,
+                        const EdsLib_DataTypeDB_EntityInfo_t *MemberInfo,
+                        EdsLib_GenericValueBuffer_t          *ConstraintValue,
+                        void                                 *Arg);
 
-static PyMethodDef CFE_MissionLib_Python_Topic_methods[] =
-{
-        {"GetCmdEdsId", CFE_MissionLib_Python_Topic_GetCmdEdsIdFromCode, METH_VARARGS, "Get a CFE command message EDS Object from a Topic"},
-        {NULL}  /* Sentinel */
+static PyMethodDef CFE_MissionLib_Python_Topic_methods[] = {
+    { "GetCmdEdsId",
+     CFE_MissionLib_Python_Topic_GetCmdEdsIdFromCode, METH_VARARGS,
+     "Get a CFE command message EDS Object from a Topic" },
+    { NULL }  /* Sentinel */
 };
 
-static struct PyMemberDef CFE_MissionLib_Python_Topic_members[] =
-{
-        {"Name", T_OBJECT_EX, offsetof(CFE_MissionLib_Python_Topic_t, TopicName), READONLY, "Topic Name" },
-        {"TopicId", T_SHORT, offsetof(CFE_MissionLib_Python_Topic_t, TopicId), READONLY, "Topic ID" },
-        {"EdsId", T_INT, offsetof(CFE_MissionLib_Python_Topic_t, DataEdsId), READONLY, "EDS ID" },
-        {NULL}  /* Sentinel */
+static struct PyMemberDef CFE_MissionLib_Python_Topic_members[] = {
+    { "Name", T_OBJECT_EX, offsetof(CFE_MissionLib_Python_Topic_t, TopicName), READONLY, "Topic Name" },
+    { "TopicId", T_SHORT, offsetof(CFE_MissionLib_Python_Topic_t, TopicId), READONLY, "Topic ID" },
+    { "EdsId", T_INT, offsetof(CFE_MissionLib_Python_Topic_t, DataEdsId), READONLY, "EDS ID" },
+    { NULL }  /* Sentinel */
 };
 
+PyTypeObject CFE_MissionLib_Python_TopicType = { PyVarObject_HEAD_INIT(NULL, 0).tp_name =
+                                                     CFE_MISSIONLIB_PYTHON_ENTITY_NAME("Topic"),
+                                                 .tp_basicsize = sizeof(CFE_MissionLib_Python_Topic_t),
+                                                 .tp_dealloc   = CFE_MissionLib_Python_Topic_dealloc,
+                                                 .tp_new       = CFE_MissionLib_Python_Topic_new,
+                                                 .tp_methods   = CFE_MissionLib_Python_Topic_methods,
+                                                 .tp_members   = CFE_MissionLib_Python_Topic_members,
+                                                 .tp_repr      = CFE_MissionLib_Python_Topic_repr,
+                                                 .tp_traverse  = CFE_MissionLib_Python_Topic_traverse,
+                                                 .tp_clear     = CFE_MissionLib_Python_Topic_clear,
+                                                 .tp_iter      = CFE_MissionLib_Python_Topic_iter,
+                                                 .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+                                                 .tp_weaklistoffset =
+                                                     offsetof(CFE_MissionLib_Python_Topic_t, WeakRefList),
+                                                 .tp_doc = PyDoc_STR("Topic entry") };
 
-PyTypeObject CFE_MissionLib_Python_TopicType =
-{
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = CFE_MISSIONLIB_PYTHON_ENTITY_NAME("Topic"),
-    .tp_basicsize = sizeof(CFE_MissionLib_Python_Topic_t),
-    .tp_dealloc = CFE_MissionLib_Python_Topic_dealloc,
-    .tp_new = CFE_MissionLib_Python_Topic_new,
-    .tp_methods = CFE_MissionLib_Python_Topic_methods,
-    .tp_members = CFE_MissionLib_Python_Topic_members,
-    .tp_repr = CFE_MissionLib_Python_Topic_repr,
-    .tp_traverse = CFE_MissionLib_Python_Topic_traverse,
-    .tp_clear = CFE_MissionLib_Python_Topic_clear,
-    .tp_iter = CFE_MissionLib_Python_Topic_iter,
-    .tp_flags = Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_GC,
-    .tp_weaklistoffset = offsetof(CFE_MissionLib_Python_Topic_t, WeakRefList),
-    .tp_doc = PyDoc_STR("Topic entry")
-};
-
-PyTypeObject CFE_MissionLib_Python_TopicIteratorType =
-{
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = CFE_MISSIONLIB_PYTHON_ENTITY_NAME("TopicIterator"),
-    .tp_basicsize = sizeof(CFE_MissionLib_Python_TopicIterator_t),
-    .tp_dealloc = CFE_MissionLib_Python_TopicIterator_dealloc,
-    .tp_getattro = PyObject_GenericGetAttr,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_traverse = CFE_MissionLib_Python_TopicIterator_traverse,
-    .tp_clear = CFE_MissionLib_Python_TopicIterator_clear,
-    .tp_iter = PyObject_SelfIter,
-    .tp_iternext = CFE_MissionLib_Python_TopicIterator_iternext,
-    .tp_doc = PyDoc_STR("CFE MissionLib TopicIteratorType")
-};
+PyTypeObject CFE_MissionLib_Python_TopicIteratorType = { PyVarObject_HEAD_INIT(NULL, 0).tp_name =
+                                                             CFE_MISSIONLIB_PYTHON_ENTITY_NAME("TopicIterator"),
+                                                         .tp_basicsize = sizeof(CFE_MissionLib_Python_TopicIterator_t),
+                                                         .tp_dealloc   = CFE_MissionLib_Python_TopicIterator_dealloc,
+                                                         .tp_getattro  = PyObject_GenericGetAttr,
+                                                         .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+                                                         .tp_traverse  = CFE_MissionLib_Python_TopicIterator_traverse,
+                                                         .tp_clear     = CFE_MissionLib_Python_TopicIterator_clear,
+                                                         .tp_iter      = PyObject_SelfIter,
+                                                         .tp_iternext  = CFE_MissionLib_Python_TopicIterator_iternext,
+                                                         .tp_doc = PyDoc_STR("CFE MissionLib TopicIteratorType") };
 
 static int CFE_MissionLib_Python_Topic_traverse(PyObject *obj, visitproc visit, void *arg)
 {
@@ -130,7 +127,7 @@ static int CFE_MissionLib_Python_Topic_clear(PyObject *obj)
     return 0;
 }
 
-static void CFE_MissionLib_Python_Topic_dealloc(PyObject * obj)
+static void CFE_MissionLib_Python_Topic_dealloc(PyObject *obj)
 {
     CFE_MissionLib_Python_Topic_t *self = (CFE_MissionLib_Python_Topic_t *)obj;
     Py_CLEAR(self->IntfObj);
@@ -145,13 +142,14 @@ static void CFE_MissionLib_Python_Topic_dealloc(PyObject * obj)
     CFE_MissionLib_Python_TopicType.tp_base->tp_dealloc(obj);
 }
 
-static CFE_MissionLib_Python_Topic_t *CFE_MissionLib_Python_Topic_GetFromTopicId_Impl(PyTypeObject *obj, PyObject *intfobj, uint16_t TopicId)
+static CFE_MissionLib_Python_Topic_t *
+CFE_MissionLib_Python_Topic_GetFromTopicId_Impl(PyTypeObject *obj, PyObject *intfobj, uint16_t TopicId)
 {
     CFE_MissionLib_Python_Interface_t *IntfObj = (CFE_MissionLib_Python_Interface_t *)intfobj;
-    CFE_MissionLib_Python_Topic_t *self = NULL;
-    char Buffer[128];
-    int32_t Status;
-    PyObject *TopicIdVal;
+    CFE_MissionLib_Python_Topic_t     *self    = NULL;
+    char                               Buffer[128];
+    int32_t                            Status;
+    PyObject                          *TopicIdVal;
 
     do
     {
@@ -161,7 +159,9 @@ static CFE_MissionLib_Python_Topic_t *CFE_MissionLib_Python_Topic_GetFromTopicId
             break;
         }
 
-        self = (CFE_MissionLib_Python_Topic_t *)CFE_MissionLib_Python_GetFromCache(IntfObj->TopicCache, TopicIdVal, &CFE_MissionLib_Python_TopicType);
+        self = (CFE_MissionLib_Python_Topic_t *)CFE_MissionLib_Python_GetFromCache(IntfObj->TopicCache,
+                                                                                   TopicIdVal,
+                                                                                   &CFE_MissionLib_Python_TopicType);
         if (self != NULL)
         {
             if (TopicId == self->TopicId)
@@ -175,7 +175,7 @@ static CFE_MissionLib_Python_Topic_t *CFE_MissionLib_Python_Topic_GetFromTopicId
             self = NULL;
         }
 
-        self = (CFE_MissionLib_Python_Topic_t*)obj->tp_alloc(obj, 0);
+        self = (CFE_MissionLib_Python_Topic_t *)obj->tp_alloc(obj, 0);
         if (self == NULL)
         {
             break;
@@ -187,12 +187,18 @@ static CFE_MissionLib_Python_Topic_t *CFE_MissionLib_Python_Topic_GetFromTopicId
         Status = CFE_MissionLib_GetTopicInfo(IntfObj->DbObj->IntfDb, TopicId, &self->TopicInfo);
         if (Status != CFE_MISSIONLIB_SUCCESS)
         {
-            PyErr_Format(PyExc_RuntimeError, "Failure in CFE_MissionLib_GetTopicInfo(%d) rc=%d", (int)TopicId, (int)Status);
+            PyErr_Format(PyExc_RuntimeError,
+                         "Failure in CFE_MissionLib_GetTopicInfo(%d) rc=%d",
+                         (int)TopicId,
+                         (int)Status);
             Py_CLEAR(self);
             break;
         }
 
-        Status = EdsLib_IntfDB_GetFullName(CFE_MissionLib_GetParent(IntfObj->DbObj->IntfDb), self->TopicInfo.ParentIntfId, Buffer, sizeof(Buffer));
+        Status = EdsLib_IntfDB_GetFullName(CFE_MissionLib_GetParent(IntfObj->DbObj->IntfDb),
+                                           self->TopicInfo.ParentIntfId,
+                                           Buffer,
+                                           sizeof(Buffer));
         if (Status != EDSLIB_SUCCESS)
         {
             /* Intf ID does not appear to be valid, this is not a valid topic ID */
@@ -202,29 +208,34 @@ static CFE_MissionLib_Python_Topic_t *CFE_MissionLib_Python_Topic_GetFromTopicId
         }
 
         self->TopicName = PyUnicode_FromFormat("%s", Buffer);
-        self->TopicId = TopicId;
+        self->TopicId   = TopicId;
 
         /* All SB topics should map to an interface type with a single command on it */
-        Status = EdsLib_IntfDB_FindAllArgumentTypes(CFE_MissionLib_GetParent(IntfObj->DbObj->IntfDb), IntfObj->CmdEdsId,
-            self->TopicInfo.ParentIntfId, &self->DataEdsId, 1);
+        Status = EdsLib_IntfDB_FindAllArgumentTypes(CFE_MissionLib_GetParent(IntfObj->DbObj->IntfDb),
+                                                    IntfObj->CmdEdsId,
+                                                    self->TopicInfo.ParentIntfId,
+                                                    &self->DataEdsId,
+                                                    1);
         if (Status != EDSLIB_SUCCESS)
         {
             /* Unable to determine data type on this topic */
-            PyErr_Format(PyExc_RuntimeError, "EdsLib_IntfDB_FindAllArgumentTypes(%x) rc=%d", (unsigned int)IntfObj->CmdEdsId, (int)Status);
+            PyErr_Format(PyExc_RuntimeError,
+                         "EdsLib_IntfDB_FindAllArgumentTypes(%x) rc=%d",
+                         (unsigned int)IntfObj->CmdEdsId,
+                         (int)Status);
             Py_CLEAR(self);
             break;
         }
 
         /* Create a weak reference to store in the local cache in case this
          * database is constructed again. */
-        if (CFE_MissionLib_Python_SaveToCache(IntfObj->TopicCache, TopicIdVal, (PyObject*)self) < 0)
+        if (CFE_MissionLib_Python_SaveToCache(IntfObj->TopicCache, TopicIdVal, (PyObject *)self) < 0)
         {
             /* if something went wrong this raises an error and must return NULL */
             Py_DECREF(self);
             self = NULL;
         }
-    }
-    while(0);
+    } while (0);
 
     Py_XDECREF(TopicIdVal);
     return self;
@@ -232,24 +243,25 @@ static CFE_MissionLib_Python_Topic_t *CFE_MissionLib_Python_Topic_GetFromTopicId
 
 static PyObject *CFE_MissionLib_Python_Topic_new(PyTypeObject *obj, PyObject *args, PyObject *kwds)
 {
-    PyObject *arg1;
-    PyObject *arg2;
-    PyObject *arg3;
-    PyObject *arg4 = NULL;
-    CFE_MissionLib_Python_Database_t *DbObj;
+    PyObject                          *arg1;
+    PyObject                          *arg2;
+    PyObject                          *arg3;
+    PyObject                          *arg4 = NULL;
+    CFE_MissionLib_Python_Database_t  *DbObj;
     CFE_MissionLib_Python_Interface_t *IntfObj;
-    uint16_t TopicId = 0;      // 0 is an invalid TopicId
-    EdsLib_Id_t CompIntfId;
-    uint16_t status;
-    PyObject *tempargs = NULL;
-    PyObject *result = NULL;
+    uint16_t                           TopicId = 0; // 0 is an invalid TopicId
+    EdsLib_Id_t                        CompIntfId;
+    uint16_t                           status;
+    PyObject                          *tempargs = NULL;
+    PyObject                          *result   = NULL;
 
     /*
      * Topic entries are constructed from three values:
      *   - An Interface Database
      *   - An Interface Identifier
      *   - A Topic Identifier
-     *   - An EdsDb Python Object (only needed if Database associated with the Interface Database Identifier has not been set up)
+     *   - An EdsDb Python Object (only needed if Database associated with the Interface Database Identifier has not
+     * been set up)
      *
      * Databases are natively of the CFE_MissionLib_Python_Database_t type
      * Interface Identifiers are indices which are natively unsigned integers (EdsLib_Id_t specifically)
@@ -260,33 +272,37 @@ static PyObject *CFE_MissionLib_Python_Topic_new(PyTypeObject *obj, PyObject *ar
      */
     if (!PyArg_UnpackTuple(args, "Topic_new", 3, 4, &arg1, &arg2, &arg3, &arg4))
     {
-        PyErr_Format(PyExc_RuntimeError, "Topic arguments expected: Interface Database, Interface Identifier, Topic Identifier, and EdsDb Python Object (optional)");
-    	return NULL;
+        PyErr_Format(PyExc_RuntimeError,
+                     "Topic arguments expected: Interface Database, Interface Identifier, Topic Identifier, and EdsDb "
+                     "Python Object (optional)");
+        return NULL;
     }
 
     do
     {
-    	// Set up the Interface Database
+        // Set up the Interface Database
         if (Py_TYPE(arg1) == &CFE_MissionLib_Python_DatabaseType)
         {
-            DbObj = (CFE_MissionLib_Python_Database_t*)arg1;
+            DbObj = (CFE_MissionLib_Python_Database_t *)arg1;
             Py_INCREF(DbObj);
         }
         else
         {
             if (arg4 != NULL)
             {
-            	tempargs = PyTuple_Pack(2, arg1, arg4);
+                tempargs = PyTuple_Pack(2, arg1, arg4);
             }
             else
             {
-            	tempargs = PyTuple_Pack(2, arg1, Py_None);
+                tempargs = PyTuple_Pack(2, arg1, Py_None);
             }
             if (tempargs == NULL)
             {
                 break;
             }
-            DbObj = (CFE_MissionLib_Python_Database_t*)PyObject_Call((PyObject*)&CFE_MissionLib_Python_DatabaseType, tempargs, NULL);
+            DbObj = (CFE_MissionLib_Python_Database_t *)PyObject_Call((PyObject *)&CFE_MissionLib_Python_DatabaseType,
+                                                                      tempargs,
+                                                                      NULL);
             Py_DECREF(tempargs);
             tempargs = NULL;
         }
@@ -299,7 +315,7 @@ static PyObject *CFE_MissionLib_Python_Topic_new(PyTypeObject *obj, PyObject *ar
         // Set up the interface
         if (Py_TYPE(arg2) == &CFE_MissionLib_Python_InterfaceType)
         {
-            IntfObj = (CFE_MissionLib_Python_Interface_t*)arg2;
+            IntfObj = (CFE_MissionLib_Python_Interface_t *)arg2;
             Py_INCREF(IntfObj);
         }
         else
@@ -309,7 +325,10 @@ static PyObject *CFE_MissionLib_Python_Topic_new(PyTypeObject *obj, PyObject *ar
             {
                 break;
             }
-            IntfObj = (CFE_MissionLib_Python_Interface_t*)PyObject_Call((PyObject*)&CFE_MissionLib_Python_InterfaceType, tempargs, NULL);
+            IntfObj =
+                (CFE_MissionLib_Python_Interface_t *)PyObject_Call((PyObject *)&CFE_MissionLib_Python_InterfaceType,
+                                                                   tempargs,
+                                                                   NULL);
             Py_DECREF(tempargs);
             tempargs = NULL;
         }
@@ -333,7 +352,9 @@ static PyObject *CFE_MissionLib_Python_Topic_new(PyTypeObject *obj, PyObject *ar
         else
         {
             // Set up the topic with either a TopicId or Topic Name
-            CompIntfId = CFE_MissionLib_Python_ConvertArgToEdsId(EdsLib_IntfDB_FindComponentInterfaceByFullName, CFE_MissionLib_GetParent(DbObj->IntfDb), arg3);
+            CompIntfId = CFE_MissionLib_Python_ConvertArgToEdsId(EdsLib_IntfDB_FindComponentInterfaceByFullName,
+                                                                 CFE_MissionLib_GetParent(DbObj->IntfDb),
+                                                                 arg3);
 
             /* if the lookup failed it should have already set an exception */
             if (!EdsLib_Is_Valid(CompIntfId))
@@ -347,12 +368,12 @@ static PyObject *CFE_MissionLib_Python_Topic_new(PyTypeObject *obj, PyObject *ar
                 PyErr_Format(PyExc_RuntimeError, "No TopicID maps to %s", PyBytes_AsString(tempargs));
                 break;
             }
-
         }
 
-        result = (PyObject*)CFE_MissionLib_Python_Topic_GetFromTopicId_Impl(&CFE_MissionLib_Python_TopicType, (PyObject *)IntfObj, TopicId);
-    }
-    while(0);
+        result = (PyObject *)CFE_MissionLib_Python_Topic_GetFromTopicId_Impl(&CFE_MissionLib_Python_TopicType,
+                                                                             (PyObject *)IntfObj,
+                                                                             TopicId);
+    } while (0);
 
     /* decrement refcount for all temporary objects created */
     Py_XDECREF(tempargs);
@@ -363,18 +384,24 @@ static PyObject *CFE_MissionLib_Python_Topic_new(PyTypeObject *obj, PyObject *ar
 PyObject *CFE_MissionLib_Python_Topic_repr(PyObject *obj)
 {
     CFE_MissionLib_Python_Topic_t *self = (CFE_MissionLib_Python_Topic_t *)obj;
-    return PyUnicode_FromFormat("%s(%R,%R,%R)", obj->ob_type->tp_name, self->IntfObj->DbObj->DbName, self->IntfObj->IntfName, self->TopicName);
+    return PyUnicode_FromFormat("%s(%R,%R,%R)",
+                                obj->ob_type->tp_name,
+                                self->IntfObj->DbObj->DbName,
+                                self->IntfObj->IntfName,
+                                self->TopicName);
 }
 
 PyObject *CFE_MissionLib_Python_Topic_GetFromTopicName(CFE_MissionLib_Python_Interface_t *obj, PyObject *TopicName)
 {
     CFE_MissionLib_Python_Topic_t *TopicEntry;
 
-    int32_t status;
-    uint16_t TopicId;
+    int32_t     status;
+    uint16_t    TopicId;
     EdsLib_Id_t CompIntfId;
 
-    TopicEntry = (CFE_MissionLib_Python_Topic_t *)CFE_MissionLib_Python_GetFromCache(obj->TopicCache, TopicName, &CFE_MissionLib_Python_TopicType);
+    TopicEntry = (CFE_MissionLib_Python_Topic_t *)CFE_MissionLib_Python_GetFromCache(obj->TopicCache,
+                                                                                     TopicName,
+                                                                                     &CFE_MissionLib_Python_TopicType);
     if (TopicEntry != NULL)
     {
         if (TopicEntry->TopicName != TopicName)
@@ -383,13 +410,14 @@ PyObject *CFE_MissionLib_Python_Topic_GetFromTopicName(CFE_MissionLib_Python_Int
             Py_DECREF(TopicEntry);
             TopicEntry = NULL;
         }
-        return (PyObject*)TopicEntry;
+        return (PyObject *)TopicEntry;
     }
 
     /* this is slightly more complicated; the name is actually associated with a component interface,
-        * and once that is found, then we need to reverse lookup that intf back to a topic ID */
+     * and once that is found, then we need to reverse lookup that intf back to a topic ID */
     status = EdsLib_IntfDB_FindComponentInterfaceByFullName(CFE_MissionLib_GetParent(obj->DbObj->IntfDb),
-        PyBytes_AsString(TopicName), &CompIntfId);
+                                                            PyBytes_AsString(TopicName),
+                                                            &CompIntfId);
     if (status != EDSLIB_SUCCESS)
     {
         PyErr_Format(PyExc_RuntimeError, "Component Intf %s not defined", PyBytes_AsString(TopicName));
@@ -403,41 +431,43 @@ PyObject *CFE_MissionLib_Python_Topic_GetFromTopicName(CFE_MissionLib_Python_Int
         return NULL;
     }
 
-    return (PyObject*)CFE_MissionLib_Python_Topic_GetFromTopicId_Impl(&CFE_MissionLib_Python_TopicType, (PyObject *)obj, TopicId);
+    return (PyObject *)CFE_MissionLib_Python_Topic_GetFromTopicId_Impl(&CFE_MissionLib_Python_TopicType,
+                                                                       (PyObject *)obj,
+                                                                       TopicId);
 }
 
-static PyObject *  CFE_MissionLib_Python_Topic_iter(PyObject *obj)
+static PyObject *CFE_MissionLib_Python_Topic_iter(PyObject *obj)
 {
-    CFE_MissionLib_Python_Topic_t *Topic = (CFE_MissionLib_Python_Topic_t *) obj;
+    CFE_MissionLib_Python_Topic_t         *Topic = (CFE_MissionLib_Python_Topic_t *)obj;
     CFE_MissionLib_Python_TopicIterator_t *TopicIter;
-    PyObject *result = NULL;
+    PyObject                              *result = NULL;
 
     if (Topic->TopicInfo.NumSubcommands > 0)
     {
-    	TopicIter = PyObject_GC_New(CFE_MissionLib_Python_TopicIterator_t, &CFE_MissionLib_Python_TopicIteratorType);
+        TopicIter = PyObject_GC_New(CFE_MissionLib_Python_TopicIterator_t, &CFE_MissionLib_Python_TopicIteratorType);
 
-    	if (TopicIter == NULL)
-    	{
+        if (TopicIter == NULL)
+        {
             return NULL;
-    	}
+        }
 
-    	Py_INCREF(obj);
-    	TopicIter->Index = 0;
-    	TopicIter->refobj = obj;
+        Py_INCREF(obj);
+        TopicIter->Index  = 0;
+        TopicIter->refobj = obj;
 
-    	result = (PyObject *)TopicIter;
-    	PyObject_GC_Track(result);
+        result = (PyObject *)TopicIter;
+        PyObject_GC_Track(result);
     }
     else
     {
-    	PyErr_Format(PyExc_RuntimeError, "Not an iterable Topic");
+        PyErr_Format(PyExc_RuntimeError, "Not an iterable Topic");
     }
     return result;
 }
 
-static void CFE_MissionLib_Python_TopicIterator_dealloc(PyObject * obj)
+static void CFE_MissionLib_Python_TopicIterator_dealloc(PyObject *obj)
 {
-    CFE_MissionLib_Python_TopicIterator_t *self = (CFE_MissionLib_Python_TopicIterator_t*)obj;
+    CFE_MissionLib_Python_TopicIterator_t *self = (CFE_MissionLib_Python_TopicIterator_t *)obj;
     PyObject_GC_UnTrack(self);
     Py_XDECREF(self->refobj);
     PyObject_GC_Del(self);
@@ -445,7 +475,7 @@ static void CFE_MissionLib_Python_TopicIterator_dealloc(PyObject * obj)
 
 static int CFE_MissionLib_Python_TopicIterator_traverse(PyObject *obj, visitproc visit, void *arg)
 {
-    CFE_MissionLib_Python_TopicIterator_t *self = (CFE_MissionLib_Python_TopicIterator_t*)obj;
+    CFE_MissionLib_Python_TopicIterator_t *self = (CFE_MissionLib_Python_TopicIterator_t *)obj;
     Py_VISIT(self->refobj);
 
     return 0;
@@ -453,7 +483,7 @@ static int CFE_MissionLib_Python_TopicIterator_traverse(PyObject *obj, visitproc
 
 static int CFE_MissionLib_Python_TopicIterator_clear(PyObject *obj)
 {
-    CFE_MissionLib_Python_TopicIterator_t *self = (CFE_MissionLib_Python_TopicIterator_t*)obj;
+    CFE_MissionLib_Python_TopicIterator_t *self = (CFE_MissionLib_Python_TopicIterator_t *)obj;
     Py_CLEAR(self->refobj);
 
     return 0;
@@ -461,30 +491,30 @@ static int CFE_MissionLib_Python_TopicIterator_clear(PyObject *obj)
 
 static PyObject *CFE_MissionLib_Python_TopicIterator_iternext(PyObject *obj)
 {
-    CFE_MissionLib_Python_TopicIterator_t *self = (CFE_MissionLib_Python_TopicIterator_t*)obj;
-    CFE_MissionLib_Python_Topic_t *topic = NULL;
-    const EdsLib_DatabaseObject_t *GD;
-    uint16_t idx;
-    EdsLib_Id_t PossibleId;
+    CFE_MissionLib_Python_TopicIterator_t *self  = (CFE_MissionLib_Python_TopicIterator_t *)obj;
+    CFE_MissionLib_Python_Topic_t         *topic = NULL;
+    const EdsLib_DatabaseObject_t         *GD;
+    uint16_t                               idx;
+    EdsLib_Id_t                            PossibleId;
 
-    PyObject *key = NULL;
-    PyObject *edsid = NULL;
+    PyObject *key    = NULL;
+    PyObject *edsid  = NULL;
     PyObject *result = NULL;
 
     do
     {
-    	if (self->refobj == NULL)
+        if (self->refobj == NULL)
         {
             break;
         }
 
         topic = (CFE_MissionLib_Python_Topic_t *)self->refobj;
-        GD = CFE_MissionLib_GetParent(topic->IntfObj->DbObj->IntfDb);
-        idx = self->Index;
+        GD    = CFE_MissionLib_GetParent(topic->IntfObj->DbObj->IntfDb);
+        idx   = self->Index;
 
         if (EdsLib_DataTypeDB_GetDerivedTypeById(GD, topic->DataEdsId, idx, &PossibleId) == EDSLIB_SUCCESS)
         {
-            key = PyUnicode_FromString(EdsLib_DisplayDB_GetBaseName(GD, PossibleId));
+            key   = PyUnicode_FromString(EdsLib_DisplayDB_GetBaseName(GD, PossibleId));
             edsid = PyLong_FromLong((long int)PossibleId);
 
             if ((key == NULL) || (edsid == NULL))
@@ -496,8 +526,7 @@ static PyObject *CFE_MissionLib_Python_TopicIterator_iternext(PyObject *obj)
             ++self->Index;
             result = PyTuple_Pack(2, key, edsid);
         }
-    }
-    while(0);
+    } while (0);
 
     Py_XDECREF(key);
     Py_XDECREF(edsid);
@@ -505,13 +534,15 @@ static PyObject *CFE_MissionLib_Python_TopicIterator_iternext(PyObject *obj)
     return result;
 }
 
-void SubcommandCallback(const EdsLib_DatabaseObject_t *GD, const EdsLib_DataTypeDB_EntityInfo_t *MemberInfo,
-        EdsLib_GenericValueBuffer_t *ConstraintValue, void *Arg)
+void SubcommandCallback(const EdsLib_DatabaseObject_t        *GD,
+                        const EdsLib_DataTypeDB_EntityInfo_t *MemberInfo,
+                        EdsLib_GenericValueBuffer_t          *ConstraintValue,
+                        void                                 *Arg)
 {
-    CbArg_t *Argument = (CbArg_t *) Arg;
+    CbArg_t *Argument = (CbArg_t *)Arg;
 
-    if (MemberInfo->Offset.Bytes == offsetof(EdsDataType_CFE_HDR_CommandHeader_t, Sec.FunctionCode) &&
-        ConstraintValue->Value.u8 == Argument->CommandCode)
+    if (MemberInfo->Offset.Bytes == offsetof(EdsDataType_CFE_HDR_CommandHeader_t, Sec.FunctionCode)
+        && ConstraintValue->Value.u8 == Argument->CommandCode)
     {
         Argument->EdsId = Argument->PossibleId;
     }
@@ -519,15 +550,15 @@ void SubcommandCallback(const EdsLib_DatabaseObject_t *GD, const EdsLib_DataType
 
 static PyObject *CFE_MissionLib_Python_Topic_GetCmdEdsIdFromCode(PyObject *obj, PyObject *args)
 {
-    CFE_MissionLib_Python_Topic_t *self = (CFE_MissionLib_Python_Topic_t*) obj;
+    CFE_MissionLib_Python_Topic_t *self = (CFE_MissionLib_Python_Topic_t *)obj;
     const EdsLib_DatabaseObject_t *GD;
-    PyObject *arg1;
-    uint8_t CommandCode;
-    int32_t idx;
-    EdsLib_Id_t PossibleId;
-    EdsLib_ConstraintCallback_t Callback = SubcommandCallback;
-    CbArg_t Argument;
-    PyObject *result = NULL;
+    PyObject                      *arg1;
+    uint8_t                        CommandCode;
+    int32_t                        idx;
+    EdsLib_Id_t                    PossibleId;
+    EdsLib_ConstraintCallback_t    Callback = SubcommandCallback;
+    CbArg_t                        Argument;
+    PyObject                      *result = NULL;
 
     do
     {
@@ -550,7 +581,7 @@ static PyObject *CFE_MissionLib_Python_Topic_GetCmdEdsIdFromCode(PyObject *obj, 
         GD = CFE_MissionLib_GetParent(self->IntfObj->DbObj->IntfDb);
 
         Argument.CommandCode = CommandCode;
-        Argument.EdsId = EDSLIB_ID_INVALID;
+        Argument.EdsId       = EDSLIB_ID_INVALID;
 
         for (idx = 0; idx < self->TopicInfo.NumSubcommands && !EdsLib_Is_Valid(Argument.EdsId); idx++)
         {
@@ -561,14 +592,14 @@ static PyObject *CFE_MissionLib_Python_Topic_GetCmdEdsIdFromCode(PyObject *obj, 
 
         if (EdsLib_Is_Valid(Argument.EdsId))
         {
-            result = PyLong_FromLong((long int) Argument.EdsId);
+            result = PyLong_FromLong((long int)Argument.EdsId);
         }
         else
         {
             result = Py_None;
             Py_INCREF(result);
         }
-    } while(0);
+    } while (0);
 
     return result;
 }

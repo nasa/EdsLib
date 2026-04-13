@@ -40,7 +40,7 @@
  *
  * This is provided for applications that supply their own custom init routine.
  */
-#define CFE_MISSIONLIB_PYTHON_DOC            "Module which provides an interface to the CFE_MissionLib Runtime Library."
+#define CFE_MISSIONLIB_PYTHON_DOC "Module which provides an interface to the CFE_MissionLib Runtime Library."
 
 /**
  * Base Name of the Python module
@@ -50,7 +50,7 @@
  * as the base name, which carries through to the respective "repr()"
  * implementation and other user-visible items.
  */
-#define CFE_MISSIONLIB_PYTHON_MODULE_NAME    "CFE_MissionLib"
+#define CFE_MISSIONLIB_PYTHON_MODULE_NAME "CFE_MissionLib"
 
 /**
  * Get the name of a Python entity
@@ -59,8 +59,7 @@
  * by adding a prefix of CFE_MISSIONLIB_PYTHON_MODULE_NAME.  It is used
  * by all types to keep the naming consistent.
  */
-#define CFE_MISSIONLIB_PYTHON_ENTITY_NAME(x)   CFE_MISSIONLIB_PYTHON_MODULE_NAME "." x
-
+#define CFE_MISSIONLIB_PYTHON_ENTITY_NAME(x) CFE_MISSIONLIB_PYTHON_MODULE_NAME "." x
 
 /**
  * Main Initializer function that sets up a newly-minted module object
@@ -75,7 +74,7 @@
  * different naming and calling conventions).  So it is expected that
  * an additional wrapper around this will be added to accommodate this.
  */
-PyObject* CFE_MissionLib_Python_CreateModule(void);
+PyObject *CFE_MissionLib_Python_CreateModule(void);
 
 /**
  * Gets the C EDS Database object from a Python MissionLib Database Object

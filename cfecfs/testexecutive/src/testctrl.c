@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     testctrl.c
  * \ingroup  testexecutive
@@ -42,112 +41,108 @@
 #include "cfe_missionlib_lua_softwarebus.h"
 #include "ccsds_spacepacket_eds_datatypes.h"
 
-
 /*
 **  volume table.
 */
-OS_VolumeInfo_t OS_VolumeTable [OS_MAX_FILE_SYSTEMS] =
-{
-        /*
-         ** The following entry is a "pre-mounted" path to a non-volatile device
-         ** This is intended to contain the functional test scripts
-         */
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  },
-        { "unused",   "unused", FS_BASED,  TRUE,  TRUE, FALSE,  " ",      " ",     0  }
+OS_VolumeInfo_t OS_VolumeTable[OS_MAX_FILE_SYSTEMS] = {
+    /*
+     ** The following entry is a "pre-mounted" path to a non-volatile device
+     ** This is intended to contain the functional test scripts
+     */
+    { "unused", "unused", FS_BASED, TRUE, TRUE, FALSE, " ", " ", 0 },
+    { "unused", "unused", FS_BASED, TRUE, TRUE, FALSE, " ", " ", 0 },
+    { "unused", "unused", FS_BASED, TRUE, TRUE, FALSE, " ", " ", 0 },
+    { "unused", "unused", FS_BASED, TRUE, TRUE, FALSE, " ", " ", 0 },
+    { "unused", "unused", FS_BASED, TRUE, TRUE, FALSE, " ", " ", 0 },
+    { "unused", "unused", FS_BASED, TRUE, TRUE, FALSE, " ", " ", 0 },
+    { "unused", "unused", FS_BASED, TRUE, TRUE, FALSE, " ", " ", 0 },
+    { "unused", "unused", FS_BASED, TRUE, TRUE, FALSE, " ", " ", 0 },
+    { "unused", "unused", FS_BASED, TRUE, TRUE, FALSE, " ", " ", 0 },
+    { "unused", "unused", FS_BASED, TRUE, TRUE, FALSE, " ", " ", 0 },
+    { "unused", "unused", FS_BASED, TRUE, TRUE, FALSE, " ", " ", 0 },
+    { "unused", "unused", FS_BASED, TRUE, TRUE, FALSE, " ", " ", 0 },
+    { "unused", "unused", FS_BASED, TRUE, TRUE, FALSE, " ", " ", 0 },
+    { "unused", "unused", FS_BASED, TRUE, TRUE, FALSE, " ", " ", 0 }
 };
 
 uint32_t TargetArgCount;
-char **TargetArgs;
+char   **TargetArgs;
 
 #ifdef JPHFIX_SERVER
 void TestCtrl_ConnHandler(void)
 {
-    uint32 SocketID;
-    int32 Status;
+    uint32        SocketID;
+    int32         Status;
     OS_SockAddr_t SocketAddress;
-    char DataBuf[128];
+    char          DataBuf[128];
 
     Status = OS_SocketOpen(&SocketID, OS_SocketDomain_INET, OS_SocketType_STREAM);
     if (Status != OS_SUCCESS)
     {
-        fprintf(stderr,"OS_SocketOpen() failed: %d\n", (int)Status);
+        fprintf(stderr, "OS_SocketOpen() failed: %d\n", (int)Status);
         return;
     }
 
-   OS_SocketAddrInit(&SocketAddress, OS_SocketDomain_INET);
-   OS_SocketAddrSetPort(&SocketAddress, 2345);
+    OS_SocketAddrInit(&SocketAddress, OS_SocketDomain_INET);
+    OS_SocketAddrSetPort(&SocketAddress, 2345);
 
+    uint32        ConnID;
+    OS_SockAddr_t ConnAddress;
 
-   uint32 ConnID;
-   OS_SockAddr_t ConnAddress;
+    Status = OS_SocketBind(SocketID, &SocketAddress);
+    if (Status != OS_SUCCESS)
+    {
+        fprintf(stderr, "OS_SocketBind() failed: %d\n", (int)Status);
+        return;
+    }
 
-   Status = OS_SocketBind(SocketID, &SocketAddress);
-   if (Status != OS_SUCCESS)
-   {
-       fprintf(stderr,"OS_SocketBind() failed: %d\n", (int)Status);
-       return;
-   }
+    while (1)
+    {
+        Status = OS_SocketAccept(SocketID, &ConnID, &ConnAddress, OS_PEND);
+        if (Status != OS_SUCCESS)
+        {
+            fprintf(stderr, "OS_SocketAccept() failed: %d\n", (int)Status);
+            break;
+        }
 
-   while(1)
-   {
-       Status = OS_SocketAccept(SocketID, &ConnID, &ConnAddress, OS_PEND);
-       if (Status != OS_SUCCESS)
-       {
-           fprintf(stderr,"OS_SocketAccept() failed: %d\n", (int)Status);
-           break;
-       }
+        while (1)
+        {
+            Status = OS_StreamRead(ConnID, DataBuf, sizeof(DataBuf) - 1, OS_PEND);
+            if (Status < OS_SUCCESS)
+            {
+                fprintf(stderr, "OS_StreamRead() failed: %d\n", (int)Status);
+                break;
+            }
 
-       while (1)
-       {
-           Status = OS_StreamRead(ConnID, DataBuf, sizeof(DataBuf)-1, OS_PEND);
-           if (Status < OS_SUCCESS)
-           {
-               fprintf(stderr,"OS_StreamRead() failed: %d\n", (int)Status);
-               break;
-           }
+            if (Status == 0)
+            {
+                printf("OS_StreamRead(): disconnect\n");
+                break;
+            }
 
-           if (Status == 0)
-           {
-               printf("OS_StreamRead(): disconnect\n");
-               break;
-           }
+            DataBuf[Status] = 0;
+            printf("OS_StreamRead(): %s\n", DataBuf);
+        }
 
-           DataBuf[Status] = 0;
-           printf("OS_StreamRead(): %s\n", DataBuf);
-       }
+        OS_SocketClose(ConnID);
+    }
 
-       OS_SocketClose(ConnID);
-   }
-
-   OS_SocketClose(SocketID);
-
+    OS_SocketClose(SocketID);
 }
 #endif
 
-#define COMMAND_MAX_ARGS        8
-#define NETBUFFER_MAX_SIZE      (64 + ((sizeof(CCSDS_SpacePacket_Buffer_t) * 4) / 3))
-#define OBJBUFFER_MAX_SIZE      (64 + sizeof(CCSDS_SpacePacket_Buffer_t))
+#define COMMAND_MAX_ARGS   8
+#define NETBUFFER_MAX_SIZE (64 + ((sizeof(CCSDS_SpacePacket_Buffer_t) * 4) / 3))
+#define OBJBUFFER_MAX_SIZE (64 + sizeof(CCSDS_SpacePacket_Buffer_t))
 
 struct
 {
-    char *ArgPtr[COMMAND_MAX_ARGS];
-    char NetBuffer[NETBUFFER_MAX_SIZE];
+    char   *ArgPtr[COMMAND_MAX_ARGS];
+    char    NetBuffer[NETBUFFER_MAX_SIZE];
     uint8_t ObjBuffer[OBJBUFFER_MAX_SIZE];
-    uint32 ArgCount;
-    uint32 NetDataLen;
-    uint32 ObjBitSize;
+    uint32  ArgCount;
+    uint32  NetDataLen;
+    uint32  ObjBitSize;
 } TestCtrl;
 
 void TestCtrl_TokenizeCommand(char *CommandData)
@@ -160,15 +155,14 @@ void TestCtrl_TokenizeCommand(char *CommandData)
     do
     {
         ++Ptr;
-    }
-    while(isspace((int)*Ptr));
+    } while (isspace((int)*Ptr));
 
-    while(TestCtrl.ArgCount < COMMAND_MAX_ARGS && *Ptr != 0)
+    while (TestCtrl.ArgCount < COMMAND_MAX_ARGS && *Ptr != 0)
     {
         TestCtrl.ArgPtr[TestCtrl.ArgCount] = Ptr;
         ++TestCtrl.ArgCount;
 
-        while(*Ptr != 0 && !isspace((int)*Ptr))
+        while (*Ptr != 0 && !isspace((int)*Ptr))
         {
             ++Ptr;
         }
@@ -182,14 +176,13 @@ void TestCtrl_TokenizeCommand(char *CommandData)
         do
         {
             ++Ptr;
-        }
-        while(isspace((int)*Ptr));
+        } while (isspace((int)*Ptr));
     }
 }
 
 void TestCtrl_ProcessDataBlock(void)
 {
-    char *EndPtr;
+    char    *EndPtr;
     uint32_t BitSize;
 
     if (TestCtrl.NetDataLen < sizeof(TestCtrl.NetBuffer))
@@ -227,7 +220,7 @@ void TestCtrl_ProcessDataBlock(void)
 
 void TestCtrl_RunCommandLoop(void)
 {
-    char NetworkBuffer[256];
+    char   NetworkBuffer[256];
     uint32 ContentLen;
 
     while (fgets(NetworkBuffer, sizeof(NetworkBuffer), stdin) != NULL)
@@ -279,7 +272,7 @@ int main(int argc, char *argv[])
     /* Initialize the OSAL */
     if (OS_API_Init() != OS_SUCCESS)
     {
-        fprintf(stderr,"OS_API_Init() failed");
+        fprintf(stderr, "OS_API_Init() failed");
         return EXIT_FAILURE;
     }
 
@@ -287,31 +280,31 @@ int main(int argc, char *argv[])
     {
         switch (opt)
         {
-        case 'c':
-        {
-            CFE_MissionLib_GetInstanceNumber(&CFE_SOFTWAREBUS_INTERFACE, optarg);
-            break;
-        }
-        case 'i':
-        {
-            break;
-        }
-        case 'l':
-        {
-            break;
-        }
-        default: /* '?' */
-        {
-            fprintf(stderr, "Usage: %s [-c cpu_name]\n", argv[0]);
-            exit(EXIT_FAILURE);
-        }
+            case 'c':
+            {
+                CFE_MissionLib_GetInstanceNumber(&CFE_SOFTWAREBUS_INTERFACE, optarg);
+                break;
+            }
+            case 'i':
+            {
+                break;
+            }
+            case 'l':
+            {
+                break;
+            }
+            default: /* '?' */
+            {
+                fprintf(stderr, "Usage: %s [-c cpu_name]\n", argv[0]);
+                exit(EXIT_FAILURE);
+            }
         }
     }
 
     if (optind < argc)
     {
         TargetArgCount = argc - optind;
-        TargetArgs = &argv[optind];
+        TargetArgs     = &argv[optind];
     }
 
     TestCtrl_RunCommandLoop();

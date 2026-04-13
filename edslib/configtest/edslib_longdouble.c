@@ -18,26 +18,25 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_longdouble.c
  * \ingroup  edslib
  * \author   joseph.p.hickey@nasa.gov
  *
-**  This is a configuration test file used by the build system to determine
-**  the level of floating point type support of the compiler and C library.
-**
-**  For the Pack/Unpack routines in EdsLib it is beneficial to use the maximum
-**  precision that is possible using the native FPU.  C99 defined the "long double"
-**  type and other systems may even have some form of quad type.
-**
-**  On the other end of the spectrum, embedded microcontrollers may not even
-**  support any sort of extended-precision type at all.
-**
-**  At the moment this checks if we can compile a simple function that uses
-**  the long double type.  If this succeeds then it is assumed that the system
-**  has a functional "long double" implementation.  Otherwise a standard "double"
-**  can be used instead.
+ **  This is a configuration test file used by the build system to determine
+ **  the level of floating point type support of the compiler and C library.
+ **
+ **  For the Pack/Unpack routines in EdsLib it is beneficial to use the maximum
+ **  precision that is possible using the native FPU.  C99 defined the "long double"
+ **  type and other systems may even have some form of quad type.
+ **
+ **  On the other end of the spectrum, embedded microcontrollers may not even
+ **  support any sort of extended-precision type at all.
+ **
+ **  At the moment this checks if we can compile a simple function that uses
+ **  the long double type.  If this succeeds then it is assumed that the system
+ **  has a functional "long double" implementation.  Otherwise a standard "double"
+ **  can be used instead.
  */
 
 #include <stdlib.h>
@@ -46,9 +45,9 @@
 
 int main(void)
 {
-    long double x1,x2;
+    long double x1, x2;
     long double y;
-    int e;
+    int         e;
 
     x1 = 1234.0L;
 
@@ -60,13 +59,13 @@ int main(void)
      * EdsLib uses some others beyond these two, but it is assumed if these
      * two will build and link than the others will too.
      */
-    y = frexpl(x1, &e);
+    y  = frexpl(x1, &e);
     x2 = ldexpl(y, e);
 
     if (x1 != x2)
     {
-        return(EXIT_FAILURE);
+        return (EXIT_FAILURE);
     }
 
-    return(EXIT_SUCCESS);
+    return (EXIT_SUCCESS);
 }

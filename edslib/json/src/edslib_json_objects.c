@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_json_objects.c
  * \ingroup  json
@@ -41,14 +40,14 @@
 typedef struct
 {
     const EdsLib_Binding_DescriptorObject_t *ParentObj;
-    struct json_object *JsonObject;
+    struct json_object                      *JsonObject;
 } EdsLib_JsonBinding_ObjectConversion_t;
 
 static void EdsLib_JSON_SetJSONObject_Callback(void *Arg, const EdsLib_EntityDescriptor_t *Param)
 {
     EdsLib_JsonBinding_ObjectConversion_t *State = Arg;
-    EdsLib_JsonBinding_DescriptorObject_t SubDesc;
-    struct json_object *ThisElement;
+    EdsLib_JsonBinding_DescriptorObject_t  SubDesc;
+    struct json_object                    *ThisElement;
 
     EdsLib_Binding_InitSubObject(&SubDesc, State->ParentObj, &Param->EntityInfo);
 
@@ -84,13 +83,10 @@ static void EdsLib_JSON_SetJSONObject_Callback(void *Arg, const EdsLib_EntityDes
     }
 }
 
-static int EdsLib_JSON_Double2Str(struct json_object *jso,
-                        struct printbuf *pb,
-                        int level,
-                        int flags)
+static int EdsLib_JSON_Double2Str(struct json_object *jso, struct printbuf *pb, int level, int flags)
 {
-    char buf[32];
-    int size;
+    char   buf[32];
+    int    size;
     double value = json_object_get_double(jso);
 
     if (value == value)
@@ -116,110 +112,116 @@ EdsLib_JsonBinding_Object_t *EdsLib_JSON_EdsObjectToJSON(const EdsLib_JsonBindin
 
     ThisElement = NULL;
 
-    switch(SrcObject->TypeInfo.ElemType)
+    switch (SrcObject->TypeInfo.ElemType)
     {
-    case EDSLIB_BASICTYPE_SIGNED_INT:
-    case EDSLIB_BASICTYPE_UNSIGNED_INT:
-    case EDSLIB_BASICTYPE_FLOAT:
-    {
-        EdsLib_GenericValueBuffer_t ValueBuffer;
-        const char *SymName;
+        case EDSLIB_BASICTYPE_SIGNED_INT:
+        case EDSLIB_BASICTYPE_UNSIGNED_INT:
+        case EDSLIB_BASICTYPE_FLOAT:
+        {
+            EdsLib_GenericValueBuffer_t ValueBuffer;
+            const char                 *SymName;
 
-        EdsLib_Binding_LoadValue(SrcObject, &ValueBuffer);
+            EdsLib_Binding_LoadValue(SrcObject, &ValueBuffer);
 
-        /*
-         * note JSON-C does not have a separate unsigned object type,
-         * so convert to a signed type.  Internally this uses a wide type (64 bits)
-         * so it is generally OK but will truncate values that are greater than 2^63.
-         *
-         * This is a limitation of JSON really, so it is what it is.  It is unlikely
-         * that such large values will need to be represented in JSON, so this will
-         * probably never be noticed.
-         */
-        if (ValueBuffer.ValueType == EDSLIB_BASICTYPE_UNSIGNED_INT)
-        {
-            ValueBuffer.Value.SignedInteger = ValueBuffer.Value.UnsignedInteger;
-            ValueBuffer.ValueType = EDSLIB_BASICTYPE_SIGNED_INT;
-        }
-
-        SymName = EdsLib_DisplayDB_GetEnumLabel(SrcObject->GD, SrcObject->EdsId, &ValueBuffer);
-        if (SymName != NULL)
-        {
-            ThisElement = json_object_new_string(SymName);
-        }
-        else if (ValueBuffer.ValueType == EDSLIB_BASICTYPE_FLOAT)
-        {
-            ThisElement = json_object_new_double(ValueBuffer.Value.FloatingPoint);
-            json_object_set_serializer(ThisElement, EdsLib_JSON_Double2Str, NULL, NULL);
-        }
-        else if (ValueBuffer.ValueType == EDSLIB_BASICTYPE_SIGNED_INT)
-        {
-            if (EdsLib_DisplayDB_GetDisplayHint(SrcObject->GD, SrcObject->EdsId) == EDSLIB_DISPLAYHINT_BOOLEAN)
+            /*
+             * note JSON-C does not have a separate unsigned object type,
+             * so convert to a signed type.  Internally this uses a wide type (64 bits)
+             * so it is generally OK but will truncate values that are greater than 2^63.
+             *
+             * This is a limitation of JSON really, so it is what it is.  It is unlikely
+             * that such large values will need to be represented in JSON, so this will
+             * probably never be noticed.
+             */
+            if (ValueBuffer.ValueType == EDSLIB_BASICTYPE_UNSIGNED_INT)
             {
-                ThisElement = json_object_new_boolean(ValueBuffer.Value.SignedInteger);
+                ValueBuffer.Value.SignedInteger = ValueBuffer.Value.UnsignedInteger;
+                ValueBuffer.ValueType           = EDSLIB_BASICTYPE_SIGNED_INT;
             }
-            else
+
+            SymName = EdsLib_DisplayDB_GetEnumLabel(SrcObject->GD, SrcObject->EdsId, &ValueBuffer);
+            if (SymName != NULL)
             {
-                ThisElement = json_object_new_int64(ValueBuffer.Value.SignedInteger);
+                ThisElement = json_object_new_string(SymName);
             }
-        }
-        break;
-    }
-    case EDSLIB_BASICTYPE_BINARY:
-    {
-        /*
-         * JSON objects cannot contain binary data directly;
-         * Use the EdsLib scalar conversion to export the data in a safe form.
-         *
-         * allocate a temporary buffer with 1 byte per 6 bits of actual binary data,
-         * to cover the case where the data is base64 encoded.
-         *
-         * Include a few bytes of extra space in the buffer for e.g. termination.
-         */
-        uint32_t MaxSize = 4 + ((SrcObject->TypeInfo.Size.Bits + 5) / 6);
-        char* Buffer = malloc(MaxSize);
-
-        if (Buffer != NULL)
-        {
-            if (EdsLib_Scalar_ToString(SrcObject->GD, SrcObject->EdsId, Buffer, MaxSize,
-                    EdsLib_Binding_GetNativeObject(SrcObject)) == EDSLIB_SUCCESS)
+            else if (ValueBuffer.ValueType == EDSLIB_BASICTYPE_FLOAT)
             {
-                ThisElement = json_object_new_string(Buffer);
+                ThisElement = json_object_new_double(ValueBuffer.Value.FloatingPoint);
+                json_object_set_serializer(ThisElement, EdsLib_JSON_Double2Str, NULL, NULL);
             }
-            free(Buffer);
+            else if (ValueBuffer.ValueType == EDSLIB_BASICTYPE_SIGNED_INT)
+            {
+                if (EdsLib_DisplayDB_GetDisplayHint(SrcObject->GD, SrcObject->EdsId) == EDSLIB_DISPLAYHINT_BOOLEAN)
+                {
+                    ThisElement = json_object_new_boolean(ValueBuffer.Value.SignedInteger);
+                }
+                else
+                {
+                    ThisElement = json_object_new_int64(ValueBuffer.Value.SignedInteger);
+                }
+            }
+            break;
         }
-        break;
-    }
-    case EDSLIB_BASICTYPE_ARRAY:
-    {
-        uint16_t Idx;
-        EdsLib_DataTypeDB_EntityInfo_t CompInfo;
-        EdsLib_JsonBinding_DescriptorObject_t SubDesc;
-
-        ThisElement = json_object_new_array();
-        for (Idx=0; Idx < SrcObject->TypeInfo.NumSubElements; ++Idx)
+        case EDSLIB_BASICTYPE_BINARY:
         {
-            EdsLib_DataTypeDB_GetMemberByIndex(SrcObject->GD, SrcObject->EdsId, Idx, &CompInfo);
-            EdsLib_Binding_InitSubObject(&SubDesc, SrcObject, &CompInfo);
-            json_object_array_put_idx(ThisElement, Idx, EdsLib_JSON_EdsObjectToJSON(&SubDesc));
+            /*
+             * JSON objects cannot contain binary data directly;
+             * Use the EdsLib scalar conversion to export the data in a safe form.
+             *
+             * allocate a temporary buffer with 1 byte per 6 bits of actual binary data,
+             * to cover the case where the data is base64 encoded.
+             *
+             * Include a few bytes of extra space in the buffer for e.g. termination.
+             */
+            uint32_t MaxSize = 4 + ((SrcObject->TypeInfo.Size.Bits + 5) / 6);
+            char    *Buffer  = malloc(MaxSize);
+
+            if (Buffer != NULL)
+            {
+                if (EdsLib_Scalar_ToString(SrcObject->GD,
+                                           SrcObject->EdsId,
+                                           Buffer,
+                                           MaxSize,
+                                           EdsLib_Binding_GetNativeObject(SrcObject))
+                    == EDSLIB_SUCCESS)
+                {
+                    ThisElement = json_object_new_string(Buffer);
+                }
+                free(Buffer);
+            }
+            break;
         }
-        break;
-    }
-    case EDSLIB_BASICTYPE_CONTAINER:
-    case EDSLIB_BASICTYPE_COMPONENT:
-    {
-        EdsLib_JsonBinding_ObjectConversion_t SubObject;
+        case EDSLIB_BASICTYPE_ARRAY:
+        {
+            uint16_t                              Idx;
+            EdsLib_DataTypeDB_EntityInfo_t        CompInfo;
+            EdsLib_JsonBinding_DescriptorObject_t SubDesc;
 
-        SubObject.ParentObj = SrcObject;
-        SubObject.JsonObject = json_object_new_object();
-        EdsLib_DisplayDB_IterateBaseEntities(SrcObject->GD, SrcObject->EdsId,
-                EdsLib_JSON_SetJSONObject_Callback, &SubObject);
+            ThisElement = json_object_new_array();
+            for (Idx = 0; Idx < SrcObject->TypeInfo.NumSubElements; ++Idx)
+            {
+                EdsLib_DataTypeDB_GetMemberByIndex(SrcObject->GD, SrcObject->EdsId, Idx, &CompInfo);
+                EdsLib_Binding_InitSubObject(&SubDesc, SrcObject, &CompInfo);
+                json_object_array_put_idx(ThisElement, Idx, EdsLib_JSON_EdsObjectToJSON(&SubDesc));
+            }
+            break;
+        }
+        case EDSLIB_BASICTYPE_CONTAINER:
+        case EDSLIB_BASICTYPE_COMPONENT:
+        {
+            EdsLib_JsonBinding_ObjectConversion_t SubObject;
 
-        ThisElement = SubObject.JsonObject;
-        break;
-    }
-    default:
-        break;
+            SubObject.ParentObj  = SrcObject;
+            SubObject.JsonObject = json_object_new_object();
+            EdsLib_DisplayDB_IterateBaseEntities(SrcObject->GD,
+                                                 SrcObject->EdsId,
+                                                 EdsLib_JSON_SetJSONObject_Callback,
+                                                 &SubObject);
+
+            ThisElement = SubObject.JsonObject;
+            break;
+        }
+        default:
+            break;
     }
 
     return ThisElement;
@@ -228,18 +230,18 @@ EdsLib_JsonBinding_Object_t *EdsLib_JSON_EdsObjectToJSON(const EdsLib_JsonBindin
 static void EdsLib_JSON_SetEDSObject_Callback(void *Arg, const EdsLib_EntityDescriptor_t *Param)
 {
     EdsLib_JsonBinding_ObjectConversion_t *State = Arg;
-    EdsLib_JsonBinding_DescriptorObject_t SubDesc;
-    struct json_object *SubObj;
+    EdsLib_JsonBinding_DescriptorObject_t  SubDesc;
+    struct json_object                    *SubObj;
 
-    if (json_object_object_get_ex(State->JsonObject, Param->FullName, &SubObj) &&
-            SubObj != NULL)
+    if (json_object_object_get_ex(State->JsonObject, Param->FullName, &SubObj) && SubObj != NULL)
     {
         EdsLib_Binding_InitSubObject(&SubDesc, State->ParentObj, &Param->EntityInfo);
         EdsLib_JSON_EdsObjectFromJSON(&SubDesc, SubObj);
     }
 }
 
-void EdsLib_JSON_EdsObjectFromJSON(EdsLib_JsonBinding_DescriptorObject_t *DstObject, EdsLib_JsonBinding_Object_t *SrcObject)
+void EdsLib_JSON_EdsObjectFromJSON(EdsLib_JsonBinding_DescriptorObject_t *DstObject,
+                                   EdsLib_JsonBinding_Object_t           *SrcObject)
 {
     enum json_type SrcType;
 
@@ -256,22 +258,22 @@ void EdsLib_JSON_EdsObjectFromJSON(EdsLib_JsonBinding_DescriptorObject_t *DstObj
         if (SrcType == json_type_double)
         {
             ValueBuffer.Value.FloatingPoint = json_object_get_double(SrcObject);
-            ValueBuffer.ValueType = EDSLIB_BASICTYPE_FLOAT;
+            ValueBuffer.ValueType           = EDSLIB_BASICTYPE_FLOAT;
         }
         else if (SrcType == json_type_int)
         {
             ValueBuffer.Value.SignedInteger = json_object_get_int64(SrcObject);
-            ValueBuffer.ValueType = EDSLIB_BASICTYPE_SIGNED_INT;
+            ValueBuffer.ValueType           = EDSLIB_BASICTYPE_SIGNED_INT;
         }
         else if (SrcType == json_type_boolean)
         {
             ValueBuffer.Value.UnsignedInteger = json_object_get_boolean(SrcObject);
-            ValueBuffer.ValueType = EDSLIB_BASICTYPE_UNSIGNED_INT;
+            ValueBuffer.ValueType             = EDSLIB_BASICTYPE_UNSIGNED_INT;
         }
         else
         {
             ValueBuffer.Value.UnsignedInteger = 0;
-            ValueBuffer.ValueType = EDSLIB_BASICTYPE_NONE;
+            ValueBuffer.ValueType             = EDSLIB_BASICTYPE_NONE;
         }
 
         if (ValueBuffer.ValueType != EDSLIB_BASICTYPE_NONE)
@@ -284,18 +286,19 @@ void EdsLib_JSON_EdsObjectFromJSON(EdsLib_JsonBinding_DescriptorObject_t *DstObj
              * If the JSON value is a string, then just use the EdsLib parser to import it.
              * This should coerce most strings into the correct type, whatever it is.
              */
-            EdsLib_Scalar_FromString(DstObject->GD, DstObject->EdsId,
-                    EdsLib_Binding_GetNativeObject(DstObject), json_object_get_string(SrcObject));
+            EdsLib_Scalar_FromString(DstObject->GD,
+                                     DstObject->EdsId,
+                                     EdsLib_Binding_GetNativeObject(DstObject),
+                                     json_object_get_string(SrcObject));
         }
     }
-    else if (DstObject->TypeInfo.ElemType == EDSLIB_BASICTYPE_ARRAY &&
-            SrcType == json_type_array)
+    else if (DstObject->TypeInfo.ElemType == EDSLIB_BASICTYPE_ARRAY && SrcType == json_type_array)
     {
-        uint16_t Idx;
-        EdsLib_DataTypeDB_EntityInfo_t CompInfo;
+        uint16_t                              Idx;
+        EdsLib_DataTypeDB_EntityInfo_t        CompInfo;
         EdsLib_JsonBinding_DescriptorObject_t SubDesc;
 
-        for (Idx=0; Idx < DstObject->TypeInfo.NumSubElements; ++Idx)
+        for (Idx = 0; Idx < DstObject->TypeInfo.NumSubElements; ++Idx)
         {
             if (EdsLib_DataTypeDB_GetMemberByIndex(DstObject->GD, DstObject->EdsId, Idx, &CompInfo) == EDSLIB_SUCCESS)
             {
@@ -308,11 +311,12 @@ void EdsLib_JSON_EdsObjectFromJSON(EdsLib_JsonBinding_DescriptorObject_t *DstObj
     {
         EdsLib_JsonBinding_ObjectConversion_t SubObject;
 
-        SubObject.ParentObj = DstObject;
+        SubObject.ParentObj  = DstObject;
         SubObject.JsonObject = SrcObject;
 
-        EdsLib_DisplayDB_IterateBaseEntities(DstObject->GD, DstObject->EdsId,
-                EdsLib_JSON_SetEDSObject_Callback, &SubObject);
+        EdsLib_DisplayDB_IterateBaseEntities(DstObject->GD,
+                                             DstObject->EdsId,
+                                             EdsLib_JSON_SetEDSObject_Callback,
+                                             &SubObject);
     }
 }
-

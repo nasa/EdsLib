@@ -21,9 +21,11 @@ include $(EDS_REPO_SOURCE_DIR)/edslib/cmake/base_patternrules.mk
 # linker logic that CMake uses, this just assumes a GNU-style LD, and that the file extension
 # (.so or .obj) indicates the style of loadable object being used.
 
+$(O)/$(EDS_FILE_PREFIX)_sb_dispatchdb.so: EXTRA_LINK_LIBS=-l:$(EDS_FILE_PREFIX)_db.so
+
 $(O)/%.so:
 	@echo EDS: Linking shared object $(@) for $(EDSTOOL_ARCH)
-	$(LD) $(SHARED_LDFLAGS) -shared -o $@ $^ -L$(O) -l:$(EDS_FILE_PREFIX)_db.so
+	$(LD) $(SHARED_LDFLAGS) -shared -o $@ $^ -L$(O) $(EXTRA_LINK_LIBS)
 
 $(O)/%.obj:
 	@echo EDS: Linking relocatable object $(@) for $(EDSTOOL_ARCH)

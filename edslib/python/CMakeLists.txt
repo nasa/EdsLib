@@ -38,9 +38,6 @@
 #  PYTHON_LIBS = libraries to put on link line (-l switches)
 #
 
-# More fixes needed for 3.13!
-add_definitions(-Wno-deprecated-declarations)
-
 project(EDSLIB_PYTHONBINDINGS C)
 
 if(NOT PYTHON_FOUND)
@@ -79,6 +76,11 @@ option(EDSLIB_PYTHON_BUILD_STANDALONE_MODULE
 if (NOT PYTHON_FOUND)
     message("    Python support not configured, skipping EdsLib Python bindings")
 else ()
+    # Note when using the Python.h header file it sometimes defines things like _XOPEN_SOURCE directly
+    # To avoid triggering errors, do not use any existing compile definitions in this module
+    set_directory_properties(PROPERTIES COMPILE_DEFINITIONS "")
+    set_directory_properties(PROPERTIES COMPILE_OPTIONS "-Wno-deprecated-declarations")
+
     include_directories(inc)
     include_directories(${EDSLIB_FSW_SOURCE_DIR}/inc)
     include_directories(${PYTHON_INCLUDE_DIRS})

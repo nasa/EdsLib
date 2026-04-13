@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     seds_instance_node.h
  * \ingroup  tool
@@ -38,13 +37,10 @@
 /*      (everything referenced outside this unit should be described here)     */
 /*******************************************************************************/
 
-
 /**
  * Register the tree functions which are called from Lua
  * These are added to a table which is at the top of the stack
  */
 void seds_instance_node_register_globals(lua_State *lua);
 
-
-#endif  /* _SEDS_INSTANCE_NODE_H_ */
-
+#endif /* _SEDS_INSTANCE_NODE_H_ */

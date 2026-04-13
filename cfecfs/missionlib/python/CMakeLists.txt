@@ -78,6 +78,12 @@ option(CFE_MISSIONLIB_PYTHON_BUILD_STANDALONE_MODULE
 if (NOT PYTHON_FOUND)
     message("    Python support not configured, skipping MissionLib Python bindings")
 else ()
+    # Note when using the Python.h header file it sometimes defines things like _XOPEN_SOURCE directly
+    # To avoid triggering errors, do not use any existing compile definitions in this module.  Also
+    # sometimes Python marks something as deprecated even with minimal/no overlap in having an alternate.
+    set_directory_properties(PROPERTIES COMPILE_DEFINITIONS "")
+    set_directory_properties(PROPERTIES COMPILE_OPTIONS "-Wno-deprecated-declarations")
+
     include_directories(inc)
     include_directories(${EDSLIB_FSW_SOURCE_DIR}/inc)
     include_directories(${EDSLIB_PYTHONBINDINGS_SOURCE_DIR}/inc)

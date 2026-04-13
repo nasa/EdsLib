@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     cfe_missionlib_lua_softwarebus.c
  * \ingroup  lua
@@ -52,23 +51,26 @@
 
 static const char CFE_MISSIONLIB_INTFDB_KEY;
 
-static const EdsLib_Id_t CFE_SB_TELECOMMAND_INTF_ID = EDSLIB_INTF_ID(EDS_INDEX(CFE_SB), EdsInterface_CFE_SB_Telecommand_DECLARATION);
-static const EdsLib_Id_t CFE_SB_TELEMETRY_INTF_ID = EDSLIB_INTF_ID(EDS_INDEX(CFE_SB), EdsInterface_CFE_SB_Telemetry_DECLARATION);
+static const EdsLib_Id_t CFE_SB_TELECOMMAND_INTF_ID =
+    EDSLIB_INTF_ID(EDS_INDEX(CFE_SB), EdsInterface_CFE_SB_Telecommand_DECLARATION);
+static const EdsLib_Id_t CFE_SB_TELEMETRY_INTF_ID =
+    EDSLIB_INTF_ID(EDS_INDEX(CFE_SB), EdsInterface_CFE_SB_Telemetry_DECLARATION);
 
-void CFE_MissionLib_Lua_MapPubSubParams(EdsInterface_CFE_SB_SoftwareBus_PubSub_t *PubSub, const CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj)
+void CFE_MissionLib_Lua_MapPubSubParams(EdsInterface_CFE_SB_SoftwareBus_PubSub_t      *PubSub,
+                                        const CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj)
 {
     if (IntfObj->IsTelecommand)
     {
         EdsComponent_CFE_SB_Listener_t Params;
         Params.Telecommand.InstanceNumber = IntfObj->InstanceNumber;
-        Params.Telecommand.TopicId = IntfObj->TopicId;
+        Params.Telecommand.TopicId        = IntfObj->TopicId;
         CFE_MissionLib_MapListenerComponent(PubSub, &Params);
     }
     else if (IntfObj->IsTelemetry)
     {
         EdsComponent_CFE_SB_Publisher_t Params;
         Params.Telemetry.InstanceNumber = IntfObj->InstanceNumber;
-        Params.Telemetry.TopicId = IntfObj->TopicId;
+        Params.Telemetry.TopicId        = IntfObj->TopicId;
         CFE_MissionLib_MapPublisherComponent(PubSub, &Params);
     }
     else
@@ -77,25 +79,26 @@ void CFE_MissionLib_Lua_MapPubSubParams(EdsInterface_CFE_SB_SoftwareBus_PubSub_t
     }
 }
 
-void CFE_MissionLib_Lua_UnmapPubSubParams(CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj, const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *PubSub)
+void CFE_MissionLib_Lua_UnmapPubSubParams(CFE_MissionLib_Lua_Interface_Userdata_t        *IntfObj,
+                                          const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *PubSub)
 {
     if (IntfObj->IsTelecommand)
     {
         EdsComponent_CFE_SB_Listener_t Result;
         CFE_MissionLib_UnmapListenerComponent(&Result, PubSub);
-        IntfObj->TopicId = Result.Telecommand.TopicId;
+        IntfObj->TopicId        = Result.Telecommand.TopicId;
         IntfObj->InstanceNumber = Result.Telecommand.InstanceNumber;
     }
     else if (IntfObj->IsTelemetry)
     {
         EdsComponent_CFE_SB_Publisher_t Result;
         CFE_MissionLib_UnmapPublisherComponent(&Result, PubSub);
-        IntfObj->TopicId = Result.Telemetry.TopicId;
+        IntfObj->TopicId        = Result.Telemetry.TopicId;
         IntfObj->InstanceNumber = Result.Telemetry.InstanceNumber;
     }
     else
     {
-        IntfObj->TopicId = 0;
+        IntfObj->TopicId        = 0;
         IntfObj->InstanceNumber = 0;
     }
 }
@@ -105,7 +108,7 @@ CFE_MissionLib_Lua_Interface_Userdata_t *CFE_MissionLib_Lua_NewInterfaceObject(l
     CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj;
 
     IntfObj = lua_newuserdata(lua, sizeof(*IntfObj));
-    memset(IntfObj,0,sizeof(*IntfObj));
+    memset(IntfObj, 0, sizeof(*IntfObj));
 
     /*
      * Set metatable for the new object
@@ -123,12 +126,12 @@ CFE_MissionLib_Lua_Interface_Userdata_t *CFE_MissionLib_Lua_NewInterfaceObject(l
 
 static int CFE_MissionLib_Lua_GetInterface(lua_State *lua)
 {
-    const char *DestName = luaL_checkstring(lua, 1);
-    const char *IndicationName = luaL_optstring(lua, 3, "indication");
+    const char                              *DestName       = luaL_checkstring(lua, 1);
+    const char                              *IndicationName = luaL_optstring(lua, 3, "indication");
     CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj;
-    const EdsLib_DatabaseObject_t *GD;
-    EdsLib_IntfDB_InterfaceInfo_t IntfInfo;
-    int32_t Status;
+    const EdsLib_DatabaseObject_t           *GD;
+    EdsLib_IntfDB_InterfaceInfo_t            IntfInfo;
+    int32_t                                  Status;
 
     lua_settop(lua, 3);
 
@@ -147,7 +150,7 @@ static int CFE_MissionLib_Lua_GetInterface(lua_State *lua)
         IntfObj->InstanceNumber = 1;
     }
 
-    GD = CFE_MissionLib_GetParent(IntfObj->IntfDB);
+    GD     = CFE_MissionLib_GetParent(IntfObj->IntfDB);
     Status = EdsLib_IntfDB_FindComponentInterfaceByFullName(GD, DestName, &IntfObj->IntfEdsId);
     if (Status != EDSLIB_SUCCESS)
     {
@@ -168,16 +171,21 @@ static int CFE_MissionLib_Lua_GetInterface(lua_State *lua)
     }
 
     IntfObj->IsTelecommand = EdsLib_Is_Similar(IntfInfo.IntfTypeEdsId, CFE_SB_TELECOMMAND_INTF_ID);
-    IntfObj->IsTelemetry = EdsLib_Is_Similar(IntfInfo.IntfTypeEdsId, CFE_SB_TELEMETRY_INTF_ID);
+    IntfObj->IsTelemetry   = EdsLib_Is_Similar(IntfInfo.IntfTypeEdsId, CFE_SB_TELEMETRY_INTF_ID);
 
-    Status = EdsLib_IntfDB_FindCommandByLocalName(GD, IntfInfo.IntfTypeEdsId, IndicationName, &IntfObj->IndicationEdsId);
+    Status =
+        EdsLib_IntfDB_FindCommandByLocalName(GD, IntfInfo.IntfTypeEdsId, IndicationName, &IntfObj->IndicationEdsId);
     if (Status != EDSLIB_SUCCESS)
     {
         return 0;
     }
 
     /* Now we can finally determine the argument type */
-    Status = EdsLib_IntfDB_FindAllArgumentTypes(GD, IntfObj->IndicationEdsId, IntfObj->IntfEdsId, &IntfObj->IndicationBaseArg, 1);
+    Status = EdsLib_IntfDB_FindAllArgumentTypes(GD,
+                                                IntfObj->IndicationEdsId,
+                                                IntfObj->IntfEdsId,
+                                                &IntfObj->IndicationBaseArg,
+                                                1);
     if (Status != EDSLIB_SUCCESS)
     {
         return 0;
@@ -188,13 +196,12 @@ static int CFE_MissionLib_Lua_GetInterface(lua_State *lua)
 
 static int CFE_MissionLib_Lua_InterfaceObjectGetProperty(lua_State *lua)
 {
-    CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj =
-            luaL_checkudata(lua, 1, "CFE_MissionLib_Lua_Interface");
-    EdsLib_IntfDB_InterfaceInfo_t IntfInfo;
-    int32_t Status;
-    const char *Str;
-    char StringBuffer[256];
-    int retval = 0;
+    CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj = luaL_checkudata(lua, 1, "CFE_MissionLib_Lua_Interface");
+    EdsLib_IntfDB_InterfaceInfo_t            IntfInfo;
+    int32_t                                  Status;
+    const char                              *Str;
+    char                                     StringBuffer[256];
+    int                                      retval = 0;
 
     if (lua_type(lua, 2) == LUA_TSTRING)
     {
@@ -223,10 +230,15 @@ static int CFE_MissionLib_Lua_InterfaceObjectGetProperty(lua_State *lua)
         else if (strcmp(PropName, "IntfName") == 0)
         {
             /* This is really the interface type name */
-            Status = EdsLib_IntfDB_GetComponentInterfaceInfo(CFE_MissionLib_GetParent(IntfObj->IntfDB), IntfObj->IntfEdsId, &IntfInfo);
+            Status = EdsLib_IntfDB_GetComponentInterfaceInfo(CFE_MissionLib_GetParent(IntfObj->IntfDB),
+                                                             IntfObj->IntfEdsId,
+                                                             &IntfInfo);
             if (Status == EDSLIB_SUCCESS)
             {
-                Status = EdsLib_IntfDB_GetFullName(CFE_MissionLib_GetParent(IntfObj->IntfDB), IntfInfo.IntfTypeEdsId, StringBuffer, sizeof(StringBuffer));
+                Status = EdsLib_IntfDB_GetFullName(CFE_MissionLib_GetParent(IntfObj->IntfDB),
+                                                   IntfInfo.IntfTypeEdsId,
+                                                   StringBuffer,
+                                                   sizeof(StringBuffer));
             }
 
             if (Status == EDSLIB_SUCCESS)
@@ -237,7 +249,10 @@ static int CFE_MissionLib_Lua_InterfaceObjectGetProperty(lua_State *lua)
         }
         else if (strcmp(PropName, "TopicName") == 0)
         {
-            Status = EdsLib_IntfDB_GetFullName(CFE_MissionLib_GetParent(IntfObj->IntfDB), IntfObj->IntfEdsId, StringBuffer, sizeof(StringBuffer));
+            Status = EdsLib_IntfDB_GetFullName(CFE_MissionLib_GetParent(IntfObj->IntfDB),
+                                               IntfObj->IntfEdsId,
+                                               StringBuffer,
+                                               sizeof(StringBuffer));
             if (Status == EDSLIB_SUCCESS)
             {
                 lua_pushstring(lua, StringBuffer);
@@ -246,7 +261,10 @@ static int CFE_MissionLib_Lua_InterfaceObjectGetProperty(lua_State *lua)
         }
         else if (strcmp(PropName, "IndicationName") == 0)
         {
-            Status = EdsLib_IntfDB_GetFullName(CFE_MissionLib_GetParent(IntfObj->IntfDB), IntfObj->IndicationEdsId, StringBuffer, sizeof(StringBuffer));
+            Status = EdsLib_IntfDB_GetFullName(CFE_MissionLib_GetParent(IntfObj->IntfDB),
+                                               IntfObj->IndicationEdsId,
+                                               StringBuffer,
+                                               sizeof(StringBuffer));
             if (Status == EDSLIB_SUCCESS)
             {
                 lua_pushstring(lua, StringBuffer);
@@ -276,20 +294,16 @@ static int CFE_MissionLib_Lua_InterfaceObjectGetProperty(lua_State *lua)
 
 static int CFE_MissionLib_Lua_InterfaceObjectEqual(lua_State *lua)
 {
-    CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj1 =
-            luaL_testudata(lua, 1, "CFE_MissionLib_Lua_Interface");
-    CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj2 =
-            luaL_testudata(lua, 2, "CFE_MissionLib_Lua_Interface");
+    CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj1 = luaL_testudata(lua, 1, "CFE_MissionLib_Lua_Interface");
+    CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj2 = luaL_testudata(lua, 2, "CFE_MissionLib_Lua_Interface");
 
     if (IntfObj1 == NULL || IntfObj2 == NULL)
     {
         lua_pushboolean(lua, 0);
     }
-    else if (IntfObj1->IntfDB != IntfObj2->IntfDB ||
-            EdsLib_Is_Match(IntfObj1->IntfEdsId, IntfObj2->IntfEdsId) ||
-            EdsLib_Is_Match(IntfObj1->IndicationEdsId, IntfObj2->IndicationEdsId) ||
-            IntfObj1->TopicId != IntfObj2->TopicId ||
-            IntfObj1->InstanceNumber != IntfObj2->InstanceNumber)
+    else if (IntfObj1->IntfDB != IntfObj2->IntfDB || EdsLib_Is_Match(IntfObj1->IntfEdsId, IntfObj2->IntfEdsId)
+             || EdsLib_Is_Match(IntfObj1->IndicationEdsId, IntfObj2->IndicationEdsId)
+             || IntfObj1->TopicId != IntfObj2->TopicId || IntfObj1->InstanceNumber != IntfObj2->InstanceNumber)
     {
         lua_pushboolean(lua, 0);
     }
@@ -303,11 +317,10 @@ static int CFE_MissionLib_Lua_InterfaceObjectEqual(lua_State *lua)
 
 static int CFE_MissionLib_Lua_InterfaceObjectToString(lua_State *lua)
 {
-    char StringBuffer[128];
-    const char *Str;
-    int32_t Status;
-    CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj =
-            luaL_checkudata(lua, 1, "CFE_MissionLib_Lua_Interface");
+    char                                     StringBuffer[128];
+    const char                              *Str;
+    int32_t                                  Status;
+    CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj = luaL_checkudata(lua, 1, "CFE_MissionLib_Lua_Interface");
 
     int top_start = lua_gettop(lua);
     int top_end;
@@ -325,7 +338,10 @@ static int CFE_MissionLib_Lua_InterfaceObjectToString(lua_State *lua)
         lua_pushstring(lua, ":");
     }
 
-    Status = EdsLib_IntfDB_GetFullName(CFE_MissionLib_GetParent(IntfObj->IntfDB), IntfObj->IntfEdsId, StringBuffer, sizeof(StringBuffer));
+    Status = EdsLib_IntfDB_GetFullName(CFE_MissionLib_GetParent(IntfObj->IntfDB),
+                                       IntfObj->IntfEdsId,
+                                       StringBuffer,
+                                       sizeof(StringBuffer));
     if (Status == EDSLIB_SUCCESS)
     {
         lua_pushstring(lua, StringBuffer);
@@ -351,18 +367,17 @@ static int CFE_MissionLib_Lua_InterfaceObjectToString(lua_State *lua)
     return 1;
 }
 
-
 static int CFE_MissionLib_Lua_NewMessage(lua_State *lua)
 {
-    const EdsLib_Lua_Database_Userdata_t *DbObj = lua_touserdata(lua, lua_upvalueindex(1));
+    const EdsLib_Lua_Database_Userdata_t          *DbObj   = lua_touserdata(lua, lua_upvalueindex(1));
     const CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj = luaL_checkudata(lua, 1, "CFE_MissionLib_Lua_Interface");
-    const char *CommandName = luaL_optstring(lua, 2, NULL);
-    EdsLib_DataTypeDB_DerivedTypeInfo_t DerivInfo;
-    EdsLib_LuaBinding_DescriptorObject_t *ObjectUserData;
-    EdsInterface_CFE_SB_SoftwareBus_PubSub_t PubSub;
-    EdsLib_Id_t PossibleId;
-    uint16_t DerivIdx;
-    int32_t Status;
+    const char                                    *CommandName = luaL_optstring(lua, 2, NULL);
+    EdsLib_DataTypeDB_DerivedTypeInfo_t            DerivInfo;
+    EdsLib_LuaBinding_DescriptorObject_t          *ObjectUserData;
+    EdsInterface_CFE_SB_SoftwareBus_PubSub_t       PubSub;
+    EdsLib_Id_t                                    PossibleId;
+    uint16_t                                       DerivIdx;
+    int32_t                                        Status;
 
     Status = EdsLib_DataTypeDB_GetDerivedInfo(DbObj->GD, IntfObj->IndicationBaseArg, &DerivInfo);
     if (Status != EDSLIB_SUCCESS)
@@ -371,8 +386,8 @@ static int CFE_MissionLib_Lua_NewMessage(lua_State *lua)
         return 0;
     }
 
-    ObjectUserData = EdsLib_LuaBinding_CreateEmptyObject(lua, DerivInfo.MaxSize.Bytes);
-    ObjectUserData->GD = DbObj->GD;
+    ObjectUserData        = EdsLib_LuaBinding_CreateEmptyObject(lua, DerivInfo.MaxSize.Bytes);
+    ObjectUserData->GD    = DbObj->GD;
     ObjectUserData->EdsId = IntfObj->IndicationBaseArg;
 
     /*
@@ -390,8 +405,9 @@ static int CFE_MissionLib_Lua_NewMessage(lua_State *lua)
                 break;
             }
 
-            if (EdsLib_DataTypeDB_GetDerivedTypeById(DbObj->GD, IntfObj->IndicationBaseArg, DerivIdx, &PossibleId) == EDSLIB_SUCCESS &&
-                    strcmp(EdsLib_DisplayDB_GetBaseName(DbObj->GD, PossibleId), CommandName) == 0)
+            if (EdsLib_DataTypeDB_GetDerivedTypeById(DbObj->GD, IntfObj->IndicationBaseArg, DerivIdx, &PossibleId)
+                    == EDSLIB_SUCCESS
+                && strcmp(EdsLib_DisplayDB_GetBaseName(DbObj->GD, PossibleId), CommandName) == 0)
             {
                 ObjectUserData->EdsId = PossibleId;
                 break;
@@ -412,23 +428,23 @@ static int CFE_MissionLib_Lua_NewMessage(lua_State *lua)
 
 static int CFE_MissionLib_Lua_IdentifyMessage(lua_State *lua)
 {
-    const EdsLib_Lua_Database_Userdata_t *DbObj = lua_touserdata(lua, lua_upvalueindex(1));
-    const uint8_t *SourceBuffer = (const uint8_t*)luaL_checkstring(lua, 1);
-    uint32_t SourceBufferSize = lua_rawlen(lua, 1);
-    const char *IndicationName = luaL_optstring(lua, 2, "indication");
-    EdsLib_Binding_DescriptorObject_t *ObjectUserData;
+    const EdsLib_Lua_Database_Userdata_t    *DbObj            = lua_touserdata(lua, lua_upvalueindex(1));
+    const uint8_t                           *SourceBuffer     = (const uint8_t *)luaL_checkstring(lua, 1);
+    uint32_t                                 SourceBufferSize = lua_rawlen(lua, 1);
+    const char                              *IndicationName   = luaL_optstring(lua, 2, "indication");
+    EdsLib_Binding_DescriptorObject_t       *ObjectUserData;
     CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj;
     EdsInterface_CFE_SB_SoftwareBus_PubSub_t PubSub;
-    EdsLib_DataTypeDB_DerivedTypeInfo_t DerivInfo;
-    EdsLib_IntfDB_InterfaceInfo_t IntfInfo;
-    EdsLib_SizeInfo_t MaxSize;
-    EdsLib_SizeInfo_t DecodeSize;
-    CFE_MissionLib_TopicInfo_t TopicInfo;
-    const EdsLib_DatabaseObject_t *GD;
-    EdsLib_Id_t EdsId;
-    int32_t Status;
+    EdsLib_DataTypeDB_DerivedTypeInfo_t      DerivInfo;
+    EdsLib_IntfDB_InterfaceInfo_t            IntfInfo;
+    EdsLib_SizeInfo_t                        MaxSize;
+    EdsLib_SizeInfo_t                        DecodeSize;
+    CFE_MissionLib_TopicInfo_t               TopicInfo;
+    const EdsLib_DatabaseObject_t           *GD;
+    EdsLib_Id_t                              EdsId;
+    int32_t                                  Status;
 
-    EdsId = EDSLIB_MAKE_ID(EDS_INDEX(CFE_HDR), EdsContainer_CFE_HDR_Message_DATADICTIONARY);
+    EdsId  = EDSLIB_MAKE_ID(EDS_INDEX(CFE_HDR), EdsContainer_CFE_HDR_Message_DATADICTIONARY);
     Status = EdsLib_DataTypeDB_GetDerivedInfo(DbObj->GD, EdsId, &DerivInfo);
     if (Status != EDSLIB_SUCCESS)
     {
@@ -437,15 +453,19 @@ static int CFE_MissionLib_Lua_IdentifyMessage(lua_State *lua)
 
     memset(&DecodeSize, 0, sizeof(DecodeSize));
 
-    ObjectUserData = EdsLib_LuaBinding_CreateEmptyObject(lua, DerivInfo.MaxSize.Bytes);
-    ObjectUserData->GD = DbObj->GD;
+    ObjectUserData        = EdsLib_LuaBinding_CreateEmptyObject(lua, DerivInfo.MaxSize.Bytes);
+    ObjectUserData->GD    = DbObj->GD;
     ObjectUserData->EdsId = EdsId;
 
     MaxSize.Bytes = DerivInfo.MaxSize.Bytes;
-    MaxSize.Bits = EdsLib_OCTETS_TO_BITS(SourceBufferSize);
+    MaxSize.Bits  = EdsLib_OCTETS_TO_BITS(SourceBufferSize);
 
-    Status = EdsLib_DataTypeDB_UnpackPartialObjectVarSize(DbObj->GD, &EdsId, EdsLib_Binding_GetNativeObject(ObjectUserData),
-            SourceBuffer, &MaxSize, &DecodeSize);
+    Status = EdsLib_DataTypeDB_UnpackPartialObjectVarSize(DbObj->GD,
+                                                          &EdsId,
+                                                          EdsLib_Binding_GetNativeObject(ObjectUserData),
+                                                          SourceBuffer,
+                                                          &MaxSize,
+                                                          &DecodeSize);
     if (Status != EDSLIB_SUCCESS)
     {
         return 0;
@@ -455,24 +475,24 @@ static int CFE_MissionLib_Lua_IdentifyMessage(lua_State *lua)
     CFE_MissionLib_Get_PubSub_Parameters(&PubSub, EdsLib_Binding_GetNativeObject(ObjectUserData));
 
     IntfObj = CFE_MissionLib_Lua_NewInterfaceObject(lua, lua_upvalueindex(1));
-    GD = CFE_MissionLib_GetParent(IntfObj->IntfDB);
+    GD      = CFE_MissionLib_GetParent(IntfObj->IntfDB);
 
     /* It is not clear if this is a TLM or CMD, so need to try both, only one will work */
     if (IntfObj->TopicId == 0)
     {
         EdsComponent_CFE_SB_Listener_t Result;
         CFE_MissionLib_UnmapListenerComponent(&Result, &PubSub);
-        IntfObj->TopicId = Result.Telecommand.TopicId;
+        IntfObj->TopicId        = Result.Telecommand.TopicId;
         IntfObj->InstanceNumber = Result.Telecommand.InstanceNumber;
-        IntfObj->IsTelecommand = true;
+        IntfObj->IsTelecommand  = true;
     }
     if (IntfObj->TopicId == 0)
     {
         EdsComponent_CFE_SB_Publisher_t Result;
         CFE_MissionLib_UnmapPublisherComponent(&Result, &PubSub);
-        IntfObj->TopicId = Result.Telemetry.TopicId;
+        IntfObj->TopicId        = Result.Telemetry.TopicId;
         IntfObj->InstanceNumber = Result.Telemetry.InstanceNumber;
-        IntfObj->IsTelemetry = true;
+        IntfObj->IsTelemetry    = true;
     }
 
     Status = CFE_MissionLib_GetTopicInfo(IntfObj->IntfDB, IntfObj->TopicId, &TopicInfo);
@@ -490,30 +510,43 @@ static int CFE_MissionLib_Lua_IdentifyMessage(lua_State *lua)
         return 0;
     }
 
-    Status = EdsLib_IntfDB_FindCommandByLocalName(GD, IntfInfo.IntfTypeEdsId, IndicationName, &IntfObj->IndicationEdsId);
+    Status =
+        EdsLib_IntfDB_FindCommandByLocalName(GD, IntfInfo.IntfTypeEdsId, IndicationName, &IntfObj->IndicationEdsId);
     if (Status != EDSLIB_SUCCESS)
     {
         return 0;
     }
 
     /* Now we can finally determine the argument type */
-    Status = EdsLib_IntfDB_FindAllArgumentTypes(GD, IntfObj->IndicationEdsId, IntfObj->IntfEdsId, &IntfObj->IndicationBaseArg, 1);
+    Status = EdsLib_IntfDB_FindAllArgumentTypes(GD,
+                                                IntfObj->IndicationEdsId,
+                                                IntfObj->IntfEdsId,
+                                                &IntfObj->IndicationBaseArg,
+                                                1);
     if (Status != EDSLIB_SUCCESS)
     {
         return 0;
     }
 
     /* Beyond this, the IntfObj is considered OK so return 1 */
-    EdsId = IntfObj->IndicationBaseArg;
-    Status = EdsLib_DataTypeDB_UnpackPartialObjectVarSize(DbObj->GD, &EdsId, EdsLib_Binding_GetNativeObject(ObjectUserData),
-            SourceBuffer, &MaxSize, &DecodeSize);
+    EdsId  = IntfObj->IndicationBaseArg;
+    Status = EdsLib_DataTypeDB_UnpackPartialObjectVarSize(DbObj->GD,
+                                                          &EdsId,
+                                                          EdsLib_Binding_GetNativeObject(ObjectUserData),
+                                                          SourceBuffer,
+                                                          &MaxSize,
+                                                          &DecodeSize);
     if (Status != EDSLIB_SUCCESS)
     {
         return 1;
     }
 
-    Status = EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize(DbObj->GD, EdsId, EdsLib_Binding_GetNativeObject(ObjectUserData),
-            SourceBuffer, EDSLIB_DATATYPEDB_RECOMPUTE_NONE, &DecodeSize);
+    Status = EdsLib_DataTypeDB_VerifyUnpackedObjectVarSize(DbObj->GD,
+                                                           EdsId,
+                                                           EdsLib_Binding_GetNativeObject(ObjectUserData),
+                                                           SourceBuffer,
+                                                           EDSLIB_DATATYPEDB_RECOMPUTE_NONE,
+                                                           &DecodeSize);
     if (Status == EDSLIB_SUCCESS)
     {
         return 1;
@@ -527,7 +560,7 @@ static int CFE_MissionLib_Lua_IdentifyMessage(lua_State *lua)
 
 void CFE_MissionLib_Lua_SoftwareBus_Attach(lua_State *lua, const CFE_MissionLib_SoftwareBus_Interface_t *IntfDB)
 {
-    int Obj = lua_gettop(lua);
+    int                             Obj   = lua_gettop(lua);
     EdsLib_Lua_Database_Userdata_t *DbObj = luaL_checkudata(lua, Obj, "EdsDb");
     if (DbObj->GD == NULL)
     {
@@ -537,7 +570,7 @@ void CFE_MissionLib_Lua_SoftwareBus_Attach(lua_State *lua, const CFE_MissionLib_
 
     lua_getuservalue(lua, -1);
 
-    lua_pushlightuserdata(lua, (void*)IntfDB);
+    lua_pushlightuserdata(lua, (void *)IntfDB);
     lua_rawsetp(lua, -2, &CFE_MISSIONLIB_INTFDB_KEY);
 
     lua_pushvalue(lua, Obj);
@@ -551,7 +584,6 @@ void CFE_MissionLib_Lua_SoftwareBus_Attach(lua_State *lua, const CFE_MissionLib_
     lua_pushvalue(lua, Obj);
     lua_pushcclosure(lua, CFE_MissionLib_Lua_IdentifyMessage, 1);
     lua_setfield(lua, -2, "IdentifyMessage");
-
 
     /*
      * Create a metatable for EDS objects (userdata blobs)
@@ -572,5 +604,4 @@ void CFE_MissionLib_Lua_SoftwareBus_Attach(lua_State *lua, const CFE_MissionLib_
 
     /* Reset the stack top to where it was initially */
     lua_settop(lua, Obj);
-
 }

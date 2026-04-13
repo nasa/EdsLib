@@ -150,9 +150,13 @@ write_cosmos_lineitem = function(output,line_writer,entry,qual_prefix,descr)
       bits_remainder = bits_remainder - attribs.bitsize
     end
     attribs.bitsize = bits_remainder
-  elseif (entry.entity_type == "STRING_DATATYPE" or entry.entity_type == "BINARY_DATATYPE") then
+  elseif (entry.entity_type == "STRING_DATATYPE") then
     attribs.ctype = "STRING"
-  elseif (SEDS.index_datatype_filter(entry)) then
+  elseif (entry.entity_type == "BINARY_DATATYPE") then
+    attribs.ctype = "BLOCK"
+  elseif (entry.entity_type == "FLOAT_DATATYPE") then
+    attribs.ctype = "FLOAT"
+  elseif (entry.entity_type == "BOOLEAN_DATATYPE" or SEDS.index_datatype_filter(entry)) then
     attribs.ctype = (entry.is_signed and "INT") or "UINT"
 
     -- This only handles integers
@@ -193,38 +197,68 @@ write_cosmos_block = function(output,line_writer,entry,qual_prefix,descr)
 
 end
 
-
 -- -------------------------------------------------------------------------
 -- Helper function: write a flattened array, adding a digit to the name prefix
 -- -------------------------------------------------------------------------
 write_cosmos_array_members = function(output,line_writer,arr,qual_prefix)
 
-  local min, max
-
   -- Arrays can be dimensioned by an index type, and that type may have a better string representation
   -- This also means that the range could be something other than the typical limits
+  local min, max
+  local minv, maxv
   local dimension_typename
+  local writer
+  local datatyperef
+  local dimension_obj
 
-  for dimension in arr:iterate_subtree("DIMENSION") do
-    if (dimension.indextyperef) then
-      dimension_typename = dimension.indextyperef:get_qualified_name()
-      min = dimension.indextyperef.resolved_range.min
-      max = dimension.indextyperef.resolved_range.max
+  -- This wrapper handles the case where the array elements are not at byte boundaries
+  -- The output is expressed as a series of 8 bit values (packed)
+  local_packedarray_writer = function(idx, element_qual_prefix)
+      local attribs = {
+        name = SEDS.to_macro_name(element_qual_prefix),
+        ctype = "UINT",
+        bitsize = 8,
+        descr = string.format("%s packed byte %d", qual_prefix or "array", idx)
+      }
+      line_writer(output, attribs)
+  end
+
+  -- This wrapper handles the normal case where the array elements are a
+  -- whole number of bytes, and thus spelled out normally in the definition
+  local_array_writer = function(idx, element_qual_prefix)
+      write_cosmos_block(output,line_writer,datatyperef,element_qual_prefix)
+  end
+
+  datatyperef = arr.datatyperef
+
+  -- Check if this needs to be output as a bitmap
+  if ((datatyperef.resolved_size.bits % 8) ~= 0) then
+    -- Packing: The dimension is the size of the whole array
+    min = { value = 0, inclusive = true }
+    max = { value = arr.resolved_size.bits / 8, inclusive = false }
+    writer = local_packedarray_writer
+  else
+    -- Normal: The actual dimension will be used
+    for dimension in arr:iterate_subtree("DIMENSION") do
+      if (dimension.indextyperef) then
+        dimension_typename = dimension.indextyperef:get_qualified_name()
+        min = dimension.indextyperef.resolved_range.min
+        max = dimension.indextyperef.resolved_range.max
+      end
     end
+    writer = local_array_writer
   end
 
   -- As a fallback use a generic 32-bit integer as the index type
-  local dimension_obj = SEDS.edslib.NewObject(dimension_typename or "BASE_TYPES/int32")
+  dimension_obj = SEDS.edslib.NewObject(dimension_typename or "BASE_TYPES/int32")
 
   -- Determine the usable min/max -- this means adjusting for inclusiveness of the limits
-  local minv
   if (min) then
     minv = min.value + (min.inclusive and 0 or 1)
   else
     minv = 0
   end
 
-  local maxv
   if (max) then
     maxv = max.value - (max.inclusive and 0 or 1)
   else
@@ -234,7 +268,7 @@ write_cosmos_array_members = function(output,line_writer,arr,qual_prefix)
   for i=minv,maxv do
 
     dimension_obj(i)
-    write_cosmos_block(output,line_writer,arr.datatyperef,append_qual_prefix(qual_prefix, dimension_obj))
+    writer(i, append_qual_prefix(qual_prefix, dimension_obj))
 
   end
 
@@ -355,7 +389,7 @@ for _,instance in ipairs(SEDS.highlevel_interfaces) do
   -- The various interfaces should be attached under required_links
   for _,binding in ipairs(instance.required_links) do
     local reqintf = binding.reqintf
-    local intf_type_str = reqintf.type:get_qualified_name() 
+    local intf_type_str = reqintf.type:get_qualified_name()
     if (intf_type_str == "CFE_SB/Telemetry" or intf_type_str == "CFE_SB/Telecommand") then
       local cmd = reqintf.intf_commands and reqintf.intf_commands[1]
 
@@ -391,4 +425,3 @@ for _,instance in ipairs(SEDS.highlevel_interfaces) do
     end
   end
 end
-

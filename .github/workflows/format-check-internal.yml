@@ -1,4 +1,4 @@
-name: Format Check
+name: Internal Format Check
 
 # Run on all push and pull requests
 on:
@@ -16,4 +16,4 @@ on:
 jobs:
   format-check:
     name: Run format check
-    uses: nasa/cFS/.github/workflows/format-check.yml@dev
+    uses: cFS/workflows/.github/workflows/format-check-reusable-internal.yml@dev

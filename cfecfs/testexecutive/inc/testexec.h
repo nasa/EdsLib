@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     testexec.h
  * \ingroup  testexecutive
@@ -30,10 +29,8 @@
 #ifndef _TESTEXEC_H_
 #define _TESTEXEC_H_
 
-
 int TestIntf_Udp_Create(struct lua_State *lua);
 int TestIntf_Remote_Create(struct lua_State *lua);
 int TestIntf_GetFactory(struct lua_State *lua);
 
-#endif  /* _TESTEXEC_H_ */
-
+#endif /* _TESTEXEC_H_ */

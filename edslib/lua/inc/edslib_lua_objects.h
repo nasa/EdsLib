@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_lua_objects.h
  * \ingroup  lua
@@ -30,7 +29,6 @@
 #ifndef _EDSLIB_LUA_OBJECTS_H_
 #define _EDSLIB_LUA_OBJECTS_H_
 
-
 #include <edslib_datatypedb.h>
 #include <edslib_displaydb.h>
 
@@ -39,9 +37,9 @@
  * These are not distinct types, but intended to be aliases of types defined elsewhere.
  * They are aliases to avoid creating a dependency on the header file which actually defines them.
  */
-typedef struct lua_State                        EdsLib_LuaBinding_State_t;
-typedef struct EdsLib_Binding_DescriptorObject  EdsLib_LuaBinding_DescriptorObject_t;
-typedef struct EdsLib_DatabaseObject            EdsLib_LuaBinding_DatabaseObject_t;
+typedef struct lua_State                       EdsLib_LuaBinding_State_t;
+typedef struct EdsLib_Binding_DescriptorObject EdsLib_LuaBinding_DescriptorObject_t;
+typedef struct EdsLib_DatabaseObject           EdsLib_LuaBinding_DatabaseObject_t;
 
 typedef struct
 {
@@ -49,9 +47,8 @@ typedef struct
 } EdsLib_Lua_Database_Userdata_t;
 
 void EdsLib_LuaBinding_GetNativeObject(EdsLib_LuaBinding_State_t *lua, int narg, void **OutPtr, size_t *SizeBuf);
-EdsLib_LuaBinding_DescriptorObject_t *EdsLib_LuaBinding_CreateEmptyObject(EdsLib_LuaBinding_State_t *lua, size_t MaxSize);
+EdsLib_LuaBinding_DescriptorObject_t *EdsLib_LuaBinding_CreateEmptyObject(EdsLib_LuaBinding_State_t *lua,
+                                                                          size_t                     MaxSize);
 void EdsLib_Lua_Attach(EdsLib_LuaBinding_State_t *lua, const EdsLib_LuaBinding_DatabaseObject_t *MissionObj);
 
-
-#endif  /* _EDSLIB_LUA_OBJECTS_H_ */
-
+#endif /* _EDSLIB_LUA_OBJECTS_H_ */

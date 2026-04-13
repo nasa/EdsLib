@@ -34,6 +34,5 @@
  */
 void EdsLib_Initialize(void)
 {
-
     UT_GenStub_Execute(EdsLib_Initialize, Basic, NULL);
 }

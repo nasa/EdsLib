@@ -18,44 +18,39 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_python_dynamicarray.c
  * \ingroup  python
  * \author   joseph.p.hickey@nasa.gov
  *
-**   Implement Python type to represent a sequence (array) of other EDS objects
-**
-**   This allows an arbitrary multiple of instances of any other EDS object type
-**   where the data is stored sequentially in memory.  These are arrays that are
-**   created dynamically at run time rather than statically sized at compile time.
-**
-**   In contrast to static arrays, these instance types are _not_ directly
-**   defined in EDS.
+ **   Implement Python type to represent a sequence (array) of other EDS objects
+ **
+ **   This allows an arbitrary multiple of instances of any other EDS object type
+ **   where the data is stored sequentially in memory.  These are arrays that are
+ **   created dynamically at run time rather than statically sized at compile time.
+ **
+ **   In contrast to static arrays, these instance types are _not_ directly
+ **   defined in EDS.
  */
 
 #include "edslib_python_internal.h"
 
+static int       EdsLib_Python_DynamicArray_init(PyObject *obj, PyObject *args, PyObject *kwds);
+static PyObject *EdsLib_Python_DynamicArray_call(PyObject *obj, PyObject *args, PyObject *kwds);
 
-static int          EdsLib_Python_DynamicArray_init(PyObject *obj, PyObject *args, PyObject *kwds);
-static PyObject *   EdsLib_Python_DynamicArray_call(PyObject *obj, PyObject *args, PyObject *kwds);
+PyTypeObject EdsLib_Python_DynamicArrayType = { PyVarObject_HEAD_INIT(NULL, 0).tp_name =
+                                                    EDSLIB_PYTHON_ENTITY_NAME("DynamicArray"),
+                                                .tp_basicsize = sizeof(EdsLib_Python_ObjectArray_t),
+                                                .tp_base      = &EdsLib_Python_ObjectArrayType,
+                                                .tp_init      = EdsLib_Python_DynamicArray_init,
+                                                .tp_call      = EdsLib_Python_DynamicArray_call,
+                                                .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+                                                .tp_doc       = PyDoc_STR("EDS Dynamic Array Type") };
 
-PyTypeObject EdsLib_Python_DynamicArrayType =
-{
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = EDSLIB_PYTHON_ENTITY_NAME("DynamicArray"),
-    .tp_basicsize = sizeof(EdsLib_Python_ObjectArray_t),
-    .tp_base = &EdsLib_Python_ObjectArrayType,
-    .tp_init = EdsLib_Python_DynamicArray_init,
-    .tp_call = EdsLib_Python_DynamicArray_call,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_doc = PyDoc_STR("EDS Dynamic Array Type")
-};
-
-static int          EdsLib_Python_DynamicArray_init(PyObject *obj, PyObject *args, PyObject *kwds)
+static int EdsLib_Python_DynamicArray_init(PyObject *obj, PyObject *args, PyObject *kwds)
 {
     static const char *kwlist[] = { "dbent", "nelem", "elemsz", NULL };
-    int result = -1;
+    int                result   = -1;
 
     kwds = EdsLib_Python_ObjectBase_InitArgsToKwds(args, kwds, kwlist);
     if (kwds != NULL)
@@ -70,22 +65,20 @@ static int          EdsLib_Python_DynamicArray_init(PyObject *obj, PyObject *arg
 
 static PyObject *EdsLib_Python_DynamicArray_call(PyObject *obj, PyObject *args, PyObject *kwds)
 {
-    EdsLib_Python_ObjectArray_t *self = (EdsLib_Python_ObjectArray_t *)obj;
-    PyObject *inseq = NULL;
-    PyObject *outlist = NULL;
-    PyObject *result = NULL;
-    PyObject *subarg = NULL;
-    PyObject *element = NULL;
-    Py_ssize_t idx = 0;
-    Py_ssize_t maxlen = -1;
-    ternaryfunc callfunc = ((PyTypeObject*)self->RefDbEntry)->tp_call;
-
+    EdsLib_Python_ObjectArray_t *self     = (EdsLib_Python_ObjectArray_t *)obj;
+    PyObject                    *inseq    = NULL;
+    PyObject                    *outlist  = NULL;
+    PyObject                    *result   = NULL;
+    PyObject                    *subarg   = NULL;
+    PyObject                    *element  = NULL;
+    Py_ssize_t                   idx      = 0;
+    Py_ssize_t                   maxlen   = -1;
+    ternaryfunc                  callfunc = ((PyTypeObject *)self->RefDbEntry)->tp_call;
 
     /*
      * This function is basically just a "call iterator" that calls
      * every element with a corresponding arg from a sequence object.
      */
-
 
     /*
      * This functions has two modes:
@@ -102,20 +95,20 @@ static PyObject *EdsLib_Python_DynamicArray_call(PyObject *obj, PyObject *args, 
              * Not expected to happen, but do not crash it if does.
              * Anything inheriting from ObjectBase should implement tp_call.
              */
-            PyErr_Format(PyExc_TypeError, "\'%s\' does not implement tp_call()\n",
-                    ((PyTypeObject*)self->RefDbEntry)->tp_name);
+            PyErr_Format(PyExc_TypeError,
+                         "\'%s\' does not implement tp_call()\n",
+                         ((PyTypeObject *)self->RefDbEntry)->tp_name);
             break;
         }
 
-        if (args != NULL &&
-                !PyArg_UnpackTuple(args, __func__, 0, 1, &inseq))
+        if (args != NULL && !PyArg_UnpackTuple(args, __func__, 0, 1, &inseq))
         {
             break;
         }
 
         if (inseq == NULL)
         {
-            maxlen = self->ElementCount;
+            maxlen  = self->ElementCount;
             outlist = PyList_New(self->ElementCount);
             if (outlist == NULL)
             {
@@ -124,7 +117,10 @@ static PyObject *EdsLib_Python_DynamicArray_call(PyObject *obj, PyObject *args, 
         }
         else if (!PySequence_Check(inseq))
         {
-            PyErr_Format(PyExc_TypeError, "%s(): argument type \'%s\' is not a sequence", __func__, Py_TYPE(inseq)->tp_name);
+            PyErr_Format(PyExc_TypeError,
+                         "%s(): argument type \'%s\' is not a sequence",
+                         __func__,
+                         Py_TYPE(inseq)->tp_name);
             break;
         }
         else
@@ -193,7 +189,7 @@ static PyObject *EdsLib_Python_DynamicArray_call(PyObject *obj, PyObject *args, 
                 }
                 else
                 {
-                    Py_DECREF(outvalue);    /* discard ref */
+                    Py_DECREF(outvalue); /* discard ref */
                 }
             }
         }
@@ -219,8 +215,7 @@ static PyObject *EdsLib_Python_DynamicArray_call(PyObject *obj, PyObject *args, 
             result = Py_None;
         }
         Py_INCREF(result);
-    }
-    while(0);
+    } while (0);
 
     /*
      * DECREF any owned objects used during this procedure.
@@ -232,16 +227,19 @@ static PyObject *EdsLib_Python_DynamicArray_call(PyObject *obj, PyObject *args, 
     return result;
 }
 
-
-PyObject *   EdsLib_Python_DynamicArray_FromPtrAndSize(PyTypeObject *objtype, void *ptr, Py_ssize_t nelem, Py_ssize_t elemsz)
+PyObject *
+EdsLib_Python_DynamicArray_FromPtrAndSize(PyTypeObject *objtype, void *ptr, Py_ssize_t nelem, Py_ssize_t elemsz)
 {
     static const char *kwlist[] = { "buffer", "dbent", "nelem", "elemsz", NULL };
-    PyObject *args = NULL;
-    PyObject *result = NULL;
+    PyObject          *args     = NULL;
+    PyObject          *result   = NULL;
 
-    args = EdsLib_Python_ObjectBase_BuildKwArgs("NOnn", kwlist,
-            EdsLib_Python_Buffer_FromPtrAndSize(ptr, nelem * elemsz),
-            objtype, nelem, elemsz);
+    args = EdsLib_Python_ObjectBase_BuildKwArgs("NOnn",
+                                                kwlist,
+                                                EdsLib_Python_Buffer_FromPtrAndSize(ptr, nelem * elemsz),
+                                                objtype,
+                                                nelem,
+                                                elemsz);
     if (args == NULL)
     {
         return NULL;
@@ -254,15 +252,21 @@ PyObject *   EdsLib_Python_DynamicArray_FromPtrAndSize(PyTypeObject *objtype, vo
     return result;
 }
 
-PyObject *   EdsLib_Python_DynamicArray_FromConstPtrAndSize(PyTypeObject *objtype, const void *ptr, Py_ssize_t nelem, Py_ssize_t elemsz)
+PyObject *EdsLib_Python_DynamicArray_FromConstPtrAndSize(PyTypeObject *objtype,
+                                                         const void   *ptr,
+                                                         Py_ssize_t    nelem,
+                                                         Py_ssize_t    elemsz)
 {
     static const char *kwlist[] = { "buffer", "dbent", "nelem", "elemsz", NULL };
-    PyObject *args = NULL;
-    PyObject *result = NULL;
+    PyObject          *args     = NULL;
+    PyObject          *result   = NULL;
 
-    args = EdsLib_Python_ObjectBase_BuildKwArgs("NOnn", kwlist,
-            EdsLib_Python_Buffer_FromConstPtrAndSize(ptr, nelem * elemsz),
-            objtype, nelem, elemsz);
+    args = EdsLib_Python_ObjectBase_BuildKwArgs("NOnn",
+                                                kwlist,
+                                                EdsLib_Python_Buffer_FromConstPtrAndSize(ptr, nelem * elemsz),
+                                                objtype,
+                                                nelem,
+                                                elemsz);
     if (args == NULL)
     {
         return NULL;
@@ -274,7 +278,3 @@ PyObject *   EdsLib_Python_DynamicArray_FromConstPtrAndSize(PyTypeObject *objtyp
 
     return result;
 }
-
-
-
-

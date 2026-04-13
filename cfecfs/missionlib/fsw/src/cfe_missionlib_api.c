@@ -101,8 +101,9 @@ uint16_t CFE_MissionLib_GetNumInstances(const CFE_MissionLib_SoftwareBus_Interfa
  * Public API function
  *
  *-----------------------------------------------------------------*/
-int32_t CFE_MissionLib_GetTopicInfo(const CFE_MissionLib_SoftwareBus_Interface_t *SBDB, uint16_t TopicId,
-                                    CFE_MissionLib_TopicInfo_t *TopicInfo)
+int32_t CFE_MissionLib_GetTopicInfo(const CFE_MissionLib_SoftwareBus_Interface_t *SBDB,
+                                    uint16_t                                      TopicId,
+                                    CFE_MissionLib_TopicInfo_t                   *TopicInfo)
 {
     const CFE_MissionLib_TopicId_Entry_t *TopicPtr;
     int32_t                               Status;
@@ -200,7 +201,8 @@ uint16_t CFE_MissionLib_GetInstanceNumber(const CFE_MissionLib_SoftwareBus_Inter
  *
  *-----------------------------------------------------------------*/
 void CFE_MissionLib_EnumerateTopics(const CFE_MissionLib_SoftwareBus_Interface_t *SBDB,
-                                    CFE_MissionLib_TopicInfo_Callback_t Callback, void *OpaqueArg)
+                                    CFE_MissionLib_TopicInfo_Callback_t           Callback,
+                                    void                                         *OpaqueArg)
 {
     const CFE_MissionLib_TopicId_Entry_t *TopicPtr;
     uint16_t                              TopicId;
@@ -218,8 +220,9 @@ void CFE_MissionLib_EnumerateTopics(const CFE_MissionLib_SoftwareBus_Interface_t
  * Public API function
  *
  *-----------------------------------------------------------------*/
-int32_t CFE_MissionLib_FindTopicIdFromIntfId(const CFE_MissionLib_SoftwareBus_Interface_t *SBDB, EdsLib_Id_t IntfEdsId,
-                                             uint16_t *TopicIdBuffer)
+int32_t CFE_MissionLib_FindTopicIdFromIntfId(const CFE_MissionLib_SoftwareBus_Interface_t *SBDB,
+                                             EdsLib_Id_t                                   IntfEdsId,
+                                             uint16_t                                     *TopicIdBuffer)
 {
     const CFE_MissionLib_TopicId_Entry_t *TopicPtr;
     uint16_t                              TopicId;

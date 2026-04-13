@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     seds_generic_props.c
  * \ingroup  tool
@@ -49,8 +48,6 @@ static const char PROPERTY_HISTORY_KEY;
 /*                      Internal / static Helper Functions                     */
 /*                  (these are not referenced outside this unit)               */
 /*******************************************************************************/
-
-
 
 /* ------------------------------------------------------------------- */
 /**
@@ -128,7 +125,6 @@ static void seds_generic_props_do_tracking(lua_State *lua, const char *action_na
 /*                      Externally-Called Functions                            */
 /*      (referenced outside this unit and prototyped in a separate header)     */
 /*******************************************************************************/
-
 
 /*
  * ------------------------------------------------------
@@ -223,7 +219,6 @@ int seds_generic_props_set_property(lua_State *lua)
             seds_generic_props_do_tracking(lua, action_name);
         }
 
-
         /*
          * Do the actual property value set
          */
@@ -235,7 +230,6 @@ int seds_generic_props_set_property(lua_State *lua)
 
     return 0;
 }
-
 
 /*
  * ------------------------------------------------------
@@ -249,7 +243,7 @@ int seds_generic_props_enumerate_properties(lua_State *lua)
     lua_getuservalue(lua, 1);
     luaL_checktype(lua, 3, LUA_TTABLE);
     lua_pushnil(lua);
-    while(lua_next(lua, 3) != 0)
+    while (lua_next(lua, 3) != 0)
     {
         lua_pushvalue(lua, 4);
         lua_rawseti(lua, 2, 1 + lua_rawlen(lua, 2));
