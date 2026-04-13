@@ -19,12 +19,28 @@ defaults:
 
 env:
   UPSTREAM_OSAL_REPO: nasa/osal
-  UPSTREAM_OSAL_REF: main
+  UPSTREAM_OSAL_REF: dev
 
 jobs:
+  checks-for-duplicates:
+    runs-on: ubuntu-latest
+    # Map a step output to a job output
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@master
+        with:
+          concurrent_skipping: 'same_content'
+          skip_after_successful_duplicate: 'true'
+          do_not_skip: '["pull_request", "workflow_dispatch", "schedule"]'
+
   prepare-dependencies:
     name: Prepare Dependencies
+    needs: checks-for-duplicates
+    if: ${{ needs.checks-for-duplicates.outputs.should_skip != 'true' || contains(github.ref, 'dev') }}
     runs-on: ubuntu-latest
+    container: ghcr.io/core-flight-system/cfsbuildenv-linux:latest
     steps:
       - name: Cache EdsLib Source
         uses: actions/cache@v3
@@ -58,6 +74,7 @@ jobs:
     name: Build EdsLib and Execute Tests
     needs: [prepare-dependencies]
     runs-on: ubuntu-latest
+    container: ghcr.io/core-flight-system/cfsbuildenv-linux:latest
 
     strategy:
       fail-fast: false
@@ -68,9 +85,6 @@ jobs:
       MATRIX_ID: matrix-${{ matrix.buildtype }}
 
     steps:
-
-      - name: Install Build Dependencies
-        run: sudo apt-get install liblua5.4-dev libpython3-dev libjson-c-dev pkg-config lcov xsltproc -y
 
       # Note - caches were updated in "prepare-dependencies" job so all three of these should be a hit
       - name: Retrieve Cached EdsLib Source
@@ -91,10 +105,10 @@ jobs:
       # so in order to make this work it needs to adjust this.
       - name: Import OSAL
         run: |
-          sudo find ${GITHUB_WORKSPACE}/osal-staging -type d -print0 | xargs -0 chmod go+rx
-          sudo find ${GITHUB_WORKSPACE}/osal-staging -type f -print0 | xargs -0 chmod go+r
-          sudo find ${GITHUB_WORKSPACE}/osal-staging -type f -path '*/bin/*' -print0 | xargs -0 chmod go+x
           sudo cp -rv -t / ${GITHUB_WORKSPACE}/osal-staging/*
+          sudo find /usr/local -type d -exec chmod go+rx {} \;
+          sudo find /usr/local -type f -exec chmod go+r {} \;
+          sudo find /usr/local -type f -path '*/bin/*' -exec chmod go+x {} \;
 
       - name: Refresh Dynamic Linker Cache
         run: sudo ldconfig
