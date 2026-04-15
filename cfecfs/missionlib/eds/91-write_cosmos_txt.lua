@@ -306,22 +306,11 @@ local write_tlm_intf_items = function (output,ds,reqintf,msgid,argtype)
     tlmname = string.sub(tlmname, 1, -5)
   end
 
-  output:write(string.format("TELEMETRY %s %s %s_ENDIAN \"%s\"", global_fsw_title, tlmname,
-    endianness, reqintf.attributes.shortdescription or "Telemetry Message"))
+  -- Use the predefined values in the cfs_tlm_hdr() function for packet specifics
+  output:write(string.format("<%%= cfs_tlm_hdr(target_name, '%s', \"%s\") %%>", tlmname,
+    reqintf.attributes.shortdescription or "Telemetry Message"))
 
   output:start_group("")
-
-
-  -- BACKWARD COMPATIBILITY: A proper identification of the packet involves multiple fields.
-  -- Historically these were merged into a single 16-bit "StreamID" value and that's what
-  -- appears to be done in existing/old cosmos DB files.  This mimics that for now.  There
-  -- should be a better/more correct way to do this.  But for now, this just duplicates the
-  -- simplified (3x 16-bit UINT) view of the CCSDS v1 header.  These should always be big-endian.
-  output:write(string.format("APPEND_ID_ITEM CCSDS_STREAMID 16 UINT 0x%04X \"CCSDS Packet Identification\" FORMAT_STRING \"0x%%04X\"%s", msgid.Value(), ccsds_append))
-  output:write(string.format("APPEND_ITEM CCSDS_SEQUENCE 16 UINT \"CCSDS Packet Sequence Control\" FORMAT_STRING \"0x%%04X\"%s", ccsds_append))
-  output:write(string.format("APPEND_ITEM CCSDS_LENGTH 16 UINT \"CCSDS Packet Data Length\"%s", ccsds_append))
-  output:write(string.format("APPEND_ITEM SECONDS 32 UINT \"Whole number of Seconds since CFS Epoch\"%s", ccsds_append))
-  output:write(string.format("APPEND_ITEM SUBSECS 16 UINT  \"Fractional portion of Seconds since CFS Epoch\"%s", ccsds_append))
 
   -- Write the definition of the payload
   -- Do not output the basetype, only direct members (Payload)
@@ -348,21 +337,11 @@ local write_cmd_intf_params = function (output,ds,reqintf,msgid,cc)
     cmdname = string.sub(cmdname, 1, -5)
   end
 
-  output:write(string.format("COMMAND %s %s %s_ENDIAN \"%s\"", global_fsw_title, cmdname,
-      endianness, argtype.attributes.shortdescription or "Telecommand Message"))
+  -- Use the predefined values in the cfs_cmd_hdr() function for packet specifics
+  output:write(string.format("<%%= cfs_cmd_hdr(target_name, '%s', %d, \"%s\") %%>", cmdname, cc.value,
+      argtype.attributes.shortdescription or "Telecommand Message"))
 
   output:start_group("")
-
-  -- BACKWARD COMPATIBILITY: A proper identification of the packet involves multiple fields.
-  -- Historically these were merged into a single 16-bit "StreamID" value and that's what
-  -- appears to be done in existing/old cosmos DB files.  This mimics that for now.  There
-  -- should be a better/more correct way to do this.  But for now, this just duplicates the
-  -- simplified (3x 16-bit UINT) view of the CCSDS v1 header.  These should always be big-endian.
-  output:write(string.format("APPEND_ID_PARAMETER CCSDS_STREAMID 16 UINT MIN MAX 0x%04X \"CCSDS Packet Identification\" FORMAT_STRING \"0x%%04X\"%s", msgid.Value(), ccsds_append))
-  output:write(string.format("APPEND_PARAMETER CCSDS_SEQUENCE 16 UINT MIN MAX 0xC000 \"CCSDS Packet Sequence Control\" FORMAT_STRING \"0x%%04X\"%s", ccsds_append))
-  output:write(string.format("APPEND_PARAMETER CCSDS_LENGTH 16 UINT MIN MAX %d \"CCSDS Packet Data Length\"%s", math.ceil(argtype.resolved_size.bits / 8) - 7, ccsds_append))
-  output:write(string.format("APPEND_PARAMETER CCSDS_FC 8 UINT MIN MAX %d \"CCSDS Command Function Code\"", cc.value))
-  output:write(string.format("APPEND_PARAMETER CCSDS_CHECKSUM 8 UINT MIN MIN 0 \"Checksum\""))
 
   -- Write the definition of the payload
   -- Do not output the basetype, only direct members (Payload)
@@ -401,13 +380,14 @@ for _,instance in ipairs(SEDS.highlevel_interfaces) do
         local argtype = cmd.args[1].type
 
         if (sb_params) then
-          local file = "cosmos/" .. SEDS.to_filename(reqintf.name .. "_cosmos_intf.txt", ds.name)
+          local file = "cosmos/" .. SEDS.to_filename(reqintf.name .. "_def.txt", ds.name)
           local msgid = sb_params.PubSub.MsgId -- This is the actual hex msgid value
           local output
 
           if (reqintf.type.name == "Telecommand") then
             if (cmd.cc_list) then
               output = SEDS.output_open(file)
+
               for _,cc in ipairs(cmd.cc_list) do
                 write_cmd_intf_params(output,ds,reqintf,msgid,cc)
                 output:add_whitespace(1)
