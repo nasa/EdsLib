@@ -26,6 +26,7 @@
  */
 #include "cfe_msg.h"
 #include "cfe_time.h"
+#include "cfe_sb.h"
 #include "cfe_missionlib_runtime.h"
 
 #include "ccsds_spacepacket_eds_datatypes.h"
@@ -41,8 +42,7 @@
  *-----------------------------------------------------------------*/
 CFE_Status_t CFE_MSG_Init(CFE_MSG_Message_t *MsgPtr, CFE_SB_MsgId_t MsgId, CFE_MSG_Size_t Size)
 {
-    EdsDataType_CCSDS_CommonHdr_t *CommonHdr;
-    CFE_Status_t                   Status;
+    CFE_Status_t Status;
 
     if (MsgPtr == NULL || Size < sizeof(EdsDataType_CCSDS_CommonHdr_t))
     {
@@ -52,17 +52,22 @@ CFE_Status_t CFE_MSG_Init(CFE_MSG_Message_t *MsgPtr, CFE_SB_MsgId_t MsgId, CFE_M
     /* Clear and set defaults */
     memset(MsgPtr, 0, Size);
 
-    /* Set various fields in the MsgPtr Metadata object from the bits in MsgId */
-    Status = CFE_MSG_SetMsgId(MsgPtr, MsgId);
+    /* Allow "CFE_SB_INVALID_MSG_ID" here - in some cases the real msgid is filled in later */
+    /* however the size should always be a valid value */
+    if (CFE_SB_MsgIdToValue(MsgId) == CFE_SB_MsgIdToValue(CFE_SB_INVALID_MSG_ID))
+    {
+        Status = CFE_SUCCESS;
+    }
+    else
+    {
+        Status = CFE_MSG_SetMsgId(MsgPtr, MsgId);
+    }
+
     if (Status == CFE_SUCCESS)
     {
-        CommonHdr = (EdsDataType_CCSDS_CommonHdr_t *)(void *)MsgPtr;
+        CFE_MSG_SetSegmentationFlag(MsgPtr, CFE_MSG_SegFlag_Unsegmented);
 
-        /* Default to complete packets */
-        CommonHdr->SeqFlag = 3; /* jphfix: enum? */
-
-        /* Set the standard size field */
-        CommonHdr->Length = Size - 7;
+        Status = CFE_MSG_SetSize(MsgPtr, Size);
     }
 
     return Status;
