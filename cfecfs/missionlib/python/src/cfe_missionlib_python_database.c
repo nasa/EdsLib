@@ -59,6 +59,7 @@ static int       CFE_MissionLib_Python_Database_clear(PyObject *obj);
 static PyObject *CFE_MissionLib_Python_Database_GetInterface(PyObject *obj, PyObject *key);
 static PyObject *CFE_MissionLib_Python_DecodeEdsId(PyObject *obj, PyObject *args);
 static PyObject *CFE_MissionLib_Python_Set_PubSub(PyObject *obj, PyObject *args);
+static PyObject *CFE_MissionLib_Python_GetMsgId(PyObject *obj, PyObject *args);
 
 static PyObject *CFE_MissionLib_Python_Instance_iter(PyObject *obj);
 static void      CFE_MissionLib_Python_InstanceIterator_dealloc(PyObject *obj);
@@ -70,6 +71,7 @@ static PyMethodDef CFE_MissionLib_Python_Database_methods[] = {
     { "Interface", CFE_MissionLib_Python_Database_GetInterface, METH_O, "Lookup an Interface type from DB." },
     { "DecodeEdsId", CFE_MissionLib_Python_DecodeEdsId, METH_VARARGS, "Decode the EdsID from a packed cFE message" },
     { "SetPubSub", CFE_MissionLib_Python_Set_PubSub, METH_VARARGS, "Set the PubSub parameters for a command message" },
+    { "GetMsgId", CFE_MissionLib_Python_GetMsgId, METH_VARARGS, "Get the MsgId for a topic" },
     { NULL }  /* Sentinel */
 };
 
@@ -509,13 +511,87 @@ static PyObject *CFE_MissionLib_Python_DecodeEdsId(PyObject *obj, PyObject *args
     return result;
 }
 
+static uint16_t CFE_MissionLib_Python_ArgToInstanceNum(const CFE_MissionLib_SoftwareBus_Interface_t *IntfDb,
+                                                       PyObject                                     *arg)
+{
+    uint16_t  Result;
+    PyObject *temparg;
+
+    Result = 0;
+
+    if (PyNumber_Check(arg))
+    {
+        temparg = PyNumber_Long(arg);
+    }
+    else if (PyUnicode_Check(arg))
+    {
+        /* Do a lookup but make sure the string is plain ASCII */
+        temparg = PyUnicode_AsASCIIString(arg);
+    }
+    else
+    {
+        temparg = PyObject_ASCII(arg);
+    }
+
+    if (temparg != NULL)
+    {
+        if (PyNumber_Check(arg))
+        {
+            Result = PyLong_AsUnsignedLong(temparg);
+        }
+        else
+        {
+            Result = CFE_MissionLib_GetInstanceNumber(IntfDb, PyBytes_AsString(temparg));
+        }
+
+        Py_DECREF(temparg);
+        temparg = NULL;
+    }
+
+    if (Result == 0)
+    {
+        PyErr_Format(PyExc_ValueError, "Cannot convert %R to an instance number", arg);
+    }
+
+    return Result;
+}
+
+static uint16_t CFE_MissionLib_Python_ArgToTopicId(const CFE_MissionLib_SoftwareBus_Interface_t *IntfDb, PyObject *arg)
+{
+    uint16_t                       Result;
+    PyObject                      *temparg;
+    CFE_MissionLib_Python_Topic_t *topic_obj;
+
+    Result = 0;
+
+    if (PyObject_TypeCheck(arg, &CFE_MissionLib_Python_TopicType))
+    {
+        topic_obj = (CFE_MissionLib_Python_Topic_t *)arg;
+        Result    = topic_obj->TopicId;
+    }
+    else if (PyNumber_Check(arg))
+    {
+        temparg = PyNumber_Long(arg);
+
+        Result = PyLong_AsUnsignedLong(temparg);
+        Py_DECREF(temparg);
+    }
+
+    if (Result == 0)
+    {
+        /* In theory this could accept a named topic as well, if needed */
+        PyErr_Format(PyExc_ValueError, "Cannot convert %R to a topic ID", arg);
+    }
+
+    return Result;
+}
+
 static PyObject *CFE_MissionLib_Python_Set_PubSub(PyObject *obj, PyObject *args)
 {
     PyObject *arg1;
     PyObject *arg2;
     PyObject *arg3;
-    PyObject *tempargs;
-    PyObject *result = NULL;
+    PyObject *result;
 
     EdsLib_Python_ObjectBase_t     *Python_Packet;
     EdsLib_Python_Buffer_t         *StorageBuffer;
@@ -537,58 +613,22 @@ static PyObject *CFE_MissionLib_Python_Set_PubSub(PyObject *obj, PyObject *args)
     Py_INCREF(arg2);
     Py_INCREF(arg3);
 
-    tempargs = NULL;
+    result = NULL;
     memset(&Params, 0, sizeof(Params));
 
     do
     {
-        if (PyNumber_Check(arg1))
-        {
-            tempargs = PyNumber_Long(arg1);
-        }
-        else if (PyUnicode_Check(arg1))
-        {
-            /* Do a lookup but make sure the string is plain ASCII */
-            tempargs = PyUnicode_AsASCIIString(arg1);
-        }
-        else
-        {
-            tempargs = PyObject_ASCII(arg1);
-        }
-
-        if (tempargs != NULL)
-        {
-            if (PyNumber_Check(arg1))
-            {
-                Params.Telecommand.InstanceNumber = PyLong_AsUnsignedLong(tempargs);
-            }
-            else
-            {
-                Params.Telecommand.InstanceNumber =
-                    CFE_MissionLib_GetInstanceNumber(IntfDb->IntfDb, PyBytes_AsString(tempargs));
-            }
-
-            Py_DECREF(tempargs);
-            tempargs = NULL;
-        }
-
+        Params.Telecommand.InstanceNumber = CFE_MissionLib_Python_ArgToInstanceNum(IntfDb->IntfDb, arg1);
         if (Params.Telecommand.InstanceNumber == 0)
         {
-            PyErr_Format(PyExc_ValueError, "Cannot convert %R to an instance number", arg1);
+            /* error already raised */
             break;
         }
 
-        if (PyNumber_Check(arg2))
+        Params.Telecommand.TopicId = CFE_MissionLib_Python_ArgToTopicId(IntfDb->IntfDb, arg2);
+        if (Params.Telecommand.TopicId == 0)
         {
-            tempargs = PyNumber_Long(arg2);
-
-            Params.Telecommand.TopicId = PyLong_AsUnsignedLong(tempargs);
-            Py_DECREF(tempargs);
-        }
-        else
-        {
-            /* In theory this could accept a named topic as well, if needed */
-            PyErr_Format(PyExc_TypeError, "TopicId needs to be an integer");
+            /* error already raised */
             break;
         }
 
@@ -608,6 +648,78 @@ static PyObject *CFE_MissionLib_Python_Set_PubSub(PyObject *obj, PyObject *args)
     Py_XDECREF(arg1);
     Py_XDECREF(arg2);
     Py_XDECREF(arg3);
+
+    return result;
+}
+
+static PyObject *CFE_MissionLib_Python_GetMsgId(PyObject *obj, PyObject *args)
+{
+    PyObject *arg1;
+    PyObject *arg2;
+    PyObject *result;
+
+    union
+    {
+        EdsComponent_CFE_SB_Listener_t  L;
+        EdsComponent_CFE_SB_Publisher_t P;
+    } Params;
+    EdsInterface_CFE_SB_SoftwareBus_PubSub_t PubSub;
+    uint16_t                                 TopicId;
+    uint16_t                                 InstanceNum;
+
+    CFE_MissionLib_Python_Database_t *IntfDb = (CFE_MissionLib_Python_Database_t *)obj;
+
+    if (!PyArg_UnpackTuple(args, "GetMsgId", 2, 2, &arg1, &arg2))
+    {
+        return PyErr_Format(PyExc_RuntimeError, "Arguments expected: InstanceNumber, TopicId");
+    }
+
+    Py_INCREF(arg1);
+    Py_INCREF(arg2);
+
+    result = NULL;
+    memset(&Params, 0, sizeof(Params));
+
+    do
+    {
+        InstanceNum = CFE_MissionLib_Python_ArgToInstanceNum(IntfDb->IntfDb, arg1);
+        if (InstanceNum == 0)
+        {
+            /* error already raised */
+            break;
+        }
+
+        TopicId = CFE_MissionLib_Python_ArgToTopicId(IntfDb->IntfDb, arg2);
+        if (TopicId == 0)
+        {
+            /* error already raised */
+            break;
+        }
+
+        /*
+         * There is not a direct way to tell if a topic is CMD or TLM, for now
+         * the approach has been to try both
+         */
+        Params.L.Telecommand.InstanceNumber = InstanceNum;
+        Params.L.Telecommand.TopicId        = TopicId;
+        if (!CFE_MissionLib_MapListenerComponent(&PubSub, &Params.L))
+        {
+            Params.P.Telemetry.InstanceNumber = InstanceNum;
+            Params.P.Telemetry.TopicId        = TopicId;
+            if (!CFE_MissionLib_MapPublisherComponent(&PubSub, &Params.P))
+            {
+                /* If neither worked, the TopicId must be bad */
+                PyErr_Format(PyExc_ValueError, "TopicID %R cannot be converted to MsgID", arg2);
+                break;
+            }
+        }
+
+        result = PyLong_FromLong(PubSub.MsgId.Value);
+
+    } while (0);
+
+    Py_XDECREF(arg1);
+    Py_XDECREF(arg2);
 
     return result;
 }

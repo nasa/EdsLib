@@ -299,35 +299,47 @@ static bool CFE_MissionLib_TryUnmapping(uint16_t                                
     return true;
 }
 
-void CFE_MissionLib_MapListenerComponent(EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Output,
+bool CFE_MissionLib_MapListenerComponent(EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Output,
                                          const EdsComponent_CFE_SB_Listener_t     *Input)
 {
+    bool Result;
+
     memset(Output, 0, sizeof(*Output));
 
-    if (!CFE_MissionLib_TryMapping(Output,
-                                   &CFE_MISSIONLIB_LOCAL_CMD_LIMITS,
-                                   Input->Telecommand.InstanceNumber,
-                                   Input->Telecommand.TopicId))
+    Result = CFE_MissionLib_TryMapping(Output,
+                                       &CFE_MISSIONLIB_LOCAL_CMD_LIMITS,
+                                       Input->Telecommand.InstanceNumber,
+                                       Input->Telecommand.TopicId);
+
+    if (!Result)
     {
-        CFE_MissionLib_TryMapping(Output, &CFE_MISSIONLIB_GLOBAL_CMD_LIMITS, 0, Input->Telecommand.TopicId);
+        Result = CFE_MissionLib_TryMapping(Output, &CFE_MISSIONLIB_GLOBAL_CMD_LIMITS, 0, Input->Telecommand.TopicId);
     }
+
+    return Result;
 }
 
-void CFE_MissionLib_UnmapListenerComponent(EdsComponent_CFE_SB_Listener_t                 *Output,
+bool CFE_MissionLib_UnmapListenerComponent(EdsComponent_CFE_SB_Listener_t                 *Output,
                                            const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Input)
 {
+    bool Result;
+
     memset(Output, 0, sizeof(*Output));
 
-    if (!CFE_MissionLib_TryUnmapping(&Output->Telecommand.InstanceNumber,
-                                     &Output->Telecommand.TopicId,
-                                     &CFE_MISSIONLIB_GLOBAL_CMD_LIMITS,
-                                     Input))
+    Result = CFE_MissionLib_TryUnmapping(&Output->Telecommand.InstanceNumber,
+                                         &Output->Telecommand.TopicId,
+                                         &CFE_MISSIONLIB_GLOBAL_CMD_LIMITS,
+                                         Input);
+
+    if (!Result)
     {
-        CFE_MissionLib_TryUnmapping(&Output->Telecommand.InstanceNumber,
-                                    &Output->Telecommand.TopicId,
-                                    &CFE_MISSIONLIB_LOCAL_CMD_LIMITS,
-                                    Input);
+        Result = CFE_MissionLib_TryUnmapping(&Output->Telecommand.InstanceNumber,
+                                             &Output->Telecommand.TopicId,
+                                             &CFE_MISSIONLIB_LOCAL_CMD_LIMITS,
+                                             Input);
     }
+
+    return Result;
 }
 
 bool CFE_MissionLib_PubSub_IsListenerComponent(const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Params)
@@ -335,35 +347,47 @@ bool CFE_MissionLib_PubSub_IsListenerComponent(const EdsInterface_CFE_SB_Softwar
     return (CFE_MissionLib_GetMsgIdInterfaceType(&Params->MsgId) == CFE_MISSIONLIB_MSGID_TELECOMMAND_BITS);
 }
 
-void CFE_MissionLib_MapPublisherComponent(EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Output,
+bool CFE_MissionLib_MapPublisherComponent(EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Output,
                                           const EdsComponent_CFE_SB_Publisher_t    *Input)
 {
+    bool Result;
+
     memset(Output, 0, sizeof(*Output));
 
-    if (!CFE_MissionLib_TryMapping(Output,
-                                   &CFE_MISSIONLIB_LOCAL_TLM_LIMITS,
-                                   Input->Telemetry.InstanceNumber,
-                                   Input->Telemetry.TopicId))
+    Result = CFE_MissionLib_TryMapping(Output,
+                                       &CFE_MISSIONLIB_LOCAL_TLM_LIMITS,
+                                       Input->Telemetry.InstanceNumber,
+                                       Input->Telemetry.TopicId);
+
+    if (!Result)
     {
-        CFE_MissionLib_TryMapping(Output, &CFE_MISSIONLIB_GLOBAL_TLM_LIMITS, 0, Input->Telemetry.TopicId);
+        Result = CFE_MissionLib_TryMapping(Output, &CFE_MISSIONLIB_GLOBAL_TLM_LIMITS, 0, Input->Telemetry.TopicId);
     }
+
+    return Result;
 }
 
-void CFE_MissionLib_UnmapPublisherComponent(EdsComponent_CFE_SB_Publisher_t                *Output,
+bool CFE_MissionLib_UnmapPublisherComponent(EdsComponent_CFE_SB_Publisher_t                *Output,
                                             const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Input)
 {
+    bool Result;
+
     memset(Output, 0, sizeof(*Output));
 
-    if (!CFE_MissionLib_TryUnmapping(&Output->Telemetry.InstanceNumber,
-                                     &Output->Telemetry.TopicId,
-                                     &CFE_MISSIONLIB_LOCAL_TLM_LIMITS,
-                                     Input))
+    Result = CFE_MissionLib_TryUnmapping(&Output->Telemetry.InstanceNumber,
+                                         &Output->Telemetry.TopicId,
+                                         &CFE_MISSIONLIB_LOCAL_TLM_LIMITS,
+                                         Input);
+
+    if (!Result)
     {
-        CFE_MissionLib_TryUnmapping(&Output->Telemetry.InstanceNumber,
-                                    &Output->Telemetry.TopicId,
-                                    &CFE_MISSIONLIB_GLOBAL_TLM_LIMITS,
-                                    Input);
+        Result = CFE_MissionLib_TryUnmapping(&Output->Telemetry.InstanceNumber,
+                                             &Output->Telemetry.TopicId,
+                                             &CFE_MISSIONLIB_GLOBAL_TLM_LIMITS,
+                                             Input);
     }
+
+    return Result;
 }
 
 bool CFE_MissionLib_PubSub_IsPublisherComponent(const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *Params)
