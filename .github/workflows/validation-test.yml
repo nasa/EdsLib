@@ -58,7 +58,7 @@ jobs:
 
       - name: Checkout EdsLib
         if: steps.cache-edslib.outputs.cache-hit != 'True'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: source
 
