@@ -65,18 +65,18 @@
 /**
  * \brief Macro to initialize a command header, useful in tables that define commands
  */
-#define CFE_MSG_CMD_HDR_INIT(mid, size, fc, cksum)             \
-    {                                                          \
+#define CFE_MSG_CMD_HDR_INIT(mid, size, fc, cksum)               \
+    {                                                            \
         .CommandHeader = {                                     \
             .Message.CCSDS.CommonHdr =                         \
                 {                                              \
                     .SecHdrFlags = (mid) >> 11,                \
                     .AppId       = (mid) & 0x7FF,              \
                     .SeqFlag     = 0x03,                       \
-                    .Length      = (size),                     \
+                    .Length      = (size - 7),                 \
                 },                                             \
             .Sec = {.FunctionCode = (fc), .Checksum = (cksum)} \
-        }                                                      \
+        } \
     }
 
 /*

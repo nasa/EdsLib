@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_api_types.h
  * \ingroup  fsw
@@ -43,7 +42,6 @@
 #ifndef _EDSLIB_API_TYPES_H_
 #define _EDSLIB_API_TYPES_H_
 
-
 /**
  * Abstract pointer to a basic EDS object with minimal info on the member objects
  * This is also referred to as the data dictionary since it has info on how to
@@ -52,7 +50,7 @@
  * Note that these objects are always constant; the database objects are generated
  * from the toolchain, compiled in and should never be modified at runtime.
  */
-typedef const struct EdsLib_App_DataTypeDB *    EdsLib_DataTypeDB_t;
+typedef const struct EdsLib_App_DataTypeDB *EdsLib_DataTypeDB_t;
 
 /**
  * Abstract pointer to a full EDS object with detailed info on the member objects
@@ -62,7 +60,7 @@ typedef const struct EdsLib_App_DataTypeDB *    EdsLib_DataTypeDB_t;
  * Note that these objects are always constant; the database objects are generated
  * from the toolchain, compiled in and should never be modified at runtime.
  */
-typedef const struct EdsLib_App_DisplayDB *     EdsLib_DisplayDB_t;
+typedef const struct EdsLib_App_DisplayDB *EdsLib_DisplayDB_t;
 
 /**
  * Abstract pointer to a EDS object with interface information
@@ -70,7 +68,7 @@ typedef const struct EdsLib_App_DisplayDB *     EdsLib_DisplayDB_t;
  * Note that these objects are always constant; the database objects are generated
  * from the toolchain, compiled in and should never be modified at runtime.
  */
-typedef const struct EdsLib_App_IntfDB *     EdsLib_IntfDB_t;
+typedef const struct EdsLib_App_IntfDB *EdsLib_IntfDB_t;
 
 /**
  * An EDS runtime database object
@@ -85,14 +83,14 @@ typedef const struct EdsLib_App_IntfDB *     EdsLib_IntfDB_t;
  */
 struct EdsLib_DatabaseObject
 {
-   uint16_t AppTableSize;           /**< Length of all the arrays (they should all match) */
-   const char * const *AppName_Table;
-   EdsLib_DataTypeDB_t *DataTypeDB_Table;
-   EdsLib_DisplayDB_t *DisplayDB_Table;
-   EdsLib_IntfDB_t *IntfDB_Table;
+    uint16_t             AppTableSize; /**< Length of all the arrays (they should all match) */
+    const char *const   *AppName_Table;
+    EdsLib_DataTypeDB_t *DataTypeDB_Table;
+    EdsLib_DisplayDB_t  *DisplayDB_Table;
+    EdsLib_IntfDB_t     *IntfDB_Table;
 };
 
-typedef struct EdsLib_DatabaseObject            EdsLib_DatabaseObject_t;
+typedef struct EdsLib_DatabaseObject EdsLib_DatabaseObject_t;
 
 /**
  * Indicates the fundamental nature of various elements within EDS basic data structures.
@@ -100,52 +98,54 @@ typedef struct EdsLib_DatabaseObject            EdsLib_DatabaseObject_t;
  */
 typedef enum
 {
-    EDSLIB_BASICTYPE_NONE = 0,        /**< Reserved value, any content for this element should be ignored */
-    EDSLIB_BASICTYPE_SIGNED_INT,      /**< Interpret as a signed integer.  Byte swapping applies. */
-    EDSLIB_BASICTYPE_UNSIGNED_INT,    /**< Interpret as an unsigned integer. Byte swapping applies. */
-    EDSLIB_BASICTYPE_FLOAT,           /**< Interpret as a floating point. Byte swapping applies. */
-    EDSLIB_BASICTYPE_BINARY,          /**< Pass-through data blob.  No byte swapping.  (char strings, etc) */
-    EDSLIB_BASICTYPE_CONTAINER,       /**< References to multiple other data blobs of heterogeneous types */
-    EDSLIB_BASICTYPE_ARRAY,           /**< References to multiple other data blobs of homogeneous type */
-    EDSLIB_BASICTYPE_COMPONENT,       /**< References to component entities */
-    EDSLIB_BASICTYPE_ALIAS,           /**< References to another EDS defined type */
-    EDSLIB_BASICTYPE_GENERIC,         /**< A generic type in an declared interface */
-    EDSLIB_BASICTYPE_MAX              /**< Reserved value, should always be last */
+    EDSLIB_BASICTYPE_NONE = 0,     /**< Reserved value, any content for this element should be ignored */
+    EDSLIB_BASICTYPE_SIGNED_INT,   /**< Interpret as a signed integer.  Byte swapping applies. */
+    EDSLIB_BASICTYPE_UNSIGNED_INT, /**< Interpret as an unsigned integer. Byte swapping applies. */
+    EDSLIB_BASICTYPE_FLOAT,        /**< Interpret as a floating point. Byte swapping applies. */
+    EDSLIB_BASICTYPE_BINARY,       /**< Pass-through data blob.  No byte swapping.  (char strings, etc) */
+    EDSLIB_BASICTYPE_CONTAINER,    /**< References to multiple other data blobs of heterogeneous types */
+    EDSLIB_BASICTYPE_ARRAY,        /**< References to multiple other data blobs of homogeneous type */
+    EDSLIB_BASICTYPE_COMPONENT,    /**< References to component entities */
+    EDSLIB_BASICTYPE_ALIAS,        /**< References to another EDS defined type */
+    EDSLIB_BASICTYPE_GENERIC,      /**< A generic type in an declared interface */
+    EDSLIB_BASICTYPE_MAX           /**< Reserved value, should always be last */
 } EdsLib_BasicType_t;
 
 typedef enum
 {
-   EDSLIB_DISPLAYHINT_NONE = 0,         /**< No extra display hints (use default) */
-   EDSLIB_DISPLAYHINT_STRING,           /**< indicates that the binary blob contains character string data */
-   EDSLIB_DISPLAYHINT_REFERENCE_TYPE,
-   EDSLIB_DISPLAYHINT_MEMBER_NAMETABLE, /**< indicates that the binary blob contains sub elements, HintArg => Name Table */
-   EDSLIB_DISPLAYHINT_ENUM_SYMTABLE,    /**< indicates that the integer value has associated names for display, HintArg => Name Table */
-   EDSLIB_DISPLAYHINT_ADDRESS,          /**< indicates that the integer value represents a memory address */
-   EDSLIB_DISPLAYHINT_BOOLEAN,          /**< indicates that the field contains a true/false value */
-   EDSLIB_DISPLAYHINT_BASE64,           /**< indicates that the binary blob should use base64 for display */
-   EDSLIB_DISPLAYHINT_MAX
+    EDSLIB_DISPLAYHINT_NONE = 0, /**< No extra display hints (use default) */
+    EDSLIB_DISPLAYHINT_STRING,   /**< indicates that the binary blob contains character string data */
+    EDSLIB_DISPLAYHINT_REFERENCE_TYPE,
+    EDSLIB_DISPLAYHINT_MEMBER_NAMETABLE, /**< indicates that the binary blob contains sub elements, HintArg => Name
+                                            Table */
+    EDSLIB_DISPLAYHINT_ENUM_SYMTABLE, /**< indicates that the integer value has associated names for display, HintArg =>
+                                         Name Table */
+    EDSLIB_DISPLAYHINT_ADDRESS,       /**< indicates that the integer value represents a memory address */
+    EDSLIB_DISPLAYHINT_BOOLEAN,       /**< indicates that the field contains a true/false value */
+    EDSLIB_DISPLAYHINT_BASE64,        /**< indicates that the binary blob should use base64 for display */
+    EDSLIB_DISPLAYHINT_MAX
 } EdsLib_DisplayHint_t;
 
 /*
- * Definitions of flag values that may appear in the "Flags" member of 
+ * Definitions of flag values that may appear in the "Flags" member of
  * type and entity information structures.
  *
  * Note: The Packing Flags here correlate with the byte order check values
  * in edslib_datatypedb_pack_unpack.c
  */
-#define EDSLIB_DATATYPE_FLAG_NONE               0x00
+#define EDSLIB_DATATYPE_FLAG_NONE 0x00
 
-#define EDSLIB_DATATYPE_FLAG_PACKED_BE          0x01 /**< Matches typical "big-endian" native representation */
-#define EDSLIB_DATATYPE_FLAG_PACKED_LE          0x02 /**< Matches typical "little-endian" native representation */
-#define EDSLIB_DATATYPE_FLAG_PACKED             0x03 /**< Mask indicating optimized packing characteristics */
+#define EDSLIB_DATATYPE_FLAG_PACKED_BE 0x01 /**< Matches typical "big-endian" native representation */
+#define EDSLIB_DATATYPE_FLAG_PACKED_LE 0x02 /**< Matches typical "little-endian" native representation */
+#define EDSLIB_DATATYPE_FLAG_PACKED    0x03 /**< Mask indicating optimized packing characteristics */
 
-#define EDSLIB_DATATYPE_FLAG_VARIABLE_SIZE      0x10 /**< Item can vary in its packed size */
-#define EDSLIB_DATATYPE_FLAG_VARIABLE_LOCATION  0x20 /**< Item can vary in its packed location */
-#define EDSLIB_DATATYPE_FLAG_VARIABLE           0x30 /**< Mask indicating variable packing characteristics */
+#define EDSLIB_DATATYPE_FLAG_VARIABLE_SIZE     0x10 /**< Item can vary in its packed size */
+#define EDSLIB_DATATYPE_FLAG_VARIABLE_LOCATION 0x20 /**< Item can vary in its packed location */
+#define EDSLIB_DATATYPE_FLAG_VARIABLE          0x30 /**< Mask indicating variable packing characteristics */
 
 /**
  * Structure for size and/or offset information
- * 
+ *
  * Sizes and offsets are given in both bits and bytes, where bits
  * indicates the position or size in a packed representation and bytes
  * indicates the position or size in a native representation, respectively.
@@ -158,17 +158,16 @@ typedef enum
  * cannot be determined by database query.
  *
  * The "Bytes" value, on the other hand, is always fixed as these represent
- * offsets or sizes of the C structure representation, which is fixed at 
+ * offsets or sizes of the C structure representation, which is fixed at
  * compile time.  However this size is platform-dependent and may not be the
  * same on other systems.
  */
 struct EdsLib_SizeInfo
 {
-    uint32_t Bits;   /**< Offset/Size in packed structure (nominal, may vary) */
-    uint32_t Bytes;  /**< Offset/Size in native structure (fixed but platform-dependent) */
+    uint32_t Bits;  /**< Offset/Size in packed structure (nominal, may vary) */
+    uint32_t Bytes; /**< Offset/Size in native structure (fixed but platform-dependent) */
 };
 
 typedef struct EdsLib_SizeInfo EdsLib_SizeInfo_t;
 
-
-#endif  /* _EDSLIB_API_TYPES_H_ */
+#endif /* _EDSLIB_API_TYPES_H_ */

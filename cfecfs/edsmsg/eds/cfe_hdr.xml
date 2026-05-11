@@ -91,6 +91,7 @@
 			 </ConstraintSet>-->
 			 <EntryList>
 				 <Entry name="Sec" type="TlmSecHdr" shortDescription="Telemetry Secondary Header" />
+				 <PaddingEntry sizeInBits="32" shortDescription="Spare bytes for alignment"/>
 			 </EntryList>
 		 </ContainerDataType>
 

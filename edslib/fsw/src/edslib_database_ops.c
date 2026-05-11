@@ -127,6 +127,6 @@ EdsLib_Id_t EdsLib_Encode_StructId(const EdsLib_DatabaseRef_t *RefObj)
  *-----------------------------------------------------------------*/
 bool EdsLib_DatabaseRef_IsEqual(const EdsLib_DatabaseRef_t *RefObj1, const EdsLib_DatabaseRef_t *RefObj2)
 {
-    return (RefObj1->Qualifier == RefObj2->Qualifier && RefObj1->AppIndex == RefObj2->AppIndex &&
-            RefObj1->SubIndex == RefObj2->SubIndex);
+    return (RefObj1->Qualifier == RefObj2->Qualifier && RefObj1->AppIndex == RefObj2->AppIndex
+            && RefObj1->SubIndex == RefObj2->SubIndex);
 }

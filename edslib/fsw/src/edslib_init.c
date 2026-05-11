@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_init.c
  * \ingroup  fsw
@@ -49,4 +48,3 @@ void EdsLib_Initialize(void)
     EdsLib_IntfDB_Initialize();
     EdsLib_Binding_Initialize();
 }
-

@@ -52,7 +52,9 @@
  * to ensure that this code is linked into the target.
  *
  *-----------------------------------------------------------------*/
-void EdsLib_IntfDB_Initialize(void) {}
+void EdsLib_IntfDB_Initialize(void)
+{
+}
 
 /*----------------------------------------------------------------
  *
@@ -76,7 +78,8 @@ void EdsLib_IntfDB_ExportComponentInfo(const EdsLib_IntfDB_ComponentEntry_t *Com
  *
  *-----------------------------------------------------------------*/
 void EdsLib_IntfDB_ExportCommandInfo(const EdsLib_IntfDB_CommandEntry_t *CmdEntry,
-                                     EdsLib_IntfDB_CommandInfo_t *CmdInfoBuffer, const EdsLib_DatabaseRef_t *SelfRefObj)
+                                     EdsLib_IntfDB_CommandInfo_t        *CmdInfoBuffer,
+                                     const EdsLib_DatabaseRef_t         *SelfRefObj)
 {
     EdsLib_DatabaseRef_t ParentRefObj;
 
@@ -121,7 +124,8 @@ void EdsLib_IntfDB_ExportInterfaceInfo(const EdsLib_IntfDB_InterfaceEntry_t *Int
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_IntfDB_GetComponentInfo(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t ComponentId,
+int32_t EdsLib_IntfDB_GetComponentInfo(const EdsLib_DatabaseObject_t *GD,
+                                       EdsLib_Id_t                    ComponentId,
                                        EdsLib_IntfDB_ComponentInfo_t *CompInfoBuffer)
 {
     const EdsLib_IntfDB_ComponentEntry_t *CompEntry;
@@ -150,8 +154,10 @@ int32_t EdsLib_IntfDB_GetComponentInfo(const EdsLib_DatabaseObject_t *GD, EdsLib
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_IntfDB_FindComponentByLocalName(const EdsLib_DatabaseObject_t *GD, uint16_t AppIdx, const char *CompName,
-                                               EdsLib_Id_t *IdBuffer)
+int32_t EdsLib_IntfDB_FindComponentByLocalName(const EdsLib_DatabaseObject_t *GD,
+                                               uint16_t                       AppIdx,
+                                               const char                    *CompName,
+                                               EdsLib_Id_t                   *IdBuffer)
 {
     EdsLib_IntfDB_t      IntfDBPtr;
     EdsLib_DatabaseRef_t RefObj;
@@ -190,8 +196,10 @@ int32_t EdsLib_IntfDB_FindComponentByLocalName(const EdsLib_DatabaseObject_t *GD
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_IntfDB_FindComponentInterfaceByLocalName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t ComponentId,
-                                                        const char *IntfName, EdsLib_Id_t *IdBuffer)
+int32_t EdsLib_IntfDB_FindComponentInterfaceByLocalName(const EdsLib_DatabaseObject_t *GD,
+                                                        EdsLib_Id_t                    ComponentId,
+                                                        const char                    *IntfName,
+                                                        EdsLib_Id_t                   *IdBuffer)
 {
     const EdsLib_IntfDB_ComponentEntry_t *CompEntry;
     EdsLib_DatabaseRef_t                  RefObj;
@@ -231,8 +239,9 @@ int32_t EdsLib_IntfDB_FindComponentInterfaceByLocalName(const EdsLib_DatabaseObj
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_IntfDB_FindDeclaredInterfaceByFullName(const EdsLib_DatabaseObject_t *GD, const char *IntfName,
-                                                      EdsLib_Id_t *IdBuffer)
+int32_t EdsLib_IntfDB_FindDeclaredInterfaceByFullName(const EdsLib_DatabaseObject_t *GD,
+                                                      const char                    *IntfName,
+                                                      EdsLib_Id_t                   *IdBuffer)
 {
     EdsLib_DatabaseRef_t RefObj;
     int32_t              Status;
@@ -260,8 +269,9 @@ int32_t EdsLib_IntfDB_FindDeclaredInterfaceByFullName(const EdsLib_DatabaseObjec
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_IntfDB_FindComponentInterfaceByFullName(const EdsLib_DatabaseObject_t *GD, const char *IntfName,
-                                                       EdsLib_Id_t *IdBuffer)
+int32_t EdsLib_IntfDB_FindComponentInterfaceByFullName(const EdsLib_DatabaseObject_t *GD,
+                                                       const char                    *IntfName,
+                                                       EdsLib_Id_t                   *IdBuffer)
 {
     const EdsLib_IntfDB_ComponentEntry_t *CompEntry;
     const char                           *Separator;
@@ -296,7 +306,9 @@ int32_t EdsLib_IntfDB_FindComponentInterfaceByFullName(const EdsLib_DatabaseObje
         }
         else
         {
-            Status = EdsLib_IntfDB_FindComponentInterfaceBySubstring(CompEntry, Separator, strlen(Separator),
+            Status = EdsLib_IntfDB_FindComponentInterfaceBySubstring(CompEntry,
+                                                                     Separator,
+                                                                     strlen(Separator),
                                                                      &RefObj.SubIndex);
         }
     }
@@ -322,8 +334,10 @@ int32_t EdsLib_IntfDB_FindComponentInterfaceByFullName(const EdsLib_DatabaseObje
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_IntfDB_FindDeclaredInterfaceByLocalName(const EdsLib_DatabaseObject_t *GD, uint16_t AppIdx,
-                                                       const char *IntfName, EdsLib_Id_t *IdBuffer)
+int32_t EdsLib_IntfDB_FindDeclaredInterfaceByLocalName(const EdsLib_DatabaseObject_t *GD,
+                                                       uint16_t                       AppIdx,
+                                                       const char                    *IntfName,
+                                                       EdsLib_Id_t                   *IdBuffer)
 {
     EdsLib_IntfDB_t                      IntfDBPtr;
     const EdsLib_IntfDB_DeclIntfEntry_t *IntfPtr;
@@ -374,8 +388,10 @@ int32_t EdsLib_IntfDB_FindDeclaredInterfaceByLocalName(const EdsLib_DatabaseObje
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_IntfDB_FindCommandByLocalName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t IntfId, const char *CmdName,
-                                             EdsLib_Id_t *IdBuffer)
+int32_t EdsLib_IntfDB_FindCommandByLocalName(const EdsLib_DatabaseObject_t *GD,
+                                             EdsLib_Id_t                    IntfId,
+                                             const char                    *CmdName,
+                                             EdsLib_Id_t                   *IdBuffer)
 {
     const EdsLib_IntfDB_DeclIntfEntry_t *IntfEntry;
     const EdsLib_IntfDB_CommandEntry_t  *CmdEntry;
@@ -432,8 +448,9 @@ int32_t EdsLib_IntfDB_FindCommandByLocalName(const EdsLib_DatabaseObject_t *GD, 
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_IntfDB_GetCommandInfo(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t CommandId,
-                                     EdsLib_IntfDB_CommandInfo_t *CommandInfoBuffer)
+int32_t EdsLib_IntfDB_GetCommandInfo(const EdsLib_DatabaseObject_t *GD,
+                                     EdsLib_Id_t                    CommandId,
+                                     EdsLib_IntfDB_CommandInfo_t   *CommandInfoBuffer)
 {
     const EdsLib_IntfDB_CommandEntry_t *CmdEntry;
     EdsLib_DatabaseRef_t                RefObj;
@@ -461,7 +478,8 @@ int32_t EdsLib_IntfDB_GetCommandInfo(const EdsLib_DatabaseObject_t *GD, EdsLib_I
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_IntfDB_GetComponentInterfaceInfo(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t IntfId,
+int32_t EdsLib_IntfDB_GetComponentInterfaceInfo(const EdsLib_DatabaseObject_t *GD,
+                                                EdsLib_Id_t                    IntfId,
                                                 EdsLib_IntfDB_InterfaceInfo_t *IntfInfoBuffer)
 {
     const EdsLib_IntfDB_InterfaceEntry_t *IntfEntry;
@@ -490,8 +508,11 @@ int32_t EdsLib_IntfDB_GetComponentInterfaceInfo(const EdsLib_DatabaseObject_t *G
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_IntfDB_FindAllArgumentTypes(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t CmdEdsId,
-                                           EdsLib_Id_t CompIntfEdsId, EdsLib_Id_t *IdBuffer, size_t NumIdBufs)
+int32_t EdsLib_IntfDB_FindAllArgumentTypes(const EdsLib_DatabaseObject_t *GD,
+                                           EdsLib_Id_t                    CmdEdsId,
+                                           EdsLib_Id_t                    CompIntfEdsId,
+                                           EdsLib_Id_t                   *IdBuffer,
+                                           size_t                         NumIdBufs)
 {
     const EdsLib_IntfDB_InterfaceEntry_t     *IntfEntry;
     const EdsLib_IntfDB_CommandEntry_t       *CmdEntry;
@@ -575,8 +596,10 @@ int32_t EdsLib_IntfDB_FindAllArgumentTypes(const EdsLib_DatabaseObject_t *GD, Ed
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_IntfDB_FindAllCommands(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t IntfId, EdsLib_Id_t *IdBuffer,
-                                      size_t NumIdBufs)
+int32_t EdsLib_IntfDB_FindAllCommands(const EdsLib_DatabaseObject_t *GD,
+                                      EdsLib_Id_t                    IntfId,
+                                      EdsLib_Id_t                   *IdBuffer,
+                                      size_t                         NumIdBufs)
 {
     const EdsLib_IntfDB_DeclIntfEntry_t *DeclIntfEntry;
     EdsLib_DatabaseRef_t                 RefObj;
@@ -622,8 +645,8 @@ int32_t EdsLib_IntfDB_FindAllCommands(const EdsLib_DatabaseObject_t *GD, EdsLib_
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_IntfDB_GetFullName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, char *BufferPtr,
-                                  size_t BufferLen)
+int32_t
+EdsLib_IntfDB_GetFullName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId, char *BufferPtr, size_t BufferLen)
 {
     int32_t                     Status;
     EdsLib_IntfDB_FullContext_t Ctxt;
@@ -659,7 +682,7 @@ int32_t EdsLib_IntfDB_GetFullName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t
         }
 
         LengthRemain -= PrintLen;
-        CurrPtr += PrintLen;
+        CurrPtr      += PrintLen;
 
         /* Note, only one or two of these pointers can be non-null at the same time */
         if (Ctxt.DeclIntfEntry != NULL)
@@ -671,7 +694,7 @@ int32_t EdsLib_IntfDB_GetFullName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t
                 break;
             }
             LengthRemain -= PrintLen;
-            CurrPtr += PrintLen;
+            CurrPtr      += PrintLen;
         }
         if (Ctxt.CompEntry != NULL)
         {
@@ -682,7 +705,7 @@ int32_t EdsLib_IntfDB_GetFullName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t
                 break;
             }
             LengthRemain -= PrintLen;
-            CurrPtr += PrintLen;
+            CurrPtr      += PrintLen;
         }
         if (Ctxt.CmdEntry != NULL)
         {
@@ -693,7 +716,7 @@ int32_t EdsLib_IntfDB_GetFullName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t
                 break;
             }
             LengthRemain -= PrintLen;
-            CurrPtr += PrintLen;
+            CurrPtr      += PrintLen;
         }
         if (Ctxt.CompIntfEntry != NULL)
         {
@@ -704,7 +727,7 @@ int32_t EdsLib_IntfDB_GetFullName(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t
                 break;
             }
             LengthRemain -= PrintLen;
-            CurrPtr += PrintLen;
+            CurrPtr      += PrintLen;
         }
     } while (false);
 

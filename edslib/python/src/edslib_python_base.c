@@ -18,19 +18,18 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_python_base.c
  * \ingroup  python
  * \author   joseph.p.hickey@nasa.gov
  *
-**   Implement common base type Python bindings for EDS objects
-**
-**   This extends the accessor type with actual instance information, mainly
-**   a buffer object to hold the EDS object described by the accessor.
-**
-**   This is functionality that every instance of an EDS object should implement,
-**   such as the buffer protocol.
+ **   Implement common base type Python bindings for EDS objects
+ **
+ **   This extends the accessor type with actual instance information, mainly
+ **   a buffer object to hold the EDS object described by the accessor.
+ **
+ **   This is functionality that every instance of an EDS object should implement,
+ **   such as the buffer protocol.
  */
 
 /*
@@ -103,41 +102,34 @@
  *
  */
 
-
 #include "edslib_python_internal.h"
 
-static char         EDSLIB_PYTHON_BYTES_FORMAT[] = "B";
+static char EDSLIB_PYTHON_BYTES_FORMAT[] = "B";
 
-static void         EdsLib_Python_ObjectBase_dealloc(PyObject * obj);
-static int          EdsLib_Python_ObjectBase_init(PyObject *obj, PyObject *args, PyObject *kwds);
-static PyObject *   EdsLib_Python_ObjectBase_repr(PyObject *obj);
-static PyObject *   EdsLib_Python_ObjectBase_call(PyObject *obj, PyObject *args, PyObject *kwds);
-static int          EdsLib_Python_ObjectBase_getbuffer(PyObject *obj, Py_buffer *view, int flags);
-static void         EdsLib_Python_ObjectBase_releasebuffer(PyObject *obj, Py_buffer *view);
+static void      EdsLib_Python_ObjectBase_dealloc(PyObject *obj);
+static int       EdsLib_Python_ObjectBase_init(PyObject *obj, PyObject *args, PyObject *kwds);
+static PyObject *EdsLib_Python_ObjectBase_repr(PyObject *obj);
+static PyObject *EdsLib_Python_ObjectBase_call(PyObject *obj, PyObject *args, PyObject *kwds);
+static int       EdsLib_Python_ObjectBase_getbuffer(PyObject *obj, Py_buffer *view, int flags);
+static void      EdsLib_Python_ObjectBase_releasebuffer(PyObject *obj, Py_buffer *view);
 
-static PyBufferProcs EdsLib_Python_ObjectBase_BufferProcs =
-{
-        .bf_getbuffer = EdsLib_Python_ObjectBase_getbuffer,
-        .bf_releasebuffer = EdsLib_Python_ObjectBase_releasebuffer
-};
+static PyBufferProcs EdsLib_Python_ObjectBase_BufferProcs = { .bf_getbuffer = EdsLib_Python_ObjectBase_getbuffer,
+                                                              .bf_releasebuffer =
+                                                                  EdsLib_Python_ObjectBase_releasebuffer };
 
+PyTypeObject EdsLib_Python_ObjectBaseType = { PyVarObject_HEAD_INIT(NULL, 0).tp_name =
+                                                  EDSLIB_PYTHON_ENTITY_NAME("Object"),
+                                              .tp_basicsize = sizeof(EdsLib_Python_ObjectBase_t),
+                                              .tp_dealloc   = EdsLib_Python_ObjectBase_dealloc,
+                                              .tp_init      = EdsLib_Python_ObjectBase_init,
+                                              .tp_new       = PyType_GenericNew,
+                                              .tp_repr      = EdsLib_Python_ObjectBase_repr,
+                                              .tp_call      = EdsLib_Python_ObjectBase_call,
+                                              .tp_as_buffer = &EdsLib_Python_ObjectBase_BufferProcs,
+                                              .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+                                              .tp_doc       = PyDoc_STR("EDS Object") };
 
-PyTypeObject EdsLib_Python_ObjectBaseType =
-{
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = EDSLIB_PYTHON_ENTITY_NAME("Object"),
-    .tp_basicsize = sizeof(EdsLib_Python_ObjectBase_t),
-    .tp_dealloc = EdsLib_Python_ObjectBase_dealloc,
-    .tp_init = EdsLib_Python_ObjectBase_init,
-    .tp_new = PyType_GenericNew,
-    .tp_repr = EdsLib_Python_ObjectBase_repr,
-    .tp_call = EdsLib_Python_ObjectBase_call,
-    .tp_as_buffer = &EdsLib_Python_ObjectBase_BufferProcs,
-    .tp_flags = Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE,
-    .tp_doc = PyDoc_STR("EDS Object")
-};
-
-static void EdsLib_Python_ObjectBase_dealloc(PyObject * obj)
+static void EdsLib_Python_ObjectBase_dealloc(PyObject *obj)
 {
     EdsLib_Python_ObjectBase_t *self = (EdsLib_Python_ObjectBase_t *)obj;
 
@@ -157,8 +149,7 @@ PyObject *EdsLib_Python_ObjectBase_GenericNew(PyTypeObject *objtype, PyObject *k
          * so to construct an object it should always be a subtype */
         if (!PyType_IsSubtype(objtype, &EdsLib_Python_ObjectBaseType))
         {
-            PyErr_Format(PyExc_TypeError, "Cannot construct EDS objects of type %s\n",
-                    objtype->tp_name);
+            PyErr_Format(PyExc_TypeError, "Cannot construct EDS objects of type %s\n", objtype->tp_name);
             break;
         }
 
@@ -174,18 +165,17 @@ PyObject *EdsLib_Python_ObjectBase_GenericNew(PyTypeObject *objtype, PyObject *k
             self = NULL;
             break;
         }
-    }
-    while(0);
-
+    } while (0);
 
     return self;
 }
 
-PyObject *EdsLib_Python_ObjectBase_NewSubObject(PyObject *obj, PyTypeObject *subobjtype, Py_ssize_t Offset, Py_ssize_t MaxSize)
+PyObject *
+EdsLib_Python_ObjectBase_NewSubObject(PyObject *obj, PyTypeObject *subobjtype, Py_ssize_t Offset, Py_ssize_t MaxSize)
 {
-    static const char *kwlist[] = { "buffer", "offset", "maxsize", NULL };
-    PyObject *args = NULL;
-    PyObject *result = NULL;
+    static const char          *kwlist[] = { "buffer", "offset", "maxsize", NULL };
+    PyObject                   *args     = NULL;
+    PyObject                   *result   = NULL;
     EdsLib_Python_ObjectBase_t *self;
 
     /* sanity check -- the type should always be an EDS object */
@@ -197,8 +187,7 @@ PyObject *EdsLib_Python_ObjectBase_NewSubObject(PyObject *obj, PyTypeObject *sub
 
     self = (EdsLib_Python_ObjectBase_t *)obj;
 
-    args = EdsLib_Python_ObjectBase_BuildKwArgs("Onn", kwlist,
-            self->StorageBuf, Offset + self->Offset, MaxSize);
+    args = EdsLib_Python_ObjectBase_BuildKwArgs("Onn", kwlist, self->StorageBuf, Offset + self->Offset, MaxSize);
     if (args == NULL)
     {
         return NULL;
@@ -210,15 +199,13 @@ PyObject *EdsLib_Python_ObjectBase_NewSubObject(PyObject *obj, PyTypeObject *sub
     return result;
 }
 
-
 PyObject *EdsLib_Python_ObjectFromBuffer(PyTypeObject *objtype, PyObject *bufobj, int readonly)
 {
     static const char *kwlist[] = { "buffer", NULL };
-    PyObject *args = NULL;
-    PyObject *result = NULL;
+    PyObject          *args     = NULL;
+    PyObject          *result   = NULL;
 
-    args = EdsLib_Python_ObjectBase_BuildKwArgs("N", kwlist,
-            EdsLib_Python_Buffer_FromObject(bufobj, readonly));
+    args = EdsLib_Python_ObjectBase_BuildKwArgs("N", kwlist, EdsLib_Python_Buffer_FromObject(bufobj, readonly));
     if (args == NULL)
     {
         return NULL;
@@ -228,18 +215,15 @@ PyObject *EdsLib_Python_ObjectFromBuffer(PyTypeObject *objtype, PyObject *bufobj
     Py_DECREF(args);
 
     return result;
-
 }
-
 
 PyObject *EdsLib_Python_ObjectFromPtr(PyTypeObject *objtype, void *ptr, Py_ssize_t size)
 {
     static const char *kwlist[] = { "buffer", NULL };
-    PyObject *args = NULL;
-    PyObject *result = NULL;
+    PyObject          *args     = NULL;
+    PyObject          *result   = NULL;
 
-    args = EdsLib_Python_ObjectBase_BuildKwArgs("N", kwlist,
-            EdsLib_Python_Buffer_FromPtrAndSize(ptr, size));
+    args = EdsLib_Python_ObjectBase_BuildKwArgs("N", kwlist, EdsLib_Python_Buffer_FromPtrAndSize(ptr, size));
     if (args == NULL)
     {
         return NULL;
@@ -254,11 +238,10 @@ PyObject *EdsLib_Python_ObjectFromPtr(PyTypeObject *objtype, void *ptr, Py_ssize
 PyObject *EdsLib_Python_ObjectNewCopy(PyTypeObject *objtype, const void *ptr, Py_ssize_t size)
 {
     static const char *kwlist[] = { "buffer", NULL };
-    PyObject *args = NULL;
-    PyObject *result = NULL;
+    PyObject          *args     = NULL;
+    PyObject          *result   = NULL;
 
-    args = EdsLib_Python_ObjectBase_BuildKwArgs("N", kwlist,
-            EdsLib_Python_Buffer_Copy(ptr, size));
+    args = EdsLib_Python_ObjectBase_BuildKwArgs("N", kwlist, EdsLib_Python_Buffer_Copy(ptr, size));
     if (args == NULL)
     {
         return NULL;
@@ -273,11 +256,10 @@ PyObject *EdsLib_Python_ObjectNewCopy(PyTypeObject *objtype, const void *ptr, Py
 PyObject *EdsLib_Python_ObjectFromConstPtr(PyTypeObject *objtype, const void *ptr, Py_ssize_t size)
 {
     static const char *kwlist[] = { "buffer", NULL };
-    PyObject *args = NULL;
-    PyObject *result = NULL;
+    PyObject          *args     = NULL;
+    PyObject          *result   = NULL;
 
-    args = EdsLib_Python_ObjectBase_BuildKwArgs("N", kwlist,
-            EdsLib_Python_Buffer_FromConstPtrAndSize(ptr, size));
+    args = EdsLib_Python_ObjectBase_BuildKwArgs("N", kwlist, EdsLib_Python_Buffer_FromConstPtrAndSize(ptr, size));
     if (args == NULL)
     {
         return NULL;
@@ -306,14 +288,14 @@ const void *EdsLib_Python_ObjectPeek(PyObject *obj)
 
 static int EdsLib_Python_ObjectBase_init(PyObject *obj, PyObject *args, PyObject *kwds)
 {
-    static const char *in_kwlist[] = { "value", NULL };
-    EdsLib_Python_ObjectBase_t *self = (EdsLib_Python_ObjectBase_t *)obj;
+    static const char                *in_kwlist[] = { "value", NULL };
+    EdsLib_Python_ObjectBase_t       *self        = (EdsLib_Python_ObjectBase_t *)obj;
     EdsLib_Binding_DescriptorObject_t viewdesc;
-    PyObject *srcvalue = NULL;
-    PyObject *bufobj = NULL;
-    Py_ssize_t MaxSize = 0;
-    Py_ssize_t Offset = 0;
-    int result = -1;
+    PyObject                         *srcvalue = NULL;
+    PyObject                         *bufobj   = NULL;
+    Py_ssize_t                        MaxSize  = 0;
+    Py_ssize_t                        Offset   = 0;
+    int                               result   = -1;
 
     /*
      * First drop any existing buffer (e.g. in case __init__ is invoked directly)
@@ -321,26 +303,26 @@ static int EdsLib_Python_ObjectBase_init(PyObject *obj, PyObject *args, PyObject
     Py_CLEAR(self->StorageBuf);
 
     kwds = EdsLib_Python_ObjectBase_InitArgsToKwds(args, kwds, in_kwlist);
-    args = NULL;    /* should no longer be used directly */
+    args = NULL; /* should no longer be used directly */
 
     do
     {
-        if (!EdsLib_Python_ObjectBase_GetKwArg(kwds,"|O:ObjectBase_init", "value", &srcvalue))
+        if (!EdsLib_Python_ObjectBase_GetKwArg(kwds, "|O:ObjectBase_init", "value", &srcvalue))
         {
             break;
         }
 
-        if (!EdsLib_Python_ObjectBase_GetKwArg(kwds,"|O:ObjectBase_init", "buffer", &bufobj))
+        if (!EdsLib_Python_ObjectBase_GetKwArg(kwds, "|O:ObjectBase_init", "buffer", &bufobj))
         {
             break;
         }
 
-        if (!EdsLib_Python_ObjectBase_GetKwArg(kwds,"|n:ObjectBase_init", "offset", &Offset))
+        if (!EdsLib_Python_ObjectBase_GetKwArg(kwds, "|n:ObjectBase_init", "offset", &Offset))
         {
             break;
         }
 
-        if (!EdsLib_Python_ObjectBase_GetKwArg(kwds,"|n:ObjectBase_init", "maxsize", &MaxSize))
+        if (!EdsLib_Python_ObjectBase_GetKwArg(kwds, "|n:ObjectBase_init", "maxsize", &MaxSize))
         {
             break;
         }
@@ -395,7 +377,7 @@ static int EdsLib_Python_ObjectBase_init(PyObject *obj, PyObject *args, PyObject
             break;
         }
 
-        self->Offset = Offset;
+        self->Offset      = Offset;
         self->TotalLength = MaxSize;
 
         /*
@@ -405,8 +387,8 @@ static int EdsLib_Python_ObjectBase_init(PyObject *obj, PyObject *args, PyObject
          * Note This default approach only works for those objects directly in EDS (DB entries)
          * For other object types like Dynamic Arrays they will need a custom routine to do this.
          */
-        if (!EdsLib_Python_Buffer_IsInitialized(self->StorageBuf) &&
-                Py_TYPE(Py_TYPE(self)) == &EdsLib_Python_DatabaseEntryType)
+        if (!EdsLib_Python_Buffer_IsInitialized(self->StorageBuf)
+            && Py_TYPE(Py_TYPE(self)) == &EdsLib_Python_DatabaseEntryType)
         {
             if (!EdsLib_Python_SetupObjectDesciptor(self, &viewdesc, PyBUF_WRITABLE))
             {
@@ -421,15 +403,13 @@ static int EdsLib_Python_ObjectBase_init(PyObject *obj, PyObject *args, PyObject
 
         /* attempt to initialize the new object from the passed in value.
          * If no srcvalue was provided, do nothing. */
-        if (srcvalue != NULL &&
-                !EdsLib_Python_ConvertPythonToEdsObject(self, srcvalue))
+        if (srcvalue != NULL && !EdsLib_Python_ConvertPythonToEdsObject(self, srcvalue))
         {
             break;
         }
 
         result = 0;
-    }
-    while(0);
+    } while (0);
 
     Py_XDECREF(kwds);
 
@@ -438,8 +418,8 @@ static int EdsLib_Python_ObjectBase_init(PyObject *obj, PyObject *args, PyObject
 
 static PyObject *EdsLib_Python_ObjectBase_repr(PyObject *obj)
 {
-    PyObject *val;
-    PyObject *result;
+    PyObject   *val;
+    PyObject   *result;
     ternaryfunc callfunc = Py_TYPE(obj)->tp_call;
 
     if (callfunc == NULL)
@@ -471,14 +451,13 @@ static PyObject *EdsLib_Python_ObjectBase_repr(PyObject *obj)
     Py_DECREF(val);
 
     return result;
-
 }
 
 static PyObject *EdsLib_Python_ObjectBase_call(PyObject *obj, PyObject *args, PyObject *kwds)
 {
-    EdsLib_Python_ObjectBase_t *self = (EdsLib_Python_ObjectBase_t *)obj;
-    PyObject *value = NULL;
-    PyObject *result;
+    EdsLib_Python_ObjectBase_t *self  = (EdsLib_Python_ObjectBase_t *)obj;
+    PyObject                   *value = NULL;
+    PyObject                   *result;
 
     /*
      * This functions has two modes:
@@ -487,8 +466,7 @@ static PyObject *EdsLib_Python_ObjectBase_call(PyObject *obj, PyObject *args, Py
      *  - If an argument is provided, it is a "setter"
      *      In this case it needs a read-write buffer
      */
-    if (args != NULL &&
-            !PyArg_UnpackTuple(args, __func__, 0, 1, &value))
+    if (args != NULL && !PyArg_UnpackTuple(args, __func__, 0, 1, &value))
     {
         return NULL;
     }
@@ -516,7 +494,7 @@ static PyObject *EdsLib_Python_ObjectBase_call(PyObject *obj, PyObject *args, Py
 
 int EdsLib_Python_ObjectBase_InitBufferView(EdsLib_Python_ObjectBase_t *self, Py_buffer *view, int flags)
 {
-    EdsLib_Binding_Buffer_Content_t* content;
+    EdsLib_Binding_Buffer_Content_t *content;
 
     memset(view, 0, sizeof(*view));
 
@@ -545,16 +523,16 @@ int EdsLib_Python_ObjectBase_InitBufferView(EdsLib_Python_ObjectBase_t *self, Py
     }
 
     /* adjust the view pointer/length to point to the window indicated by the accessor */
-    view->obj = (PyObject*)self;
+    view->obj = (PyObject *)self;
     Py_INCREF(view->obj);
-    view->buf = content->Data + self->Offset;
-    view->len = self->TotalLength;
-    view->readonly = self->StorageBuf->is_readonly;
-    view->itemsize = 0;
-    view->ndim = 0;
-    view->format = NULL;
-    view->shape = NULL;
-    view->strides = NULL;
+    view->buf        = content->Data + self->Offset;
+    view->len        = self->TotalLength;
+    view->readonly   = self->StorageBuf->is_readonly;
+    view->itemsize   = 0;
+    view->ndim       = 0;
+    view->format     = NULL;
+    view->shape      = NULL;
+    view->strides    = NULL;
     view->suboffsets = NULL;
 
     /*
@@ -569,7 +547,7 @@ int EdsLib_Python_ObjectBase_InitBufferView(EdsLib_Python_ObjectBase_t *self, Py
 
 static int EdsLib_Python_ObjectBase_getbuffer(PyObject *obj, Py_buffer *view, int flags)
 {
-    EdsLib_Python_ObjectBase_t * self = (EdsLib_Python_ObjectBase_t *)obj;
+    EdsLib_Python_ObjectBase_t *self = (EdsLib_Python_ObjectBase_t *)obj;
 
     if (EdsLib_Python_ObjectBase_InitBufferView(self, view, flags) != 0)
     {
@@ -589,14 +567,13 @@ static int EdsLib_Python_ObjectBase_getbuffer(PyObject *obj, Py_buffer *view, in
     }
     if ((flags & PyBUF_ND) == PyBUF_ND)
     {
-        view->ndim = 1;
+        view->ndim  = 1;
         view->shape = &view->len;
     }
     if ((flags & PyBUF_STRIDES) == PyBUF_STRIDES)
     {
         view->strides = &view->itemsize;
     }
-
 
     return 0;
 }
@@ -608,9 +585,9 @@ static void EdsLib_Python_ObjectBase_releasebuffer(PyObject *obj, Py_buffer *vie
 
 PyObject *EdsLib_Python_ObjectBase_InitArgsToKwds(PyObject *args, PyObject *kwds, const char **kwlist)
 {
-    PyObject *subargs;
-    bool positional_args_valid = (args != NULL && PyTuple_Check(args));
-    bool kw_args_valid = (kwds != NULL && PyDict_Check(kwds));
+    PyObject  *subargs;
+    bool       positional_args_valid = (args != NULL && PyTuple_Check(args));
+    bool       kw_args_valid         = (kwds != NULL && PyDict_Check(kwds));
     Py_ssize_t idx;
 
     /*
@@ -663,8 +640,8 @@ PyObject *EdsLib_Python_ObjectBase_InitArgsToKwds(PyObject *args, PyObject *kwds
 bool EdsLib_Python_ObjectBase_SetKwArg(PyObject *kwds, const char *format, const char *kw, ...)
 {
     PyObject *args;
-    bool result = false;
-    va_list va;
+    bool      result = false;
+    va_list   va;
 
     /*
      * First convert the value to a python object, then
@@ -673,7 +650,6 @@ bool EdsLib_Python_ObjectBase_SetKwArg(PyObject *kwds, const char *format, const
     va_start(va, kw);
     args = Py_VaBuildValue(format, va);
     va_end(va);
-
 
     if (args != NULL)
     {
@@ -686,10 +662,10 @@ bool EdsLib_Python_ObjectBase_SetKwArg(PyObject *kwds, const char *format, const
 
 PyObject *EdsLib_Python_ObjectBase_BuildKwArgs(const char *format, const char **kwlist, ...)
 {
-    PyObject *args = NULL;
-    PyObject *kwds = NULL;
+    PyObject  *args = NULL;
+    PyObject  *kwds = NULL;
     Py_ssize_t idx;
-    va_list va;
+    va_list    va;
 
     do
     {
@@ -736,27 +712,24 @@ PyObject *EdsLib_Python_ObjectBase_BuildKwArgs(const char *format, const char **
                 }
             }
         }
-        else if (kwlist[0] != NULL &&
-                PyDict_SetItemString(kwds, kwlist[0], args) != 0)
+        else if (kwlist[0] != NULL && PyDict_SetItemString(kwds, kwlist[0], args) != 0)
         {
             /* failed to insert -- unlikely but possible */
             Py_DECREF(kwds);
             kwds = NULL;
             break;
         }
-    }
-    while(0);
+    } while (0);
 
     Py_XDECREF(args);
 
     return kwds;
 }
 
-
 bool EdsLib_Python_ObjectBase_GetKwArg(PyObject *kwds, const char *format, const char *kw, void *OutPtr)
 {
-    bool result;
-    bool is_optional;
+    bool      result;
+    bool      is_optional;
     PyObject *item;
 
     /*
@@ -810,4 +783,3 @@ bool EdsLib_Python_ObjectBase_GetKwArg(PyObject *kwds, const char *format, const
 
     return result;
 }
-

@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     seds_xmlparser.h
  * \ingroup  tool
@@ -51,6 +50,4 @@ int seds_xmlparser_readfile(lua_State *lua);
  */
 int seds_xmlparser_finish(lua_State *lua);
 
-
-#endif  /* _SEDS_XMLPARSER_H_ */
-
+#endif /* _SEDS_XMLPARSER_H_ */

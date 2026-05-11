@@ -35,51 +35,45 @@
 
 PyObject *EdsLib_Python_DatabaseCache = NULL;
 
-static void         EdsLib_Python_Database_dealloc(PyObject * obj);
-static PyObject *   EdsLib_Python_Database_new(PyTypeObject *obj, PyObject *args, PyObject *kwds);
-static PyObject *   EdsLib_Python_Database_repr(PyObject *obj);
-static int          EdsLib_Python_Database_traverse(PyObject *obj, visitproc visit, void *arg);
-static int          EdsLib_Python_Database_clear(PyObject *obj);
+static void      EdsLib_Python_Database_dealloc(PyObject *obj);
+static PyObject *EdsLib_Python_Database_new(PyTypeObject *obj, PyObject *args, PyObject *kwds);
+static PyObject *EdsLib_Python_Database_repr(PyObject *obj);
+static int       EdsLib_Python_Database_traverse(PyObject *obj, visitproc visit, void *arg);
+static int       EdsLib_Python_Database_clear(PyObject *obj);
 
-static PyObject *   EdsLib_Python_Database_getentry(PyObject *obj, PyObject *key);
-static PyObject *   EdsLib_Python_Database_IsContainer(PyObject *obj, PyObject *arg);
-static PyObject *   EdsLib_Python_Database_IsArray(PyObject *obj, PyObject *arg);
-static PyObject *   EdsLib_Python_Database_IsNumber(PyObject *obj, PyObject *arg);
-static PyObject *   EdsLib_Python_Database_IsEnum(PyObject *obj, PyObject *arg);
+static PyObject *EdsLib_Python_Database_getentry(PyObject *obj, PyObject *key);
+static PyObject *EdsLib_Python_Database_IsContainer(PyObject *obj, PyObject *arg);
+static PyObject *EdsLib_Python_Database_IsArray(PyObject *obj, PyObject *arg);
+static PyObject *EdsLib_Python_Database_IsNumber(PyObject *obj, PyObject *arg);
+static PyObject *EdsLib_Python_Database_IsEnum(PyObject *obj, PyObject *arg);
 
-static PyMethodDef EdsLib_Python_Database_methods[] =
-{
-        {"Entry",       EdsLib_Python_Database_getentry, METH_O, "Lookup an EDS type from DB."},
-        {"IsContainer", EdsLib_Python_Database_IsContainer, METH_O, "Check if an object is a container."},
-        {"IsArray",     EdsLib_Python_Database_IsArray, METH_O, "Check if an object is an array."},
-        {"IsNumber",    EdsLib_Python_Database_IsNumber, METH_O, "Check if an object is a number."},
-        {"IsEnum",      EdsLib_Python_Database_IsEnum, METH_O, "Check if a database entry is an enumeration."},
-        {NULL}  /* Sentinel */
+static PyMethodDef EdsLib_Python_Database_methods[] = {
+    { "Entry", EdsLib_Python_Database_getentry, METH_O, "Lookup an EDS type from DB." },
+    { "IsContainer", EdsLib_Python_Database_IsContainer, METH_O, "Check if an object is a container." },
+    { "IsArray", EdsLib_Python_Database_IsArray, METH_O, "Check if an object is an array." },
+    { "IsNumber", EdsLib_Python_Database_IsNumber, METH_O, "Check if an object is a number." },
+    { "IsEnum", EdsLib_Python_Database_IsEnum, METH_O, "Check if a database entry is an enumeration." },
+    { NULL }  /* Sentinel */
 };
 
-static struct PyMemberDef EdsLib_Python_Database_members[] =
-{
-        {"Name", T_OBJECT_EX, offsetof(EdsLib_Python_Database_t, DbName), READONLY, "Database Name" },
-        {NULL}  /* Sentinel */
+static struct PyMemberDef EdsLib_Python_Database_members[] = {
+    { "Name", T_OBJECT_EX, offsetof(EdsLib_Python_Database_t, DbName), READONLY, "Database Name" },
+    { NULL }  /* Sentinel */
 };
 
-
-PyTypeObject EdsLib_Python_DatabaseType =
-{
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = EDSLIB_PYTHON_ENTITY_NAME("Database"),
-    .tp_basicsize = sizeof(EdsLib_Python_Database_t),
-    .tp_dealloc = EdsLib_Python_Database_dealloc,
-    .tp_new = EdsLib_Python_Database_new,
-    .tp_methods = EdsLib_Python_Database_methods,
-    .tp_members = EdsLib_Python_Database_members,
-    .tp_repr = EdsLib_Python_Database_repr,
-    .tp_traverse = EdsLib_Python_Database_traverse,
-    .tp_clear = EdsLib_Python_Database_clear,
-    .tp_flags = Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_GC,
-    .tp_weaklistoffset = offsetof(EdsLib_Python_Database_t, WeakRefList),
-    .tp_doc = "EDS database"
-};
+PyTypeObject EdsLib_Python_DatabaseType = { PyVarObject_HEAD_INIT(NULL, 0).tp_name =
+                                                EDSLIB_PYTHON_ENTITY_NAME("Database"),
+                                            .tp_basicsize      = sizeof(EdsLib_Python_Database_t),
+                                            .tp_dealloc        = EdsLib_Python_Database_dealloc,
+                                            .tp_new            = EdsLib_Python_Database_new,
+                                            .tp_methods        = EdsLib_Python_Database_methods,
+                                            .tp_members        = EdsLib_Python_Database_members,
+                                            .tp_repr           = EdsLib_Python_Database_repr,
+                                            .tp_traverse       = EdsLib_Python_Database_traverse,
+                                            .tp_clear          = EdsLib_Python_Database_clear,
+                                            .tp_flags          = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+                                            .tp_weaklistoffset = offsetof(EdsLib_Python_Database_t, WeakRefList),
+                                            .tp_doc            = "EDS database" };
 
 static int EdsLib_Python_Database_traverse(PyObject *obj, visitproc visit, void *arg)
 {
@@ -180,11 +174,11 @@ int EdsLib_Python_SaveToCache(PyObject *cachedict, PyObject *idxval, PyObject *o
     return 0;
 }
 
-static EdsLib_Python_Database_t *EdsLib_Python_Database_CreateImpl(PyTypeObject *obj, PyObject *Name,
-                                                                   const EdsLib_DatabaseObject_t *GD)
+static EdsLib_Python_Database_t *
+EdsLib_Python_Database_CreateImpl(PyTypeObject *obj, PyObject *Name, const EdsLib_DatabaseObject_t *GD)
 {
     EdsLib_Python_Database_t *self;
-    bool IsSuccess;
+    bool                      IsSuccess;
 
     IsSuccess = false;
 
@@ -207,7 +201,7 @@ static EdsLib_Python_Database_t *EdsLib_Python_Database_CreateImpl(PyTypeObject 
         self->DbName = Name;
 
         /* Create a weak reference to store in the local cache in case this
-        * database is constructed again. */
+         * database is constructed again. */
         if (EdsLib_Python_SaveToCache(EdsLib_Python_DatabaseCache, Name, (PyObject *)self) < 0)
         {
             /* if something went wrong this raises an error and must return NULL */
@@ -215,8 +209,7 @@ static EdsLib_Python_Database_t *EdsLib_Python_Database_CreateImpl(PyTypeObject 
         }
 
         IsSuccess = true;
-    }
-    while (false);
+    } while (false);
 
     if (!IsSuccess && self != NULL)
     {
@@ -239,7 +232,8 @@ PyObject *EdsLib_Python_Database_CreateFromStaticDB(const char *Name, const EdsL
         return NULL;
     }
 
-    self = (EdsLib_Python_Database_t *)EdsLib_Python_GetFromCache(EdsLib_Python_DatabaseCache, pyname,
+    self = (EdsLib_Python_Database_t *)EdsLib_Python_GetFromCache(EdsLib_Python_DatabaseCache,
+                                                                  pyname,
                                                                   &EdsLib_Python_DatabaseType);
     if (self != NULL)
     {
@@ -270,21 +264,21 @@ const EdsLib_DatabaseObject_t *EdsLib_Python_Database_GetDB(PyObject *obj)
         return NULL;
     }
 
-    return ((EdsLib_Python_Database_t*)obj)->GD;
+    return ((EdsLib_Python_Database_t *)obj)->GD;
 }
 
 static PyObject *EdsLib_Python_Database_new(PyTypeObject *obj, PyObject *args, PyObject *kwds)
 {
-    const char *dbstr;
-    PyObject *nameobj;
-    PyObject *argobj;
-    char *p;
-    char tempstring[512];
-    void *handle;
-    void *symbol;
-    const char *errstr;
+    const char               *dbstr;
+    PyObject                 *nameobj;
+    PyObject                 *argobj;
+    char                     *p;
+    char                      tempstring[512];
+    void                     *handle;
+    void                     *symbol;
+    const char               *errstr;
     EdsLib_Python_Database_t *self;
-    bool IsSuccess;
+    bool                      IsSuccess;
 
     /* note: the object returned here is a borrowed ref */
     if (!PyArg_ParseTuple(args, "O:Database_new", &argobj))
@@ -323,7 +317,8 @@ static PyObject *EdsLib_Python_Database_new(PyTypeObject *obj, PyObject *args, P
          * To avoid wasting resources, do not create the same database multiple times.
          * First check if the db cache object already contains an instance for this name
          */
-        self = (EdsLib_Python_Database_t *)EdsLib_Python_GetFromCache(EdsLib_Python_DatabaseCache, nameobj,
+        self = (EdsLib_Python_Database_t *)EdsLib_Python_GetFromCache(EdsLib_Python_DatabaseCache,
+                                                                      nameobj,
                                                                       &EdsLib_Python_DatabaseType);
         if (self != NULL)
         {
@@ -398,10 +393,10 @@ static PyObject *EdsLib_Python_Database_new(PyTypeObject *obj, PyObject *args, P
         }
     }
 
-    return (PyObject*)self;
+    return (PyObject *)self;
 }
 
-PyObject *   EdsLib_Python_Database_repr(PyObject *obj)
+PyObject *EdsLib_Python_Database_repr(PyObject *obj)
 {
     EdsLib_Python_Database_t *self = (EdsLib_Python_Database_t *)obj;
 
@@ -410,22 +405,22 @@ PyObject *   EdsLib_Python_Database_repr(PyObject *obj)
 
 static PyObject *EdsLib_Python_Database_getentry(PyObject *obj, PyObject *key)
 {
-    EdsLib_Python_Database_t *dbobj = (EdsLib_Python_Database_t *)obj;
-    PyObject *result = NULL;
-    EdsLib_Id_t EdsId;
+    EdsLib_Python_Database_t *dbobj  = (EdsLib_Python_Database_t *)obj;
+    PyObject                 *result = NULL;
+    EdsLib_Id_t               EdsId;
 
     EdsId = EdsLib_Python_ConvertArgToEdsId(dbobj->GD, key);
 
     /* if not valid this should have raised an exception */
     if (EdsLib_Is_Valid(EdsId))
     {
-        result = (PyObject*)EdsLib_Python_DatabaseEntry_GetFromEdsId_Impl(dbobj, EdsId);
+        result = (PyObject *)EdsLib_Python_DatabaseEntry_GetFromEdsId_Impl(dbobj, EdsId);
     }
 
     return result;
 }
 
-static PyObject *   EdsLib_Python_Database_IsContainer(PyObject *obj, PyObject *arg)
+static PyObject *EdsLib_Python_Database_IsContainer(PyObject *obj, PyObject *arg)
 {
     PyObject *result;
 
@@ -443,7 +438,7 @@ static PyObject *   EdsLib_Python_Database_IsContainer(PyObject *obj, PyObject *
     return result;
 }
 
-static PyObject *   EdsLib_Python_Database_IsArray(PyObject *obj, PyObject *arg)
+static PyObject *EdsLib_Python_Database_IsArray(PyObject *obj, PyObject *arg)
 {
     PyObject *result;
 
@@ -461,7 +456,7 @@ static PyObject *   EdsLib_Python_Database_IsArray(PyObject *obj, PyObject *arg)
     return result;
 }
 
-static PyObject *   EdsLib_Python_Database_IsNumber(PyObject *obj, PyObject *arg)
+static PyObject *EdsLib_Python_Database_IsNumber(PyObject *obj, PyObject *arg)
 {
     PyObject *result;
 
@@ -479,19 +474,19 @@ static PyObject *   EdsLib_Python_Database_IsNumber(PyObject *obj, PyObject *arg
     return result;
 }
 
-static PyObject *   EdsLib_Python_Database_IsEnum(PyObject *obj, PyObject *arg)
+static PyObject *EdsLib_Python_Database_IsEnum(PyObject *obj, PyObject *arg)
 {
     EdsLib_Python_DatabaseEntry_t *dbent;
-    EdsLib_DisplayHint_t DisplayHint;
-    PyTypeObject *base_type;
+    EdsLib_DisplayHint_t           DisplayHint;
+    PyTypeObject                  *base_type;
 
     PyObject *result = NULL;
 
     if (Py_TYPE(arg) == &EdsLib_Python_DatabaseEntryType)
     {
-        dbent = (EdsLib_Python_DatabaseEntry_t *)arg;
+        dbent       = (EdsLib_Python_DatabaseEntry_t *)arg;
         DisplayHint = EdsLib_DisplayDB_GetDisplayHint(dbent->EdsDb->GD, dbent->EdsId);
-        base_type = dbent->type_base.ht_type.tp_base;
+        base_type   = dbent->type_base.ht_type.tp_base;
 
         if ((DisplayHint == EDSLIB_DISPLAYHINT_ENUM_SYMTABLE) && (base_type == &EdsLib_Python_ObjectNumberType))
         {

@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     seds_checksum.h
  * \ingroup  tool
@@ -33,9 +32,7 @@
 #ifndef _SEDS_CHECKSUM_H_
 #define _SEDS_CHECKSUM_H_
 
-
 #include "seds_global.h"
-
 
 /*******************************************************************************/
 /*                         Macro definitions                                   */
@@ -44,8 +41,7 @@
 /**
  * Initial value to use for checksum calculations
  */
-#define SEDS_CHECKSUM_INITIAL        0x49A42201BE3217D6U
-
+#define SEDS_CHECKSUM_INITIAL 0x49A42201BE3217D6U
 
 /*******************************************************************************/
 /*                  Function documentation and prototypes                      */
@@ -74,7 +70,8 @@ void seds_checksum_init_table(void);
  * @param significant_bits the number of bits in localvalue to consider
  * @return updated checksum
  */
-seds_checksum_t seds_update_checksum_numeric(seds_checksum_t sum, uintmax_t localvalue, seds_integer_t significant_bits);
+seds_checksum_t
+seds_update_checksum_numeric(seds_checksum_t sum, uintmax_t localvalue, seds_integer_t significant_bits);
 
 /**
  * Update a checksum based on a string value
@@ -106,6 +103,4 @@ seds_checksum_t seds_update_checksum_string(seds_checksum_t sum, const char *cst
  */
 seds_checksum_t seds_update_checksum_int(seds_checksum_t sum, seds_integer_t value);
 
-
-#endif  /* _SEDS_CHECKSUM_H_ */
-
+#endif /* _SEDS_CHECKSUM_H_ */

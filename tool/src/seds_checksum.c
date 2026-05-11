@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     seds_checksum.c
  * \ingroup  tool
@@ -64,7 +63,7 @@
 /**
  * Polynomial used to initialize the checksum table
  */
-#define SEDS_CHECKSUM_POLY        0x04C11DB70012E321U
+#define SEDS_CHECKSUM_POLY 0x04C11DB70012E321U
 
 /**
  * Internal byte-wise checksum table, to speed up calculations
@@ -88,9 +87,9 @@ void seds_checksum_init_table(void)
     seds_checksum_t v;
     seds_checksum_t mask;
     seds_checksum_t result;
-    int32_t i, j;
+    int32_t         i, j;
 
-    mask = 1;
+    mask   = 1;
     mask <<= 8 * sizeof(mask) - 1;
     /*
      * This is a modified / simplified crc-type checksum
@@ -99,9 +98,9 @@ void seds_checksum_init_table(void)
      * the table is skewed to place the "no effect" byte at a
      * different spot in the table.
      */
-    for(i = 0; i < 256; ++i)
+    for (i = 0; i < 256; ++i)
     {
-        v = i ^ 0x7F;
+        v   = i ^ 0x7F;
         v <<= 8 * sizeof(v) - 8;
         for (j = 0; j < 8; ++j)
         {
@@ -118,8 +117,8 @@ void seds_checksum_init_table(void)
         result = 0;
         for (j = 0; j < (8 * sizeof(v)); ++j)
         {
-            result = (result << 1) | (v & 1);
-            v >>= 1;
+            result   = (result << 1) | (v & 1);
+            v      >>= 1;
         }
 
         SEDS_CHECKSUM_TABLE[i] = result;
@@ -154,14 +153,14 @@ seds_checksum_t seds_update_checksum_numeric(seds_checksum_t sum, uintmax_t loca
 
     while (significant_bits > 0)
     {
-        sum = (sum >> 8) ^ SEDS_CHECKSUM_TABLE[(sum ^ localvalue) & 0xFF];
+        sum               = (sum >> 8) ^ SEDS_CHECKSUM_TABLE[(sum ^ localvalue) & 0xFF];
         /*
          * In theory the right shift should always insert 0 bits on the left,
          * since the argument is unsigned.  However, the C spec allows for some
          * implementation-defined behavior with right shifts, so....
          * Apply a mask to ensure that the leftmost bits are indeed zero.
          */
-        localvalue = (localvalue >> 8) & LOCAL_MASK;
+        localvalue        = (localvalue >> 8) & LOCAL_MASK;
         significant_bits -= 8;
     }
 
@@ -217,4 +216,3 @@ seds_checksum_t seds_update_checksum_int(seds_checksum_t sum, seds_integer_t val
      */
     return seds_update_checksum_numeric(sum, value, 64);
 }
-

@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     seds_xmlparser.c
  * \ingroup  tool
@@ -56,8 +55,7 @@
  * As long as XML_Char type == char type, then this is a pass through
  * If XML_Char is something different, this macro should provide a conversion
  */
-#define XML_CHAR_C(x)           x
-
+#define XML_CHAR_C(x) x
 
 /*
  * Define the functions used for basic string ops on XML strings.
@@ -67,8 +65,8 @@
  *
  * (Use strcasecmp for case insensitivity during most operations)
  */
-#define XML_strcmp              strcasecmp
-#define XML_tolower             tolower
+#define XML_strcmp  strcasecmp
+#define XML_tolower tolower
 
 /**
  * Structure to map between character based XML tags and
@@ -84,164 +82,163 @@ typedef struct
  * Mapping table for start tags - comes from the SOIS EDS blue book
  * Each defined XML tag should have an entry in this table and an associated enum label for that tag
  */
-static const seds_stringmap_t XML_SEDS_STARTTAG_MAP[] =
-{
+static const seds_stringmap_t XML_SEDS_STARTTAG_MAP[] = {
 
-        /* Element types defined by SEDS and supported by this toolchain */
-        { .tag_name = XML_CHAR_C("ActivitySet"),            .tag_id = SEDS_NODETYPE_ACTIVITY_SET },
-        { .tag_name = XML_CHAR_C("Activity"),               .tag_id = SEDS_NODETYPE_ACTIVITY },
-        { .tag_name = XML_CHAR_C("AliasDataType"),          .tag_id = SEDS_NODETYPE_ALIAS_DATATYPE          },
-        { .tag_name = XML_CHAR_C("AlternateSet"),           .tag_id = SEDS_NODETYPE_ALTERNATE_SET           },
-        { .tag_name = XML_CHAR_C("Alternate"),              .tag_id = SEDS_NODETYPE_ALTERNATE               },
-        { .tag_name = XML_CHAR_C("ANDedConditions"),        .tag_id = SEDS_NODETYPE_ANDED_CONDITIONS        },
-        { .tag_name = XML_CHAR_C("Argument"),               .tag_id = SEDS_NODETYPE_ARGUMENT                },
-        { .tag_name = XML_CHAR_C("ArgumentValue"),          .tag_id = SEDS_NODETYPE_ARGUMENT_VALUE          },
-        { .tag_name = XML_CHAR_C("ArrayDataType"),          .tag_id = SEDS_NODETYPE_ARRAY_DATATYPE          },
-        { .tag_name = XML_CHAR_C("ArrayDimensions"),        .tag_id = SEDS_NODETYPE_ARRAY_DIMENSIONS        },
-        { .tag_name = XML_CHAR_C("Assignment"),             .tag_id = SEDS_NODETYPE_ASSIGNMENT              },
-        { .tag_name = XML_CHAR_C("BaseInterfaceSet"),       .tag_id = SEDS_NODETYPE_BASE_INTERFACE_SET      },
-        { .tag_name = XML_CHAR_C("BinaryDataType"),         .tag_id = SEDS_NODETYPE_BINARY_DATATYPE         },
-        { .tag_name = XML_CHAR_C("Body"),                   .tag_id = SEDS_NODETYPE_BODY                    },
-        { .tag_name = XML_CHAR_C("BooleanDataEncoding"),    .tag_id = SEDS_NODETYPE_BOOLEAN_DATA_ENCODING   },
-        { .tag_name = XML_CHAR_C("BooleanDataType"),        .tag_id = SEDS_NODETYPE_BOOLEAN_DATATYPE        },
-        { .tag_name = XML_CHAR_C("Calibration"),            .tag_id = SEDS_NODETYPE_CALIBRATION             },
-        { .tag_name = XML_CHAR_C("Call"),                   .tag_id = SEDS_NODETYPE_CALL                    },
-        { .tag_name = XML_CHAR_C("Category"),               .tag_id = SEDS_NODETYPE_CATEGORY                },
-        { .tag_name = XML_CHAR_C("CommandSet"),             .tag_id = SEDS_NODETYPE_COMMAND_SET             },
-        { .tag_name = XML_CHAR_C("Command"),                .tag_id = SEDS_NODETYPE_COMMAND                 },
-        { .tag_name = XML_CHAR_C("ComparisonOperator"),     .tag_id = SEDS_NODETYPE_COMPARISON_OPERATOR     },
-        { .tag_name = XML_CHAR_C("ComponentSet"),           .tag_id = SEDS_NODETYPE_COMPONENT_SET           },
-        { .tag_name = XML_CHAR_C("Component"),              .tag_id = SEDS_NODETYPE_COMPONENT               },
-        { .tag_name = XML_CHAR_C("Conditional"),            .tag_id = SEDS_NODETYPE_CONDITIONAL             },
-        { .tag_name = XML_CHAR_C("Condition"),              .tag_id = SEDS_NODETYPE_CONDITION               },
-        { .tag_name = XML_CHAR_C("ConstraintSet"),          .tag_id = SEDS_NODETYPE_CONSTRAINT_SET          },
-        { .tag_name = XML_CHAR_C("ContainerDataType"),      .tag_id = SEDS_NODETYPE_CONTAINER_DATATYPE      },
-        { .tag_name = XML_CHAR_C("DataSheet"),              .tag_id = SEDS_NODETYPE_DATASHEET               },
-        { .tag_name = XML_CHAR_C("DataTypeSet"),            .tag_id = SEDS_NODETYPE_DATA_TYPE_SET           },
-        { .tag_name = XML_CHAR_C("DateValue"),              .tag_id = SEDS_NODETYPE_DATE_VALUE              },
-        { .tag_name = XML_CHAR_C("DeclaredInterfaceSet"),   .tag_id = SEDS_NODETYPE_DECLARED_INTERFACE_SET  },
-        { .tag_name = XML_CHAR_C("Device"),                 .tag_id = SEDS_NODETYPE_DEVICE                  },
-        { .tag_name = XML_CHAR_C("DimensionList"),          .tag_id = SEDS_NODETYPE_DIMENSION_LIST          },
-        { .tag_name = XML_CHAR_C("Dimension"),              .tag_id = SEDS_NODETYPE_DIMENSION               },
-        { .tag_name = XML_CHAR_C("Do"),                     .tag_id = SEDS_NODETYPE_DO                      },
-        { .tag_name = XML_CHAR_C("EndAt"),                  .tag_id = SEDS_NODETYPE_END_AT                  },
-        { .tag_name = XML_CHAR_C("EntryList"),              .tag_id = SEDS_NODETYPE_CONTAINER_ENTRY_LIST    },
-        { .tag_name = XML_CHAR_C("EntryState"),             .tag_id = SEDS_NODETYPE_ENTRY_STATE             },
-        { .tag_name = XML_CHAR_C("Entry"),                  .tag_id = SEDS_NODETYPE_CONTAINER_ENTRY         },
-        { .tag_name = XML_CHAR_C("EnumeratedDataType"),     .tag_id = SEDS_NODETYPE_ENUMERATION_DATATYPE    },
-        { .tag_name = XML_CHAR_C("EnumeratedRange"),        .tag_id = SEDS_NODETYPE_ENUMERATED_RANGE        },
-        { .tag_name = XML_CHAR_C("EnumerationList"),        .tag_id = SEDS_NODETYPE_ENUMERATION_LIST        },
-        { .tag_name = XML_CHAR_C("Enumeration"),            .tag_id = SEDS_NODETYPE_ENUMERATION_ENTRY       },
-        { .tag_name = XML_CHAR_C("ErrorControlEntry"),      .tag_id = SEDS_NODETYPE_CONTAINER_ERROR_CONTROL_ENTRY   },
-        { .tag_name = XML_CHAR_C("ExitState"),              .tag_id = SEDS_NODETYPE_EXIT_STATE              },
-        { .tag_name = XML_CHAR_C("FirstOperand"),           .tag_id = SEDS_NODETYPE_FIRST_OPERAND           },
-        { .tag_name = XML_CHAR_C("FixedValueEntry"),        .tag_id = SEDS_NODETYPE_CONTAINER_FIXED_VALUE_ENTRY      },
-        { .tag_name = XML_CHAR_C("FloatDataEncoding"),      .tag_id = SEDS_NODETYPE_FLOAT_DATA_ENCODING     },
-        { .tag_name = XML_CHAR_C("FloatDataType"),          .tag_id = SEDS_NODETYPE_FLOAT_DATATYPE          },
-        { .tag_name = XML_CHAR_C("FloatValue"),             .tag_id = SEDS_NODETYPE_FLOAT_VALUE             },
-        { .tag_name = XML_CHAR_C("GenericTypeMapSet"),      .tag_id = SEDS_NODETYPE_GENERIC_TYPE_MAP_SET    },
-        { .tag_name = XML_CHAR_C("GenericTypeMap"),         .tag_id = SEDS_NODETYPE_GENERIC_TYPE_MAP        },
-        { .tag_name = XML_CHAR_C("GenericTypeSet"),         .tag_id = SEDS_NODETYPE_GENERIC_TYPE_SET        },
-        { .tag_name = XML_CHAR_C("GenericType"),            .tag_id = SEDS_NODETYPE_GENERIC_TYPE            },
-        { .tag_name = XML_CHAR_C("GetActivity"),            .tag_id = SEDS_NODETYPE_GET_ACTIVITY            },
-        { .tag_name = XML_CHAR_C("Guard"),                  .tag_id = SEDS_NODETYPE_GUARD                   },
-        { .tag_name = XML_CHAR_C("Implementation"),         .tag_id = SEDS_NODETYPE_IMPLEMENTATION          },
-        { .tag_name = XML_CHAR_C("IntegerDataEncoding"),    .tag_id = SEDS_NODETYPE_INTEGER_DATA_ENCODING   },
-        { .tag_name = XML_CHAR_C("IntegerDataType"),        .tag_id = SEDS_NODETYPE_INTEGER_DATATYPE        },
-        { .tag_name = XML_CHAR_C("IntegerValue"),           .tag_id = SEDS_NODETYPE_INTEGER_VALUE           },
-        { .tag_name = XML_CHAR_C("Interface"),              .tag_id = SEDS_NODETYPE_INTERFACE               },
-        { .tag_name = XML_CHAR_C("Iteration"),              .tag_id = SEDS_NODETYPE_ITERATION               },
-        { .tag_name = XML_CHAR_C("Label"),                  .tag_id = SEDS_NODETYPE_LABEL                   },
-        { .tag_name = XML_CHAR_C("LengthEntry"),            .tag_id = SEDS_NODETYPE_CONTAINER_LENGTH_ENTRY  },
-        { .tag_name = XML_CHAR_C("ListEntry"),              .tag_id = SEDS_NODETYPE_CONTAINER_LIST_ENTRY    },
-        { .tag_name = XML_CHAR_C("LongDescription"),        .tag_id = SEDS_NODETYPE_LONG_DESCRIPTION        },
-        { .tag_name = XML_CHAR_C("MathOperation"),          .tag_id = SEDS_NODETYPE_MATH_OPERATION          },
-        { .tag_name = XML_CHAR_C("Metadata"),               .tag_id = SEDS_NODETYPE_METADATA                },
-        { .tag_name = XML_CHAR_C("MetadataValueSet"),       .tag_id = SEDS_NODETYPE_METADATA_VALUE_SET      },
-        { .tag_name = XML_CHAR_C("MinMaxRange"),            .tag_id = SEDS_NODETYPE_MINMAX_RANGE            },
-        { .tag_name = XML_CHAR_C("NominalRangeSet"),        .tag_id = SEDS_NODETYPE_NOMINAL_RANGE_SET       },
-        { .tag_name = XML_CHAR_C("OnCommandPrimitive"),     .tag_id = SEDS_NODETYPE_ON_COMMAND_PRIMITIVE    },
-        { .tag_name = XML_CHAR_C("OnConditionFalse"),       .tag_id = SEDS_NODETYPE_ON_CONDITION_FALSE      },
-        { .tag_name = XML_CHAR_C("OnConditionTrue"),        .tag_id = SEDS_NODETYPE_ON_CONDITION_TRUE       },
-        { .tag_name = XML_CHAR_C("OnEntry"),                .tag_id = SEDS_NODETYPE_ON_ENTRY                },
-        { .tag_name = XML_CHAR_C("OnExit"),                 .tag_id = SEDS_NODETYPE_ON_EXIT                 },
-        { .tag_name = XML_CHAR_C("OnParameterPrimitive"),   .tag_id = SEDS_NODETYPE_ON_PARAMETER_PRIMITIVE  },
-        { .tag_name = XML_CHAR_C("OnTimer"),                .tag_id = SEDS_NODETYPE_ON_TIMER                },
-        { .tag_name = XML_CHAR_C("Operator"),               .tag_id = SEDS_NODETYPE_OPERATOR                },
-        { .tag_name = XML_CHAR_C("ORedConditions"),         .tag_id = SEDS_NODETYPE_ORED_CONDITIONS         },
-        { .tag_name = XML_CHAR_C("OverArray"),              .tag_id = SEDS_NODETYPE_OVER_ARRAY              },
-        { .tag_name = XML_CHAR_C("PackageFile"),            .tag_id = SEDS_NODETYPE_PACKAGEFILE             },
-        { .tag_name = XML_CHAR_C("Package"),                .tag_id = SEDS_NODETYPE_PACKAGE                 },
-        { .tag_name = XML_CHAR_C("PaddingEntry"),           .tag_id = SEDS_NODETYPE_CONTAINER_PADDING_ENTRY },
-        { .tag_name = XML_CHAR_C("ParameterActivityMapSet"),.tag_id = SEDS_NODETYPE_PARAMETER_ACTIVITY_MAP_SET },
-        { .tag_name = XML_CHAR_C("ParameterActivityMap"),   .tag_id = SEDS_NODETYPE_PARAMETER_ACTIVITY_MAP  },
-        { .tag_name = XML_CHAR_C("ParameterMapSet"),        .tag_id = SEDS_NODETYPE_PARAMETER_MAP_SET       },
-        { .tag_name = XML_CHAR_C("ParameterMap"),           .tag_id = SEDS_NODETYPE_PARAMETER_MAP           },
-        { .tag_name = XML_CHAR_C("ParameterSet"),           .tag_id = SEDS_NODETYPE_PARAMETER_SET           },
-        { .tag_name = XML_CHAR_C("Parameter"),              .tag_id = SEDS_NODETYPE_PARAMETER               },
-        { .tag_name = XML_CHAR_C("PolynomialCalibrator"),   .tag_id = SEDS_NODETYPE_POLYNOMIAL_CALIBRATOR   },
-        { .tag_name = XML_CHAR_C("PrecisionRange"),         .tag_id = SEDS_NODETYPE_PRECISION_RANGE         },
-        { .tag_name = XML_CHAR_C("PresentWhen"),            .tag_id = SEDS_NODETYPE_PRESENT_WHEN            },
-        { .tag_name = XML_CHAR_C("ProvidedInterfaceSet"),   .tag_id = SEDS_NODETYPE_PROVIDED_INTERFACE_SET  },
-        { .tag_name = XML_CHAR_C("Provided"),               .tag_id = SEDS_NODETYPE_PROVIDED                },
-        { .tag_name = XML_CHAR_C("RangeConstraint"),        .tag_id = SEDS_NODETYPE_RANGE_CONSTRAINT        },
-        { .tag_name = XML_CHAR_C("RangeSet"),               .tag_id = SEDS_NODETYPE_RANGE_SET               },
-        { .tag_name = XML_CHAR_C("Range"),                  .tag_id = SEDS_NODETYPE_RANGE                   },
-        { .tag_name = XML_CHAR_C("RequiredInterfaceSet"),   .tag_id = SEDS_NODETYPE_REQUIRED_INTERFACE_SET  },
-        { .tag_name = XML_CHAR_C("Required"),               .tag_id = SEDS_NODETYPE_REQUIRED                },
-        { .tag_name = XML_CHAR_C("SecondOperand"),          .tag_id = SEDS_NODETYPE_SECOND_OPERAND          },
-        { .tag_name = XML_CHAR_C("Semantics"),              .tag_id = SEDS_NODETYPE_SEMANTICS               },
-        { .tag_name = XML_CHAR_C("SemanticsTerm"),          .tag_id = SEDS_NODETYPE_SEMANTICS_TERM          },
-        { .tag_name = XML_CHAR_C("SendCommandPrimitive"),   .tag_id = SEDS_NODETYPE_SEND_COMMAND_PRIMITIVE  },
-        { .tag_name = XML_CHAR_C("SendParameterPrimitive"), .tag_id = SEDS_NODETYPE_SEND_PARAMETER_PRIMITIVE},
-        { .tag_name = XML_CHAR_C("SetActivityOnly"),        .tag_id = SEDS_NODETYPE_SET_ACTIVITY_ONLY       },
-        { .tag_name = XML_CHAR_C("SetActivity"),            .tag_id = SEDS_NODETYPE_SET_ACTIVITY            },
-        { .tag_name = XML_CHAR_C("SplineCalibrator"),       .tag_id = SEDS_NODETYPE_SPLINE_CALIBRATOR       },
-        { .tag_name = XML_CHAR_C("SplinePoint"),            .tag_id = SEDS_NODETYPE_SPLINE_POINT            },
-        { .tag_name = XML_CHAR_C("StartAt"),                .tag_id = SEDS_NODETYPE_START_AT                },
-        { .tag_name = XML_CHAR_C("StateMachineSet"),        .tag_id = SEDS_NODETYPE_STATE_MACHINE_SET       },
-        { .tag_name = XML_CHAR_C("StateMachine"),           .tag_id = SEDS_NODETYPE_STATE_MACHINE           },
-        { .tag_name = XML_CHAR_C("State"),                  .tag_id = SEDS_NODETYPE_STATE                   },
-        { .tag_name = XML_CHAR_C("Step"),                   .tag_id = SEDS_NODETYPE_STEP                    },
-        { .tag_name = XML_CHAR_C("StringDataEncoding"),     .tag_id = SEDS_NODETYPE_STRING_DATA_ENCODING    },
-        { .tag_name = XML_CHAR_C("StringDataType"),         .tag_id = SEDS_NODETYPE_STRING_DATATYPE         },
-        { .tag_name = XML_CHAR_C("StringValue"),            .tag_id = SEDS_NODETYPE_STRING_VALUE            },
-        { .tag_name = XML_CHAR_C("SubRangeDataType"),       .tag_id = SEDS_NODETYPE_SUBRANGE_DATATYPE       },
-        { .tag_name = XML_CHAR_C("Term"),                   .tag_id = SEDS_NODETYPE_POLYNOMIAL_TERM         },
-        { .tag_name = XML_CHAR_C("TrailerEntryList"),       .tag_id = SEDS_NODETYPE_CONTAINER_TRAILER_ENTRY_LIST    },
-        { .tag_name = XML_CHAR_C("Transition"),             .tag_id = SEDS_NODETYPE_TRANSITION              },
-        { .tag_name = XML_CHAR_C("TypeCondition"),          .tag_id = SEDS_NODETYPE_TYPE_CONDITION          },
-        { .tag_name = XML_CHAR_C("TypeConstraint"),         .tag_id = SEDS_NODETYPE_TYPE_CONSTRAINT         },
-        { .tag_name = XML_CHAR_C("TypeOperand"),            .tag_id = SEDS_NODETYPE_TYPE_OPERAND            },
-        { .tag_name = XML_CHAR_C("ValidRange"),             .tag_id = SEDS_NODETYPE_VALID_RANGE              },
-        { .tag_name = XML_CHAR_C("ValueConstraint"),        .tag_id = SEDS_NODETYPE_VALUE_CONSTRAINT        },
-        { .tag_name = XML_CHAR_C("Value"),                  .tag_id = SEDS_NODETYPE_VALUE                   },
-        { .tag_name = XML_CHAR_C("VariableRef"),            .tag_id = SEDS_NODETYPE_VARIABLE_REF            },
-        { .tag_name = XML_CHAR_C("VariableSet"),            .tag_id = SEDS_NODETYPE_VARIABLE_SET            },
-        { .tag_name = XML_CHAR_C("Variable"),               .tag_id = SEDS_NODETYPE_VARIABLE                },
+    /* Element types defined by SEDS and supported by this toolchain */
+    { .tag_name = XML_CHAR_C("ActivitySet"),             .tag_id = SEDS_NODETYPE_ACTIVITY_SET                  },
+    { .tag_name = XML_CHAR_C("Activity"),                .tag_id = SEDS_NODETYPE_ACTIVITY                      },
+    { .tag_name = XML_CHAR_C("AliasDataType"),           .tag_id = SEDS_NODETYPE_ALIAS_DATATYPE                },
+    { .tag_name = XML_CHAR_C("AlternateSet"),            .tag_id = SEDS_NODETYPE_ALTERNATE_SET                 },
+    { .tag_name = XML_CHAR_C("Alternate"),               .tag_id = SEDS_NODETYPE_ALTERNATE                     },
+    { .tag_name = XML_CHAR_C("ANDedConditions"),         .tag_id = SEDS_NODETYPE_ANDED_CONDITIONS              },
+    { .tag_name = XML_CHAR_C("Argument"),                .tag_id = SEDS_NODETYPE_ARGUMENT                      },
+    { .tag_name = XML_CHAR_C("ArgumentValue"),           .tag_id = SEDS_NODETYPE_ARGUMENT_VALUE                },
+    { .tag_name = XML_CHAR_C("ArrayDataType"),           .tag_id = SEDS_NODETYPE_ARRAY_DATATYPE                },
+    { .tag_name = XML_CHAR_C("ArrayDimensions"),         .tag_id = SEDS_NODETYPE_ARRAY_DIMENSIONS              },
+    { .tag_name = XML_CHAR_C("Assignment"),              .tag_id = SEDS_NODETYPE_ASSIGNMENT                    },
+    { .tag_name = XML_CHAR_C("BaseInterfaceSet"),        .tag_id = SEDS_NODETYPE_BASE_INTERFACE_SET            },
+    { .tag_name = XML_CHAR_C("BinaryDataType"),          .tag_id = SEDS_NODETYPE_BINARY_DATATYPE               },
+    { .tag_name = XML_CHAR_C("Body"),                    .tag_id = SEDS_NODETYPE_BODY                          },
+    { .tag_name = XML_CHAR_C("BooleanDataEncoding"),     .tag_id = SEDS_NODETYPE_BOOLEAN_DATA_ENCODING         },
+    { .tag_name = XML_CHAR_C("BooleanDataType"),         .tag_id = SEDS_NODETYPE_BOOLEAN_DATATYPE              },
+    { .tag_name = XML_CHAR_C("Calibration"),             .tag_id = SEDS_NODETYPE_CALIBRATION                   },
+    { .tag_name = XML_CHAR_C("Call"),                    .tag_id = SEDS_NODETYPE_CALL                          },
+    { .tag_name = XML_CHAR_C("Category"),                .tag_id = SEDS_NODETYPE_CATEGORY                      },
+    { .tag_name = XML_CHAR_C("CommandSet"),              .tag_id = SEDS_NODETYPE_COMMAND_SET                   },
+    { .tag_name = XML_CHAR_C("Command"),                 .tag_id = SEDS_NODETYPE_COMMAND                       },
+    { .tag_name = XML_CHAR_C("ComparisonOperator"),      .tag_id = SEDS_NODETYPE_COMPARISON_OPERATOR           },
+    { .tag_name = XML_CHAR_C("ComponentSet"),            .tag_id = SEDS_NODETYPE_COMPONENT_SET                 },
+    { .tag_name = XML_CHAR_C("Component"),               .tag_id = SEDS_NODETYPE_COMPONENT                     },
+    { .tag_name = XML_CHAR_C("Conditional"),             .tag_id = SEDS_NODETYPE_CONDITIONAL                   },
+    { .tag_name = XML_CHAR_C("Condition"),               .tag_id = SEDS_NODETYPE_CONDITION                     },
+    { .tag_name = XML_CHAR_C("ConstraintSet"),           .tag_id = SEDS_NODETYPE_CONSTRAINT_SET                },
+    { .tag_name = XML_CHAR_C("ContainerDataType"),       .tag_id = SEDS_NODETYPE_CONTAINER_DATATYPE            },
+    { .tag_name = XML_CHAR_C("DataSheet"),               .tag_id = SEDS_NODETYPE_DATASHEET                     },
+    { .tag_name = XML_CHAR_C("DataTypeSet"),             .tag_id = SEDS_NODETYPE_DATA_TYPE_SET                 },
+    { .tag_name = XML_CHAR_C("DateValue"),               .tag_id = SEDS_NODETYPE_DATE_VALUE                    },
+    { .tag_name = XML_CHAR_C("DeclaredInterfaceSet"),    .tag_id = SEDS_NODETYPE_DECLARED_INTERFACE_SET        },
+    { .tag_name = XML_CHAR_C("Device"),                  .tag_id = SEDS_NODETYPE_DEVICE                        },
+    { .tag_name = XML_CHAR_C("DimensionList"),           .tag_id = SEDS_NODETYPE_DIMENSION_LIST                },
+    { .tag_name = XML_CHAR_C("Dimension"),               .tag_id = SEDS_NODETYPE_DIMENSION                     },
+    { .tag_name = XML_CHAR_C("Do"),                      .tag_id = SEDS_NODETYPE_DO                            },
+    { .tag_name = XML_CHAR_C("EndAt"),                   .tag_id = SEDS_NODETYPE_END_AT                        },
+    { .tag_name = XML_CHAR_C("EntryList"),               .tag_id = SEDS_NODETYPE_CONTAINER_ENTRY_LIST          },
+    { .tag_name = XML_CHAR_C("EntryState"),              .tag_id = SEDS_NODETYPE_ENTRY_STATE                   },
+    { .tag_name = XML_CHAR_C("Entry"),                   .tag_id = SEDS_NODETYPE_CONTAINER_ENTRY               },
+    { .tag_name = XML_CHAR_C("EnumeratedDataType"),      .tag_id = SEDS_NODETYPE_ENUMERATION_DATATYPE          },
+    { .tag_name = XML_CHAR_C("EnumeratedRange"),         .tag_id = SEDS_NODETYPE_ENUMERATED_RANGE              },
+    { .tag_name = XML_CHAR_C("EnumerationList"),         .tag_id = SEDS_NODETYPE_ENUMERATION_LIST              },
+    { .tag_name = XML_CHAR_C("Enumeration"),             .tag_id = SEDS_NODETYPE_ENUMERATION_ENTRY             },
+    { .tag_name = XML_CHAR_C("ErrorControlEntry"),       .tag_id = SEDS_NODETYPE_CONTAINER_ERROR_CONTROL_ENTRY },
+    { .tag_name = XML_CHAR_C("ExitState"),               .tag_id = SEDS_NODETYPE_EXIT_STATE                    },
+    { .tag_name = XML_CHAR_C("FirstOperand"),            .tag_id = SEDS_NODETYPE_FIRST_OPERAND                 },
+    { .tag_name = XML_CHAR_C("FixedValueEntry"),         .tag_id = SEDS_NODETYPE_CONTAINER_FIXED_VALUE_ENTRY   },
+    { .tag_name = XML_CHAR_C("FloatDataEncoding"),       .tag_id = SEDS_NODETYPE_FLOAT_DATA_ENCODING           },
+    { .tag_name = XML_CHAR_C("FloatDataType"),           .tag_id = SEDS_NODETYPE_FLOAT_DATATYPE                },
+    { .tag_name = XML_CHAR_C("FloatValue"),              .tag_id = SEDS_NODETYPE_FLOAT_VALUE                   },
+    { .tag_name = XML_CHAR_C("GenericTypeMapSet"),       .tag_id = SEDS_NODETYPE_GENERIC_TYPE_MAP_SET          },
+    { .tag_name = XML_CHAR_C("GenericTypeMap"),          .tag_id = SEDS_NODETYPE_GENERIC_TYPE_MAP              },
+    { .tag_name = XML_CHAR_C("GenericTypeSet"),          .tag_id = SEDS_NODETYPE_GENERIC_TYPE_SET              },
+    { .tag_name = XML_CHAR_C("GenericType"),             .tag_id = SEDS_NODETYPE_GENERIC_TYPE                  },
+    { .tag_name = XML_CHAR_C("GetActivity"),             .tag_id = SEDS_NODETYPE_GET_ACTIVITY                  },
+    { .tag_name = XML_CHAR_C("Guard"),                   .tag_id = SEDS_NODETYPE_GUARD                         },
+    { .tag_name = XML_CHAR_C("Implementation"),          .tag_id = SEDS_NODETYPE_IMPLEMENTATION                },
+    { .tag_name = XML_CHAR_C("IntegerDataEncoding"),     .tag_id = SEDS_NODETYPE_INTEGER_DATA_ENCODING         },
+    { .tag_name = XML_CHAR_C("IntegerDataType"),         .tag_id = SEDS_NODETYPE_INTEGER_DATATYPE              },
+    { .tag_name = XML_CHAR_C("IntegerValue"),            .tag_id = SEDS_NODETYPE_INTEGER_VALUE                 },
+    { .tag_name = XML_CHAR_C("Interface"),               .tag_id = SEDS_NODETYPE_INTERFACE                     },
+    { .tag_name = XML_CHAR_C("Iteration"),               .tag_id = SEDS_NODETYPE_ITERATION                     },
+    { .tag_name = XML_CHAR_C("Label"),                   .tag_id = SEDS_NODETYPE_LABEL                         },
+    { .tag_name = XML_CHAR_C("LengthEntry"),             .tag_id = SEDS_NODETYPE_CONTAINER_LENGTH_ENTRY        },
+    { .tag_name = XML_CHAR_C("ListEntry"),               .tag_id = SEDS_NODETYPE_CONTAINER_LIST_ENTRY          },
+    { .tag_name = XML_CHAR_C("LongDescription"),         .tag_id = SEDS_NODETYPE_LONG_DESCRIPTION              },
+    { .tag_name = XML_CHAR_C("MathOperation"),           .tag_id = SEDS_NODETYPE_MATH_OPERATION                },
+    { .tag_name = XML_CHAR_C("Metadata"),                .tag_id = SEDS_NODETYPE_METADATA                      },
+    { .tag_name = XML_CHAR_C("MetadataValueSet"),        .tag_id = SEDS_NODETYPE_METADATA_VALUE_SET            },
+    { .tag_name = XML_CHAR_C("MinMaxRange"),             .tag_id = SEDS_NODETYPE_MINMAX_RANGE                  },
+    { .tag_name = XML_CHAR_C("NominalRangeSet"),         .tag_id = SEDS_NODETYPE_NOMINAL_RANGE_SET             },
+    { .tag_name = XML_CHAR_C("OnCommandPrimitive"),      .tag_id = SEDS_NODETYPE_ON_COMMAND_PRIMITIVE          },
+    { .tag_name = XML_CHAR_C("OnConditionFalse"),        .tag_id = SEDS_NODETYPE_ON_CONDITION_FALSE            },
+    { .tag_name = XML_CHAR_C("OnConditionTrue"),         .tag_id = SEDS_NODETYPE_ON_CONDITION_TRUE             },
+    { .tag_name = XML_CHAR_C("OnEntry"),                 .tag_id = SEDS_NODETYPE_ON_ENTRY                      },
+    { .tag_name = XML_CHAR_C("OnExit"),                  .tag_id = SEDS_NODETYPE_ON_EXIT                       },
+    { .tag_name = XML_CHAR_C("OnParameterPrimitive"),    .tag_id = SEDS_NODETYPE_ON_PARAMETER_PRIMITIVE        },
+    { .tag_name = XML_CHAR_C("OnTimer"),                 .tag_id = SEDS_NODETYPE_ON_TIMER                      },
+    { .tag_name = XML_CHAR_C("Operator"),                .tag_id = SEDS_NODETYPE_OPERATOR                      },
+    { .tag_name = XML_CHAR_C("ORedConditions"),          .tag_id = SEDS_NODETYPE_ORED_CONDITIONS               },
+    { .tag_name = XML_CHAR_C("OverArray"),               .tag_id = SEDS_NODETYPE_OVER_ARRAY                    },
+    { .tag_name = XML_CHAR_C("PackageFile"),             .tag_id = SEDS_NODETYPE_PACKAGEFILE                   },
+    { .tag_name = XML_CHAR_C("Package"),                 .tag_id = SEDS_NODETYPE_PACKAGE                       },
+    { .tag_name = XML_CHAR_C("PaddingEntry"),            .tag_id = SEDS_NODETYPE_CONTAINER_PADDING_ENTRY       },
+    { .tag_name = XML_CHAR_C("ParameterActivityMapSet"), .tag_id = SEDS_NODETYPE_PARAMETER_ACTIVITY_MAP_SET    },
+    { .tag_name = XML_CHAR_C("ParameterActivityMap"),    .tag_id = SEDS_NODETYPE_PARAMETER_ACTIVITY_MAP        },
+    { .tag_name = XML_CHAR_C("ParameterMapSet"),         .tag_id = SEDS_NODETYPE_PARAMETER_MAP_SET             },
+    { .tag_name = XML_CHAR_C("ParameterMap"),            .tag_id = SEDS_NODETYPE_PARAMETER_MAP                 },
+    { .tag_name = XML_CHAR_C("ParameterSet"),            .tag_id = SEDS_NODETYPE_PARAMETER_SET                 },
+    { .tag_name = XML_CHAR_C("Parameter"),               .tag_id = SEDS_NODETYPE_PARAMETER                     },
+    { .tag_name = XML_CHAR_C("PolynomialCalibrator"),    .tag_id = SEDS_NODETYPE_POLYNOMIAL_CALIBRATOR         },
+    { .tag_name = XML_CHAR_C("PrecisionRange"),          .tag_id = SEDS_NODETYPE_PRECISION_RANGE               },
+    { .tag_name = XML_CHAR_C("PresentWhen"),             .tag_id = SEDS_NODETYPE_PRESENT_WHEN                  },
+    { .tag_name = XML_CHAR_C("ProvidedInterfaceSet"),    .tag_id = SEDS_NODETYPE_PROVIDED_INTERFACE_SET        },
+    { .tag_name = XML_CHAR_C("Provided"),                .tag_id = SEDS_NODETYPE_PROVIDED                      },
+    { .tag_name = XML_CHAR_C("RangeConstraint"),         .tag_id = SEDS_NODETYPE_RANGE_CONSTRAINT              },
+    { .tag_name = XML_CHAR_C("RangeSet"),                .tag_id = SEDS_NODETYPE_RANGE_SET                     },
+    { .tag_name = XML_CHAR_C("Range"),                   .tag_id = SEDS_NODETYPE_RANGE                         },
+    { .tag_name = XML_CHAR_C("RequiredInterfaceSet"),    .tag_id = SEDS_NODETYPE_REQUIRED_INTERFACE_SET        },
+    { .tag_name = XML_CHAR_C("Required"),                .tag_id = SEDS_NODETYPE_REQUIRED                      },
+    { .tag_name = XML_CHAR_C("SecondOperand"),           .tag_id = SEDS_NODETYPE_SECOND_OPERAND                },
+    { .tag_name = XML_CHAR_C("Semantics"),               .tag_id = SEDS_NODETYPE_SEMANTICS                     },
+    { .tag_name = XML_CHAR_C("SemanticsTerm"),           .tag_id = SEDS_NODETYPE_SEMANTICS_TERM                },
+    { .tag_name = XML_CHAR_C("SendCommandPrimitive"),    .tag_id = SEDS_NODETYPE_SEND_COMMAND_PRIMITIVE        },
+    { .tag_name = XML_CHAR_C("SendParameterPrimitive"),  .tag_id = SEDS_NODETYPE_SEND_PARAMETER_PRIMITIVE      },
+    { .tag_name = XML_CHAR_C("SetActivityOnly"),         .tag_id = SEDS_NODETYPE_SET_ACTIVITY_ONLY             },
+    { .tag_name = XML_CHAR_C("SetActivity"),             .tag_id = SEDS_NODETYPE_SET_ACTIVITY                  },
+    { .tag_name = XML_CHAR_C("SplineCalibrator"),        .tag_id = SEDS_NODETYPE_SPLINE_CALIBRATOR             },
+    { .tag_name = XML_CHAR_C("SplinePoint"),             .tag_id = SEDS_NODETYPE_SPLINE_POINT                  },
+    { .tag_name = XML_CHAR_C("StartAt"),                 .tag_id = SEDS_NODETYPE_START_AT                      },
+    { .tag_name = XML_CHAR_C("StateMachineSet"),         .tag_id = SEDS_NODETYPE_STATE_MACHINE_SET             },
+    { .tag_name = XML_CHAR_C("StateMachine"),            .tag_id = SEDS_NODETYPE_STATE_MACHINE                 },
+    { .tag_name = XML_CHAR_C("State"),                   .tag_id = SEDS_NODETYPE_STATE                         },
+    { .tag_name = XML_CHAR_C("Step"),                    .tag_id = SEDS_NODETYPE_STEP                          },
+    { .tag_name = XML_CHAR_C("StringDataEncoding"),      .tag_id = SEDS_NODETYPE_STRING_DATA_ENCODING          },
+    { .tag_name = XML_CHAR_C("StringDataType"),          .tag_id = SEDS_NODETYPE_STRING_DATATYPE               },
+    { .tag_name = XML_CHAR_C("StringValue"),             .tag_id = SEDS_NODETYPE_STRING_VALUE                  },
+    { .tag_name = XML_CHAR_C("SubRangeDataType"),        .tag_id = SEDS_NODETYPE_SUBRANGE_DATATYPE             },
+    { .tag_name = XML_CHAR_C("Term"),                    .tag_id = SEDS_NODETYPE_POLYNOMIAL_TERM               },
+    { .tag_name = XML_CHAR_C("TrailerEntryList"),        .tag_id = SEDS_NODETYPE_CONTAINER_TRAILER_ENTRY_LIST  },
+    { .tag_name = XML_CHAR_C("Transition"),              .tag_id = SEDS_NODETYPE_TRANSITION                    },
+    { .tag_name = XML_CHAR_C("TypeCondition"),           .tag_id = SEDS_NODETYPE_TYPE_CONDITION                },
+    { .tag_name = XML_CHAR_C("TypeConstraint"),          .tag_id = SEDS_NODETYPE_TYPE_CONSTRAINT               },
+    { .tag_name = XML_CHAR_C("TypeOperand"),             .tag_id = SEDS_NODETYPE_TYPE_OPERAND                  },
+    { .tag_name = XML_CHAR_C("ValidRange"),              .tag_id = SEDS_NODETYPE_VALID_RANGE                   },
+    { .tag_name = XML_CHAR_C("ValueConstraint"),         .tag_id = SEDS_NODETYPE_VALUE_CONSTRAINT              },
+    { .tag_name = XML_CHAR_C("Value"),                   .tag_id = SEDS_NODETYPE_VALUE                         },
+    { .tag_name = XML_CHAR_C("VariableRef"),             .tag_id = SEDS_NODETYPE_VARIABLE_REF                  },
+    { .tag_name = XML_CHAR_C("VariableSet"),             .tag_id = SEDS_NODETYPE_VARIABLE_SET                  },
+    { .tag_name = XML_CHAR_C("Variable"),                .tag_id = SEDS_NODETYPE_VARIABLE                      },
 
-        /* catch instances of xi:include, these are ignored by this tool but do not generate warnings */
-        { .tag_name = XML_CHAR_C("xi:include"),             .tag_id = SEDS_NODETYPE_XINCLUDE_PASSTHRU       },
+    /* catch instances of xi:include, these are ignored by this tool but do not generate warnings */
+    { .tag_name = XML_CHAR_C("xi:include"),              .tag_id = SEDS_NODETYPE_XINCLUDE_PASSTHRU             },
 
-        /* Extra Element types _not_ defined by SEDS that this toolchain supports (SEDS supplement) */
-        { .tag_name = XML_CHAR_C("DesignParameters"),       .tag_id = SEDS_NODETYPE_DESIGN_PARAMETERS       },
-        { .tag_name = XML_CHAR_C("Define"),                 .tag_id = SEDS_NODETYPE_DEFINE                  },
-        { .tag_name = XML_CHAR_C("InstanceRuleSet"),        .tag_id = SEDS_NODETYPE_INSTANCE_RULE_SET       },
-        { .tag_name = XML_CHAR_C("InstanceRule"),           .tag_id = SEDS_NODETYPE_INSTANCE_RULE           },
-        { .tag_name = XML_CHAR_C("InterfaceMapSet"),        .tag_id = SEDS_NODETYPE_INTERFACE_MAP_SET       },
-        { .tag_name = XML_CHAR_C("InterfaceMap"),           .tag_id = SEDS_NODETYPE_INTERFACE_MAP           },
-        { .tag_name = XML_CHAR_C("ParameterValue"),         .tag_id = SEDS_NODETYPE_PARAMETER_VALUE         },
-        { .tag_name = XML_CHAR_C("DeclaredInterface"),      .tag_id = SEDS_NODETYPE_DECLARED_INTERFACE      },
-        { .tag_name = XML_CHAR_C("ProvidedInterface"),      .tag_id = SEDS_NODETYPE_PROVIDED_INTERFACE      },
-        { .tag_name = XML_CHAR_C("RequiredInterface"),      .tag_id = SEDS_NODETYPE_REQUIRED_INTERFACE      },
+    /* Extra Element types _not_ defined by SEDS that this toolchain supports (SEDS supplement) */
+    { .tag_name = XML_CHAR_C("DesignParameters"),        .tag_id = SEDS_NODETYPE_DESIGN_PARAMETERS             },
+    { .tag_name = XML_CHAR_C("Define"),                  .tag_id = SEDS_NODETYPE_DEFINE                        },
+    { .tag_name = XML_CHAR_C("InstanceRuleSet"),         .tag_id = SEDS_NODETYPE_INSTANCE_RULE_SET             },
+    { .tag_name = XML_CHAR_C("InstanceRule"),            .tag_id = SEDS_NODETYPE_INSTANCE_RULE                 },
+    { .tag_name = XML_CHAR_C("InterfaceMapSet"),         .tag_id = SEDS_NODETYPE_INTERFACE_MAP_SET             },
+    { .tag_name = XML_CHAR_C("InterfaceMap"),            .tag_id = SEDS_NODETYPE_INTERFACE_MAP                 },
+    { .tag_name = XML_CHAR_C("ParameterValue"),          .tag_id = SEDS_NODETYPE_PARAMETER_VALUE               },
+    { .tag_name = XML_CHAR_C("DeclaredInterface"),       .tag_id = SEDS_NODETYPE_DECLARED_INTERFACE            },
+    { .tag_name = XML_CHAR_C("ProvidedInterface"),       .tag_id = SEDS_NODETYPE_PROVIDED_INTERFACE            },
+    { .tag_name = XML_CHAR_C("RequiredInterface"),       .tag_id = SEDS_NODETYPE_REQUIRED_INTERFACE            },
 
-        /* these are variations of the constraint elements that appear within PresentWhen elements */
-        { .tag_name = XML_CHAR_C("PresenceTypeConstraint"),   .tag_id = SEDS_NODETYPE_PRESENCE_TYPE_CONSTRAINT  },
-        { .tag_name = XML_CHAR_C("PresenceRangeConstraint"),  .tag_id = SEDS_NODETYPE_PRESENCE_RANGE_CONSTRAINT },
-        { .tag_name = XML_CHAR_C("PresenceValueConstraint"),  .tag_id = SEDS_NODETYPE_PRESENCE_VALUE_CONSTRAINT },
+    /* these are variations of the constraint elements that appear within PresentWhen elements */
+    { .tag_name = XML_CHAR_C("PresenceTypeConstraint"),  .tag_id = SEDS_NODETYPE_PRESENCE_TYPE_CONSTRAINT      },
+    { .tag_name = XML_CHAR_C("PresenceRangeConstraint"), .tag_id = SEDS_NODETYPE_PRESENCE_RANGE_CONSTRAINT     },
+    { .tag_name = XML_CHAR_C("PresenceValueConstraint"), .tag_id = SEDS_NODETYPE_PRESENCE_VALUE_CONSTRAINT     },
 
-        /* Keep NULL tag last - absolute end of list marker */
-        { .tag_name = NULL,                                 .tag_id = SEDS_NODETYPE_UNKNOWN                 }
+    /* Keep NULL tag last - absolute end of list marker */
+    { .tag_name = NULL,                                  .tag_id = SEDS_NODETYPE_UNKNOWN                       }
 };
 
 /**
@@ -252,15 +249,13 @@ static const seds_stringmap_t XML_SEDS_STARTTAG_MAP[] =
 typedef struct
 {
     XML_Parser xmlp;
-    FILE *fp;
+    FILE      *fp;
 } seds_parser_t;
-
 
 /*******************************************************************************/
 /*                      Internal / static Helper Functions                     */
 /*                  (these are not referenced outside this unit)               */
 /*******************************************************************************/
-
 
 /**
  * Helper function to identify an element in an XML file.
@@ -273,14 +268,13 @@ typedef struct
 static seds_nodetype_t seds_xmlparser_identify_element(seds_nodetype_t parent_node_type, const XML_Char *str)
 {
     const seds_stringmap_t *mapptr;
-    seds_nodetype_t node_type;
+    seds_nodetype_t         node_type;
 
     /* if the parent was any "passthru" type, then consider the child to also
      * be that same type.  This can be used to ignore entire subtrees, for
      * unimplemented features  */
-    if (parent_node_type == SEDS_NODETYPE_UNKNOWN ||
-            parent_node_type == SEDS_NODETYPE_XINCLUDE_PASSTHRU ||
-            parent_node_type == SEDS_NODETYPE_DESCRIPTION_PASSTHRU)
+    if (parent_node_type == SEDS_NODETYPE_UNKNOWN || parent_node_type == SEDS_NODETYPE_XINCLUDE_PASSTHRU
+        || parent_node_type == SEDS_NODETYPE_DESCRIPTION_PASSTHRU)
     {
         node_type = parent_node_type;
     }
@@ -320,45 +314,45 @@ static seds_nodetype_t seds_xmlparser_identify_element(seds_nodetype_t parent_no
          * there are different sets of required attributes and the attribute interpretation
          * varies.
          */
-        switch(parent_node_type)
+        switch (parent_node_type)
         {
-        case SEDS_NODETYPE_DECLARED_INTERFACE_SET:
-            node_type = SEDS_NODETYPE_DECLARED_INTERFACE;
-            break;
-        case SEDS_NODETYPE_REQUIRED_INTERFACE_SET:
-            node_type = SEDS_NODETYPE_REQUIRED_INTERFACE;
-            break;
-        case SEDS_NODETYPE_PROVIDED_INTERFACE_SET:
-            node_type = SEDS_NODETYPE_PROVIDED_INTERFACE;
-            break;
-        case SEDS_NODETYPE_BASE_INTERFACE_SET:
-            node_type = SEDS_NODETYPE_BASE_INTERFACE;
-            break;
-        default:
-            break;
+            case SEDS_NODETYPE_DECLARED_INTERFACE_SET:
+                node_type = SEDS_NODETYPE_DECLARED_INTERFACE;
+                break;
+            case SEDS_NODETYPE_REQUIRED_INTERFACE_SET:
+                node_type = SEDS_NODETYPE_REQUIRED_INTERFACE;
+                break;
+            case SEDS_NODETYPE_PROVIDED_INTERFACE_SET:
+                node_type = SEDS_NODETYPE_PROVIDED_INTERFACE;
+                break;
+            case SEDS_NODETYPE_BASE_INTERFACE_SET:
+                node_type = SEDS_NODETYPE_BASE_INTERFACE;
+                break;
+            default:
+                break;
         }
     }
 
-    /* 
+    /*
      * The same constraint XML elements are also used within PresentWhen, but these
      * need to be handled differently from other constraint elements because they are
-     * used for a different purpose in this context 
+     * used for a different purpose in this context
      */
     if (parent_node_type == SEDS_NODETYPE_PRESENT_WHEN)
     {
-        switch(node_type)
+        switch (node_type)
         {
-        case SEDS_NODETYPE_VALUE_CONSTRAINT:
-            node_type = SEDS_NODETYPE_PRESENCE_VALUE_CONSTRAINT;
-            break;
-        case SEDS_NODETYPE_TYPE_CONSTRAINT:
-            node_type = SEDS_NODETYPE_PRESENCE_TYPE_CONSTRAINT;
-            break;
-        case SEDS_NODETYPE_RANGE_CONSTRAINT:
-            node_type = SEDS_NODETYPE_PRESENCE_RANGE_CONSTRAINT;
-            break;
-        default:
-            break;
+            case SEDS_NODETYPE_VALUE_CONSTRAINT:
+                node_type = SEDS_NODETYPE_PRESENCE_VALUE_CONSTRAINT;
+                break;
+            case SEDS_NODETYPE_TYPE_CONSTRAINT:
+                node_type = SEDS_NODETYPE_PRESENCE_TYPE_CONSTRAINT;
+                break;
+            case SEDS_NODETYPE_RANGE_CONSTRAINT:
+                node_type = SEDS_NODETYPE_PRESENCE_RANGE_CONSTRAINT;
+                break;
+            default:
+                break;
         }
     }
 
@@ -382,14 +376,14 @@ static seds_nodetype_t seds_xmlparser_identify_element(seds_nodetype_t parent_no
  */
 static void seds_xmlparser_message(lua_State *lua, seds_user_message_t msgtype)
 {
-    int top_start = lua_gettop(lua);        /* top of stack should be the user supplied message */
-    const char *element;
-    const char *file;
+    int           top_start = lua_gettop(lua); /* top of stack should be the user supplied message */
+    const char   *element;
+    const char   *file;
     unsigned long line;
 
     element = NULL;
-    file = NULL;
-    line = 0;
+    file    = NULL;
+    line    = 0;
 
     if (luaL_checkudata(lua, top_start - 1, "seds_node"))
     {
@@ -397,8 +391,8 @@ static void seds_xmlparser_message(lua_State *lua, seds_user_message_t msgtype)
         lua_getfield(lua, top_start - 1, "xml_linenum");
         lua_getfield(lua, top_start - 1, "xml_element");
 
-        file = lua_tostring(lua, -3);
-        line = lua_tointeger(lua, -2);
+        file    = lua_tostring(lua, -3);
+        line    = lua_tointeger(lua, -2);
         element = lua_tostring(lua, -1);
     }
 
@@ -440,17 +434,17 @@ static int seds_xmlparser_recreate_xml(lua_State *lua)
         lua_pushnil(lua);
 
         /*
-        * Note - lua_next pops 1 item from the stack, interpreted as the prev table index, nil to start.
-        * It then pushes 2 items back on - the next table index, and the corresponding value.
-        * At the end of the table it pushes nothing back on, but still pops the last index.
-        */
+         * Note - lua_next pops 1 item from the stack, interpreted as the prev table index, nil to start.
+         * It then pushes 2 items back on - the next table index, and the corresponding value.
+         * At the end of the table it pushes nothing back on, but still pops the last index.
+         */
         while (lua_next(lua, 2))
         {
             /*
-            * The item at the top should be the value, the item at -1 should be the key.
-            * because the next code does multiple pushes, it is easier to capture the stack
-            * number as an absolute position rather than using offsets.
-            */
+             * The item at the top should be the value, the item at -1 should be the key.
+             * because the next code does multiple pushes, it is easier to capture the stack
+             * number as an absolute position rather than using offsets.
+             */
             tbl_val_idx = lua_gettop(lua);
             if (lua_type(lua, tbl_val_idx - 1) == LUA_TSTRING)
             {
@@ -462,9 +456,9 @@ static int seds_xmlparser_recreate_xml(lua_State *lua)
                 lua_concat(lua, 5);
 
                 /*
-                * This puts the concatenated value immediately below the table index.
-                * Note that each iteration through this code adds 1 to the stack.
-                */
+                 * This puts the concatenated value immediately below the table index.
+                 * Note that each iteration through this code adds 1 to the stack.
+                 */
                 lua_insert(lua, tbl_val_idx - 2);
             }
             lua_pop(lua, 1);
@@ -526,11 +520,11 @@ static int seds_xmlparser_recreate_xml(lua_State *lua)
  */
 static int seds_xmlparser_breakup_namespace(lua_State *lua)
 {
-    int stack_top = lua_gettop(lua);
+    int         stack_top = lua_gettop(lua);
     const char *nspace;
     const char *sep;
 
-    while(1)
+    while (1)
     {
         if (luaL_checkudata(lua, 1, "seds_node") == NULL)
         {
@@ -543,7 +537,7 @@ static int seds_xmlparser_breakup_namespace(lua_State *lua)
         }
 
         nspace = lua_tostring(lua, stack_top + 1);
-        sep = strrchr(nspace, '/');
+        sep    = strrchr(nspace, '/');
         if (sep == NULL)
         {
             break;
@@ -607,12 +601,12 @@ static int seds_xmlparser_breakup_namespace(lua_State *lua)
  */
 static void seds_xmlparser_starttag(void *data, const XML_Char *el, const XML_Char **xattr)
 {
-    lua_State *lua = data;
-    seds_nodetype_t node_type;
-    const char *name_attr;
-    char attrib_string[64];
-    size_t len;
-    int top_start;
+    lua_State       *lua = data;
+    seds_nodetype_t  node_type;
+    const char      *name_attr;
+    char             attrib_string[64];
+    size_t           len;
+    int              top_start;
     const XML_Char **iattr;
 
     top_start = lua_gettop(lua);
@@ -657,8 +651,8 @@ static void seds_xmlparser_starttag(void *data, const XML_Char *el, const XML_Ch
     if (xattr[0] != NULL && xattr[1] != NULL)
     {
         iattr = xattr;
-        lua_newtable(lua);                                      /* top+2: current node attribute table */
-        lua_newtable(lua);                                      /* top+3: current node attribute table */
+        lua_newtable(lua); /* top+2: current node attribute table */
+        lua_newtable(lua); /* top+3: current node attribute table */
         while (iattr[0] != NULL && iattr[1] != NULL)
         {
             lua_pushstring(lua, iattr[0]);
@@ -699,7 +693,7 @@ static void seds_xmlparser_starttag(void *data, const XML_Char *el, const XML_Ch
         seds_xmlparser_message(lua, SEDS_USER_MESSAGE_WARNING);
     }
 
-    lua_settop(lua, top_start + 1);                         /* top  : current node data table */
+    lua_settop(lua, top_start + 1); /* top  : current node data table */
 }
 
 /* ------------------------------------------------------------------- */
@@ -718,71 +712,71 @@ static void seds_xmlparser_starttag(void *data, const XML_Char *el, const XML_Ch
  */
 static void seds_xmlparser_endtag(void *data, const XML_Char *el)
 {
-    lua_State *lua = data;
+    lua_State  *lua = data;
     const char *parent_append_field;
-    int parent_append_type;
-    int top_start;
+    int         parent_append_type;
+    int         top_start;
 
     top_start = lua_gettop(lua);
     luaL_argcheck(lua, luaL_checkudata(lua, top_start - 1, "seds_node") != NULL, top_start - 1, "seds_node expected");
 
-    switch(seds_tree_node_get_type(lua, top_start))
+    switch (seds_tree_node_get_type(lua, top_start))
     {
-    case SEDS_NODETYPE_LONG_DESCRIPTION:
-        /*
-         * concatenate with the "longdescription" of the parent
-         */
-        parent_append_field = "longdescription";
-        parent_append_type = LUA_TSTRING;
-        lua_getfield(lua, top_start, "xml_cdata");
-        lua_remove(lua, top_start);
-        break;
+        case SEDS_NODETYPE_LONG_DESCRIPTION:
+            /*
+             * concatenate with the "longdescription" of the parent
+             */
+            parent_append_field = "longdescription";
+            parent_append_type  = LUA_TSTRING;
+            lua_getfield(lua, top_start, "xml_cdata");
+            lua_remove(lua, top_start);
+            break;
 
-    case SEDS_NODETYPE_DESCRIPTION_PASSTHRU:
-        /*
-         * Re-create an XML tag from the contents,
-         * concatenate with the "xml_cdata" of the parent
-         */
-        parent_append_field = "xml_cdata";
-        parent_append_type = LUA_TSTRING;
+        case SEDS_NODETYPE_DESCRIPTION_PASSTHRU:
+            /*
+             * Re-create an XML tag from the contents,
+             * concatenate with the "xml_cdata" of the parent
+             */
+            parent_append_field = "xml_cdata";
+            parent_append_type  = LUA_TSTRING;
 
-        lua_pushcfunction(lua, seds_xmlparser_recreate_xml);
-        lua_getfield(lua, top_start, "xml_element");
-        lua_getfield(lua, top_start, "xml_attrs");
-        lua_getfield(lua, top_start, "xml_cdata");
-        lua_call(lua, 3, 1);
+            lua_pushcfunction(lua, seds_xmlparser_recreate_xml);
+            lua_getfield(lua, top_start, "xml_element");
+            lua_getfield(lua, top_start, "xml_attrs");
+            lua_getfield(lua, top_start, "xml_cdata");
+            lua_call(lua, 3, 1);
 
-        lua_remove(lua, top_start);
-        break;
+            lua_remove(lua, top_start);
+            break;
 
-    case SEDS_NODETYPE_PACKAGE:
-        /*
-         * Namespaces needs special handling in case they have
-         * implicitly nested namespaces within them.
-         *
-         */
-        lua_pushcfunction(lua, seds_xmlparser_breakup_namespace);
-        lua_insert(lua, top_start);
-        lua_call(lua, 1, 1);
+        case SEDS_NODETYPE_PACKAGE:
+            /*
+             * Namespaces needs special handling in case they have
+             * implicitly nested namespaces within them.
+             *
+             */
+            lua_pushcfunction(lua, seds_xmlparser_breakup_namespace);
+            lua_insert(lua, top_start);
+            lua_call(lua, 1, 1);
 
-        parent_append_field = "subnodes";
-        parent_append_type = LUA_TTABLE;
-        break;
+            parent_append_field = "subnodes";
+            parent_append_type  = LUA_TTABLE;
+            break;
 
-    case SEDS_NODETYPE_UNKNOWN:
-    case SEDS_NODETYPE_XINCLUDE_PASSTHRU:
-        /* discard the node, do not append it */
-        parent_append_field = NULL;
-        parent_append_type = LUA_TNONE;
-        break;
+        case SEDS_NODETYPE_UNKNOWN:
+        case SEDS_NODETYPE_XINCLUDE_PASSTHRU:
+            /* discard the node, do not append it */
+            parent_append_field = NULL;
+            parent_append_type  = LUA_TNONE;
+            break;
 
-    default:
-        /*
-         * Typical case -- append the current node to the subnodes table of the parent
-         */
-        parent_append_field = "subnodes";
-        parent_append_type = LUA_TTABLE;
-        break;
+        default:
+            /*
+             * Typical case -- append the current node to the subnodes table of the parent
+             */
+            parent_append_field = "subnodes";
+            parent_append_type  = LUA_TTABLE;
+            break;
     }
 
     if (parent_append_field != NULL)
@@ -799,7 +793,7 @@ static void seds_xmlparser_endtag(void *data, const XML_Char *el)
                 lua_newtable(lua);
             }
             lua_pushvalue(lua, top_start);
-            lua_rawseti(lua, -2,  1 + lua_rawlen(lua, -2));
+            lua_rawseti(lua, -2, 1 + lua_rawlen(lua, -2));
 
             lua_pushinteger(lua, lua_rawlen(lua, -1));
             lua_setfield(lua, top_start, "id");
@@ -811,39 +805,39 @@ static void seds_xmlparser_endtag(void *data, const XML_Char *el)
         if (lua_type(lua, -1) != parent_append_type)
         {
             lua_pop(lua, 1);
-            switch(parent_append_type)
+            switch (parent_append_type)
             {
-            case LUA_TTABLE:
-                lua_newtable(lua);
-                break;
-            case LUA_TSTRING:
-                lua_pushstring(lua, "");
-                break;
-            default:
-                lua_pushnil(lua);
-                break;
+                case LUA_TTABLE:
+                    lua_newtable(lua);
+                    break;
+                case LUA_TSTRING:
+                    lua_pushstring(lua, "");
+                    break;
+                default:
+                    lua_pushnil(lua);
+                    break;
             }
         }
 
         lua_insert(lua, top_start);
 
-        switch(parent_append_type)
+        switch (parent_append_type)
         {
-        case LUA_TTABLE:
-            lua_rawseti(lua, top_start, 1 + lua_rawlen(lua, top_start));
-            break;
-        case LUA_TSTRING:
-            if (lua_isstring(lua, -1))
-            {
-                lua_concat(lua, 2);
-            }
-            else
-            {
-                lua_pop(lua, 1);
-            }
-            break;
-        default:
-            break;
+            case LUA_TTABLE:
+                lua_rawseti(lua, top_start, 1 + lua_rawlen(lua, top_start));
+                break;
+            case LUA_TSTRING:
+                if (lua_isstring(lua, -1))
+                {
+                    lua_concat(lua, 2);
+                }
+                else
+                {
+                    lua_pop(lua, 1);
+                }
+                break;
+            default:
+                break;
         }
 
         lua_setfield(lua, top_start - 1, parent_append_field);
@@ -869,9 +863,8 @@ static void seds_xmlparser_endtag(void *data, const XML_Char *el)
  */
 static void seds_xmlparser_cdata(void *data, const XML_Char *s, int len)
 {
-    lua_State *lua = data;
-    int top_start = lua_gettop(lua);
-
+    lua_State *lua       = data;
+    int        top_start = lua_gettop(lua);
 
     /*
      * At the top of the LUA stack should be a table
@@ -952,7 +945,7 @@ static int seds_xmlparser_get_property(lua_State *lua)
     /*
      */
     seds_parser_t *pself = luaL_checkudata(lua, 1, "seds_parser");
-    const char *prop = NULL;
+    const char    *prop  = NULL;
 
     /*
      * note - lua_tostring() possibly converts to a string,
@@ -1047,10 +1040,9 @@ static int seds_xmlparser_set_property(lua_State *lua)
 int seds_xmlparser_readfile(lua_State *lua)
 {
     seds_parser_t *pself = luaL_checkudata(lua, 1, "seds_parser");
-    void *xmlbuf;
-    size_t len;
-    int file_flag;
-
+    void          *xmlbuf;
+    size_t         len;
+    int            file_flag;
 
     luaL_argcheck(lua, pself != NULL, 1, "seds_parser expected");
 
@@ -1080,7 +1072,7 @@ int seds_xmlparser_readfile(lua_State *lua)
     {
         fclose(pself->fp);
     }
-    pself->fp = fopen(lua_tostring(lua, 2), "r");    /* arg2: xml_filename */
+    pself->fp = fopen(lua_tostring(lua, 2), "r"); /* arg2: xml_filename */
     if (!pself->fp)
     {
         lua_pushfstring(lua, "%s: %s", lua_tostring(lua, 2), strerror(errno));
@@ -1103,13 +1095,14 @@ int seds_xmlparser_readfile(lua_State *lua)
         xmlbuf = XML_GetBuffer(pself->xmlp, 16384);
         if (xmlbuf == NULL)
         {
-            lua_pushfstring(lua, "%s: XML Buffering Error: %s",
-                    lua_tostring(lua, 2),
-                    XML_ErrorString(XML_GetErrorCode(pself->xmlp)));
+            lua_pushfstring(lua,
+                            "%s: XML Buffering Error: %s",
+                            lua_tostring(lua, 2),
+                            XML_ErrorString(XML_GetErrorCode(pself->xmlp)));
             return lua_error(lua);
         }
 
-        len = fread(xmlbuf, 1, 16384, pself->fp);
+        len       = fread(xmlbuf, 1, 16384, pself->fp);
         file_flag = ferror(pself->fp);
         if (file_flag != 0)
         {
@@ -1120,14 +1113,14 @@ int seds_xmlparser_readfile(lua_State *lua)
         file_flag = feof(pself->fp);
         if (!XML_ParseBuffer(pself->xmlp, len, file_flag))
         {
-            lua_pushfstring(lua, "%s:%d: XML Parsing Error: %s",
-                    lua_tostring(lua, 2),
-                    XML_GetCurrentLineNumber(pself->xmlp),
-                    XML_ErrorString(XML_GetErrorCode(pself->xmlp)));
+            lua_pushfstring(lua,
+                            "%s:%d: XML Parsing Error: %s",
+                            lua_tostring(lua, 2),
+                            XML_GetCurrentLineNumber(pself->xmlp),
+                            XML_ErrorString(XML_GetErrorCode(pself->xmlp)));
             return lua_error(lua);
         }
-    }
-    while (!file_flag);
+    } while (!file_flag);
 
     XML_SetUserData(pself->xmlp, NULL);
 
@@ -1211,14 +1204,24 @@ int seds_xmlparser_finish(lua_State *lua)
         return luaL_error(lua, "No XML datasheets parsed");
     }
 
-    seds_user_message_printf(SEDS_USER_MESSAGE_DEBUG, __FILE__, __LINE__, "%s(): ROOT=> %d", __func__, (int) lua_rawlen(lua, 3));
+    seds_user_message_printf(SEDS_USER_MESSAGE_DEBUG,
+                             __FILE__,
+                             __LINE__,
+                             "%s(): ROOT=> %d",
+                             __func__,
+                             (int)lua_rawlen(lua, 3));
     lua_pushnil(lua);
     while (lua_next(lua, 3))
     {
         luaL_tolstring(lua, -2, NULL);
         luaL_tolstring(lua, -2, NULL);
-        seds_user_message_printf(SEDS_USER_MESSAGE_DEBUG, __FILE__, __LINE__, "%s(): %s => %s", __func__,
-                lua_tostring(lua, -2), lua_tostring(lua, -1));
+        seds_user_message_printf(SEDS_USER_MESSAGE_DEBUG,
+                                 __FILE__,
+                                 __LINE__,
+                                 "%s(): %s => %s",
+                                 __func__,
+                                 lua_tostring(lua, -2),
+                                 lua_tostring(lua, -1));
         lua_pop(lua, 3);
     }
     lua_pop(lua, 1);

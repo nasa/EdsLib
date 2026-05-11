@@ -50,8 +50,10 @@ int32_t EdsLib_FindPackageIdxByName(const EdsLib_DatabaseObject_t *GD, const cha
  * Generated stub function for EdsLib_FindPackageIdxBySubstring()
  * ----------------------------------------------------
  */
-int32_t EdsLib_FindPackageIdxBySubstring(const EdsLib_DatabaseObject_t *GD, const char *MatchString, size_t MatchLen,
-                                         uint8_t *IdxOut)
+int32_t EdsLib_FindPackageIdxBySubstring(const EdsLib_DatabaseObject_t *GD,
+                                         const char                    *MatchString,
+                                         size_t                         MatchLen,
+                                         uint8_t                       *IdxOut)
 {
     UT_GenStub_SetupReturnBuffer(EdsLib_FindPackageIdxBySubstring, int32_t);
 

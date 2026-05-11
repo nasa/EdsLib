@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     cfe_missionlib_lua_softwarebus.h
  * \ingroup  lua
@@ -29,7 +28,6 @@
 #ifndef _CFE_MISSIONLIB_LUA_SOFTWAREBUS_H_
 #define _CFE_MISSIONLIB_LUA_SOFTWAREBUS_H_
 
-
 #include <lua.h>
 #include "cfe_missionlib_api.h"
 #include "cfe_sb_eds_datatypes.h"
@@ -37,19 +35,20 @@
 typedef struct
 {
     const CFE_MissionLib_SoftwareBus_Interface_t *IntfDB;
-    bool IsTelecommand;
-    bool IsTelemetry;
-    uint16_t InstanceNumber;
-    uint16_t TopicId;
-    EdsLib_Id_t IntfEdsId;
-    EdsLib_Id_t IndicationEdsId;
-    EdsLib_Id_t IndicationBaseArg;
+    bool                                          IsTelecommand;
+    bool                                          IsTelemetry;
+    uint16_t                                      InstanceNumber;
+    uint16_t                                      TopicId;
+    EdsLib_Id_t                                   IntfEdsId;
+    EdsLib_Id_t                                   IndicationEdsId;
+    EdsLib_Id_t                                   IndicationBaseArg;
 } CFE_MissionLib_Lua_Interface_Userdata_t;
-
 
 void CFE_MissionLib_Lua_SoftwareBus_Attach(lua_State *lua, const CFE_MissionLib_SoftwareBus_Interface_t *IntfDB);
 
-void CFE_MissionLib_Lua_MapPubSubParams(EdsInterface_CFE_SB_SoftwareBus_PubSub_t *PubSub, const CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj);
-void CFE_MissionLib_Lua_UnmapPubSubParams(CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj, const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *PubSub);
+void CFE_MissionLib_Lua_MapPubSubParams(EdsInterface_CFE_SB_SoftwareBus_PubSub_t      *PubSub,
+                                        const CFE_MissionLib_Lua_Interface_Userdata_t *IntfObj);
+void CFE_MissionLib_Lua_UnmapPubSubParams(CFE_MissionLib_Lua_Interface_Userdata_t        *IntfObj,
+                                          const EdsInterface_CFE_SB_SoftwareBus_PubSub_t *PubSub);
 
-#endif  /* _CFE_MISSIONLIB_LUA_SOFTWAREBUS_H_ */
+#endif /* _CFE_MISSIONLIB_LUA_SOFTWAREBUS_H_ */

@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     seds_generic_props.h
  * \ingroup  tool
@@ -31,14 +30,12 @@
 #ifndef _SEDS_GENERIC_PROPS_H_
 #define _SEDS_GENERIC_PROPS_H_
 
-
 #include "seds_global.h"
 
 /*******************************************************************************/
 /*                  Function documentation and prototypes                      */
 /*      (everything referenced outside this unit should be described here)     */
 /*******************************************************************************/
-
 
 /**
  * Lua callable function to get a property of a userdata object
@@ -86,12 +83,9 @@ int seds_generic_props_set_property(lua_State *lua);
  */
 int seds_generic_props_enumerate_properties(lua_State *lua);
 
-
 /**
  * Register any globals associated with this module in the Lua state
  */
 void seds_generic_props_register_globals(lua_State *lua);
 
-
-#endif  /* _SEDS_GENERIC_PROPS_H_ */
-
+#endif /* _SEDS_GENERIC_PROPS_H_ */

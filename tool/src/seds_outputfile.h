@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     seds_outputfile.h
  * \ingroup  tool
@@ -47,5 +46,4 @@
  */
 void seds_outputfile_register_globals(lua_State *lua);
 
-#endif  /* _SEDS_OUTPUTFILE_H_ */
-
+#endif /* _SEDS_OUTPUTFILE_H_ */

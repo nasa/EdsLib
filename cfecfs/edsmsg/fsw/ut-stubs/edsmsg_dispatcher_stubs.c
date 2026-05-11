@@ -32,8 +32,10 @@
  * Generated stub function for CFE_EDSMSG_Dispatch()
  * ----------------------------------------------------
  */
-CFE_Status_t CFE_EDSMSG_Dispatch(EdsLib_Id_t DeclIntfId, EdsLib_Id_t ComponentId, const CFE_SB_Buffer_t *Buffer,
-                                 const void *DispatchTable)
+CFE_Status_t CFE_EDSMSG_Dispatch(EdsLib_Id_t            DeclIntfId,
+                                 EdsLib_Id_t            ComponentId,
+                                 const CFE_SB_Buffer_t *Buffer,
+                                 const void            *DispatchTable)
 {
     UT_GenStub_SetupReturnBuffer(CFE_EDSMSG_Dispatch, CFE_Status_t);
 

@@ -202,7 +202,8 @@ EdsLib_IntfDB_GetCommandEntryFromIntfIdx(const EdsLib_IntfDB_DeclIntfEntry_t *In
  *
  *-----------------------------------------------------------------*/
 const EdsLib_IntfDB_InterfaceEntry_t *
-EdsLib_IntfDB_GetComponentInterfaceEntry(const EdsLib_DatabaseObject_t *GD, const EdsLib_DatabaseRef_t *RefObj,
+EdsLib_IntfDB_GetComponentInterfaceEntry(const EdsLib_DatabaseObject_t         *GD,
+                                         const EdsLib_DatabaseRef_t            *RefObj,
                                          const EdsLib_IntfDB_ComponentEntry_t **CompEntryOut)
 {
     EdsLib_IntfDB_t                       IntfDB;
@@ -252,7 +253,8 @@ EdsLib_IntfDB_GetComponentInterfaceEntry(const EdsLib_DatabaseObject_t *GD, cons
  *
  *-----------------------------------------------------------------*/
 const EdsLib_IntfDB_CommandEntry_t *
-EdsLib_IntfDB_GetDeclIntfCommandEntry(const EdsLib_DatabaseObject_t *GD, const EdsLib_DatabaseRef_t *RefObj,
+EdsLib_IntfDB_GetDeclIntfCommandEntry(const EdsLib_DatabaseObject_t        *GD,
+                                      const EdsLib_DatabaseRef_t           *RefObj,
                                       const EdsLib_IntfDB_DeclIntfEntry_t **DeclIntfOut)
 {
     EdsLib_IntfDB_t                      IntfDB;
@@ -261,7 +263,7 @@ EdsLib_IntfDB_GetDeclIntfCommandEntry(const EdsLib_DatabaseObject_t *GD, const E
     uint16_t                             i;
 
     IntfEntry = NULL;
-    CmdEntry = NULL;
+    CmdEntry  = NULL;
 
     do
     {
@@ -301,8 +303,10 @@ EdsLib_IntfDB_GetDeclIntfCommandEntry(const EdsLib_DatabaseObject_t *GD, const E
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_IntfDB_FindComponentBySubstring(EdsLib_IntfDB_t IntfDBPtr, const char *CompName, size_t MatchLen,
-                                               uint16_t *IdxOut)
+int32_t EdsLib_IntfDB_FindComponentBySubstring(EdsLib_IntfDB_t IntfDBPtr,
+                                               const char     *CompName,
+                                               size_t          MatchLen,
+                                               uint16_t       *IdxOut)
 {
     const EdsLib_IntfDB_ComponentEntry_t *CompEntry;
     int32_t                               Status;
@@ -314,8 +318,8 @@ int32_t EdsLib_IntfDB_FindComponentBySubstring(EdsLib_IntfDB_t IntfDBPtr, const 
     {
         CompEntry = &IntfDBPtr->ComponentListEntries[i];
 
-        if (CompEntry->Name != NULL && strlen(CompEntry->Name) == MatchLen &&
-            memcmp(CompEntry->Name, CompName, MatchLen) == 0)
+        if (CompEntry->Name != NULL && strlen(CompEntry->Name) == MatchLen
+            && memcmp(CompEntry->Name, CompName, MatchLen) == 0)
         {
             *IdxOut = 1 + IntfDBPtr->DeclIntfListSize + i;
             Status  = EDSLIB_SUCCESS;
@@ -332,8 +336,10 @@ int32_t EdsLib_IntfDB_FindComponentBySubstring(EdsLib_IntfDB_t IntfDBPtr, const 
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_IntfDB_FindDeclIntfBySubstring(EdsLib_IntfDB_t IntfDBPtr, const char *IntfName, size_t MatchLen,
-                                              uint16_t *IdxOut)
+int32_t EdsLib_IntfDB_FindDeclIntfBySubstring(EdsLib_IntfDB_t IntfDBPtr,
+                                              const char     *IntfName,
+                                              size_t          MatchLen,
+                                              uint16_t       *IdxOut)
 {
     const EdsLib_IntfDB_DeclIntfEntry_t *DeclIntfEntry;
     int32_t                              Status;
@@ -345,8 +351,8 @@ int32_t EdsLib_IntfDB_FindDeclIntfBySubstring(EdsLib_IntfDB_t IntfDBPtr, const c
     {
         DeclIntfEntry = &IntfDBPtr->DeclIntfListEntries[i];
 
-        if (DeclIntfEntry->Name != NULL && strlen(DeclIntfEntry->Name) == MatchLen &&
-            memcmp(DeclIntfEntry->Name, IntfName, MatchLen) == 0)
+        if (DeclIntfEntry->Name != NULL && strlen(DeclIntfEntry->Name) == MatchLen
+            && memcmp(DeclIntfEntry->Name, IntfName, MatchLen) == 0)
         {
             *IdxOut = 1 + i;
             Status  = EDSLIB_SUCCESS;
@@ -364,7 +370,9 @@ int32_t EdsLib_IntfDB_FindDeclIntfBySubstring(EdsLib_IntfDB_t IntfDBPtr, const c
  *
  *-----------------------------------------------------------------*/
 int32_t EdsLib_IntfDB_FindComponentInterfaceBySubstring(const EdsLib_IntfDB_ComponentEntry_t *CompEntry,
-                                                        const char *IntfName, size_t MatchLen, uint16_t *IdxOut)
+                                                        const char                           *IntfName,
+                                                        size_t                                MatchLen,
+                                                        uint16_t                             *IdxOut)
 {
     const EdsLib_IntfDB_InterfaceEntry_t *IntfEntry;
     uint16_t                              CompIdx;
@@ -378,8 +386,8 @@ int32_t EdsLib_IntfDB_FindComponentInterfaceBySubstring(const EdsLib_IntfDB_Comp
     {
         IntfEntry = EdsLib_IntfDB_GetInterfaceEntryFromCompIdx(CompEntry, CompIdx);
 
-        if (IntfEntry != NULL && IntfEntry->Name != NULL && strlen(IntfEntry->Name) == MatchLen &&
-            memcmp(IntfEntry->Name, IntfName, MatchLen) == 0)
+        if (IntfEntry != NULL && IntfEntry->Name != NULL && strlen(IntfEntry->Name) == MatchLen
+            && memcmp(IntfEntry->Name, IntfName, MatchLen) == 0)
         {
             *IdxOut = CompIdx;
 
@@ -400,8 +408,10 @@ int32_t EdsLib_IntfDB_FindComponentInterfaceBySubstring(const EdsLib_IntfDB_Comp
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_IntfDB_FindDeclIntfByQualifiedName(const EdsLib_DatabaseObject_t *GD, const char *IntfName,
-                                                  size_t MatchLen, EdsLib_DatabaseRef_t *RefObj)
+int32_t EdsLib_IntfDB_FindDeclIntfByQualifiedName(const EdsLib_DatabaseObject_t *GD,
+                                                  const char                    *IntfName,
+                                                  size_t                         MatchLen,
+                                                  EdsLib_DatabaseRef_t          *RefObj)
 {
     EdsLib_IntfDB_t IntfDBPtr;
     const char     *Sep;
@@ -430,7 +440,7 @@ int32_t EdsLib_IntfDB_FindDeclIntfByQualifiedName(const EdsLib_DatabaseObject_t 
         }
 
         CurrChunkPtr += CurrChunkLen + 1;
-        CurrChunkLen = MatchLen - (CurrChunkPtr - IntfName);
+        CurrChunkLen  = MatchLen - (CurrChunkPtr - IntfName);
     }
 
     if (IntfDBPtr != NULL)
@@ -452,8 +462,10 @@ int32_t EdsLib_IntfDB_FindDeclIntfByQualifiedName(const EdsLib_DatabaseObject_t 
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_IntfDB_FindComponentByQualifiedName(const EdsLib_DatabaseObject_t *GD, const char *CompName,
-                                                   size_t MatchLen, EdsLib_DatabaseRef_t *RefObj)
+int32_t EdsLib_IntfDB_FindComponentByQualifiedName(const EdsLib_DatabaseObject_t *GD,
+                                                   const char                    *CompName,
+                                                   size_t                         MatchLen,
+                                                   EdsLib_DatabaseRef_t          *RefObj)
 {
     EdsLib_IntfDB_t IntfDBPtr;
     const char     *Sep;
@@ -482,7 +494,7 @@ int32_t EdsLib_IntfDB_FindComponentByQualifiedName(const EdsLib_DatabaseObject_t
         }
 
         CurrChunkPtr += CurrChunkLen + 1;
-        CurrChunkLen = MatchLen - (CurrChunkPtr - CompName);
+        CurrChunkLen  = MatchLen - (CurrChunkPtr - CompName);
     }
 
     if (IntfDBPtr != NULL)
@@ -504,8 +516,9 @@ int32_t EdsLib_IntfDB_FindComponentByQualifiedName(const EdsLib_DatabaseObject_t
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_IntfDB_FindFullContext(const EdsLib_DatabaseObject_t *GD, const EdsLib_DatabaseRef_t *RefObj,
-                                      EdsLib_IntfDB_FullContext_t *CtxtOut)
+int32_t EdsLib_IntfDB_FindFullContext(const EdsLib_DatabaseObject_t *GD,
+                                      const EdsLib_DatabaseRef_t    *RefObj,
+                                      EdsLib_IntfDB_FullContext_t   *CtxtOut)
 {
     EdsLib_IntfDB_t                       IntfDBPtr;
     const EdsLib_IntfDB_ComponentEntry_t *CompEntry;

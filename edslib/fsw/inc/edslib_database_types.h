@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_database_types.h
  * \ingroup  fsw
@@ -39,7 +38,6 @@
 #ifndef _EDSLIB_DATABASE_TYPES_H_
 #define _EDSLIB_DATABASE_TYPES_H_
 
-
 #ifndef _EDSLIB_BUILD_
 #error "Do not include edslib_database_types.h from application code; use the edslib API instead"
 #endif
@@ -48,12 +46,10 @@
 #error "This file is not intended to be compiled with a C++ compiler"
 #endif
 
-
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include "edslib_api_types.h"
-
 
 /*******************************************************
  * BASIC DATA TYPE DATABASE COMPONENTS
@@ -77,8 +73,8 @@ enum EdsLib_DbRef_Qualifier
     EdsLib_DbRef_Qualifier_USERDEF2,    /**< Refers to an entry in user-defined DB #2 (placeholder) */
 };
 
-#define EDSLIB_TYPEREF_C(app,idx)  { .Qualifier = EdsLib_DbRef_Qualifier_DATATYPE,  .AppIndex = app, .SubIndex = idx }
-#define EDSLIB_INTFREF_C(app,idx) { .Qualifier = EdsLib_DbRef_Qualifier_INTERFACE, .AppIndex = app, .SubIndex = idx }
+#define EDSLIB_TYPEREF_C(app, idx) { .Qualifier = EdsLib_DbRef_Qualifier_DATATYPE, .AppIndex = app, .SubIndex = idx }
+#define EDSLIB_INTFREF_C(app, idx) { .Qualifier = EdsLib_DbRef_Qualifier_INTERFACE, .AppIndex = app, .SubIndex = idx }
 
 typedef intmax_t (*EdsLib_IntegerCalibratorFunc_t)(intmax_t x);
 typedef double (*EdsLib_FloatingPointCalibratorFunc_t)(double x);
@@ -115,12 +111,12 @@ typedef struct EdsLib_FloatCalPair EdsLib_FloatCalPair_t;
 union EdsLib_HandlerArgument
 {
     EdsLib_ErrorControlType_t ErrorControl;
-    EdsLib_FloatCalPair_t FloatCalibrator;
-    EdsLib_IntegerCalPair_t IntegerCalibrator;
-    const char *FixedString;
-    double FixedFloat;
-    intmax_t FixedInteger;
-    uintmax_t FixedUnsigned;
+    EdsLib_FloatCalPair_t     FloatCalibrator;
+    EdsLib_IntegerCalPair_t   IntegerCalibrator;
+    const char               *FixedString;
+    double                    FixedFloat;
+    intmax_t                  FixedInteger;
+    uintmax_t                 FixedUnsigned;
 };
 
 typedef union EdsLib_HandlerArgument EdsLib_HandlerArgument_t;
@@ -143,7 +139,7 @@ typedef enum
 
 struct EdsLib_DerivativeEntry
 {
-    uint16_t IdentSeqIdx;
+    uint16_t             IdentSeqIdx;
     EdsLib_DatabaseRef_t RefObj;
 };
 
@@ -152,9 +148,9 @@ typedef struct EdsLib_DerivativeEntry EdsLib_DerivativeEntry_t;
 union EdsLib_SingleValue
 {
     const char *String;
-    intmax_t SignedInt;
-    uintmax_t UnsignedInt;
-    double FloatingPt;
+    intmax_t    SignedInt;
+    uintmax_t   UnsignedInt;
+    double      FloatingPt;
 };
 
 typedef union EdsLib_SingleValue EdsLib_SingleValue_t;
@@ -167,11 +163,10 @@ struct EdsLib_ValuePair
 
 typedef struct EdsLib_ValuePair EdsLib_ValuePair_t;
 
-
 union EdsLib_RefValue
 {
     EdsLib_SingleValue_t Single;
-    EdsLib_ValuePair_t Pair;
+    EdsLib_ValuePair_t   Pair;
 };
 
 typedef union EdsLib_RefValue EdsLib_RefValue_t;
@@ -179,8 +174,8 @@ typedef union EdsLib_RefValue EdsLib_RefValue_t;
 typedef enum
 {
     EDSLIB_VALUE_CONSTRAINTSTYLE_NONE,
-    EDSLIB_VALUE_CONSTRAINTSTYLE_SINGLE_VALUE,  /* Simple comparison on a single number */
-    EDSLIB_VALUE_CONSTRAINTSTYLE_RANGE_VALUE    /* value within range */
+    EDSLIB_VALUE_CONSTRAINTSTYLE_SINGLE_VALUE, /* Simple comparison on a single number */
+    EDSLIB_VALUE_CONSTRAINTSTYLE_RANGE_VALUE   /* value within range */
 } EdsLib_Value_ConstraintStyle_t;
 
 typedef enum
@@ -201,9 +196,9 @@ typedef enum
 
 struct EdsLib_ValueEntry
 {
-    uint8_t BasicType;
-    uint8_t ConstraintStyle;
-    uint8_t InclusionStyle;
+    uint8_t           BasicType;
+    uint8_t           ConstraintStyle;
+    uint8_t           InclusionStyle;
     EdsLib_RefValue_t RefValue;
 };
 
@@ -211,7 +206,7 @@ typedef struct EdsLib_ValueEntry EdsLib_ValueEntry_t;
 
 struct EdsLib_ConstraintEntity
 {
-    EdsLib_SizeInfo_t Offset;
+    EdsLib_SizeInfo_t    Offset;
     EdsLib_DatabaseRef_t RefObj;
 };
 
@@ -238,22 +233,22 @@ typedef struct EdsLib_IdentSequenceEntry EdsLib_IdentSequenceEntry_t;
 
 struct EdsLib_IdentityCheckSequence
 {
-   uint16_t ConstraintEntityListSize;
-   uint16_t ValueListSize;
-   uint16_t SequenceEntryIdx;
-   const EdsLib_IdentSequenceEntry_t *SequenceList;
-   const EdsLib_ValueEntry_t *ValueList;
-   const EdsLib_ConstraintEntity_t *ConstraintEntityList;
+    uint16_t                           ConstraintEntityListSize;
+    uint16_t                           ValueListSize;
+    uint16_t                           SequenceEntryIdx;
+    const EdsLib_IdentSequenceEntry_t *SequenceList;
+    const EdsLib_ValueEntry_t         *ValueList;
+    const EdsLib_ConstraintEntity_t   *ConstraintEntityList;
 };
 
 typedef struct EdsLib_IdentityCheckSequence EdsLib_IdentityCheckSequence_t;
 
 struct EdsLib_FieldDetailEntry
 {
-    uint16_t EntryType;
-    EdsLib_SizeInfo_t Offset;
-    EdsLib_DatabaseRef_t RefObj;
-    EdsLib_HandlerArgument_t HandlerArg;
+    uint16_t                              EntryType;
+    EdsLib_SizeInfo_t                     Offset;
+    EdsLib_DatabaseRef_t                  RefObj;
+    EdsLib_HandlerArgument_t              HandlerArg;
     const EdsLib_IdentityCheckSequence_t *CheckSequence;
 };
 
@@ -261,12 +256,12 @@ typedef struct EdsLib_FieldDetailEntry EdsLib_FieldDetailEntry_t;
 
 struct EdsLib_ContainerDescriptor
 {
-    EdsLib_SizeInfo_t MaxSize;
-    uint16_t DerivativeListSize;
+    EdsLib_SizeInfo_t                     MaxSize;
+    uint16_t                              DerivativeListSize;
     const EdsLib_IdentityCheckSequence_t *CheckSequence;
-    const EdsLib_FieldDetailEntry_t *EntryList;
-    const EdsLib_FieldDetailEntry_t *TrailerEntryList;
-    const EdsLib_DerivativeEntry_t *DerivativeList;
+    const EdsLib_FieldDetailEntry_t      *EntryList;
+    const EdsLib_FieldDetailEntry_t      *TrailerEntryList;
+    const EdsLib_DerivativeEntry_t       *DerivativeList;
 };
 
 typedef struct EdsLib_ContainerDescriptor EdsLib_ContainerDescriptor_t;
@@ -338,39 +333,37 @@ typedef struct EdsLib_GenericDescriptor EdsLib_GenericDescriptor_t;
 
 union EdsLib_ObjectDetailDescriptor
 {
-    const void *Ptr;
+    const void                         *Ptr;
     const EdsLib_ContainerDescriptor_t *Container;
-    const EdsLib_ArrayDescriptor_t *Array;
-    const EdsLib_StringDescriptor_t String;
-    const EdsLib_NumberDescriptor_t Number;
-    const EdsLib_AliasDescriptor_t  Alias;
-    const EdsLib_GenericDescriptor_t GenericType;
+    const EdsLib_ArrayDescriptor_t     *Array;
+    const EdsLib_StringDescriptor_t     String;
+    const EdsLib_NumberDescriptor_t     Number;
+    const EdsLib_AliasDescriptor_t      Alias;
+    const EdsLib_GenericDescriptor_t    GenericType;
 };
 
 typedef union EdsLib_ObjectDetailDescriptor EdsLib_ObjectDetailDescriptor_t;
 
 struct EdsLib_DataTypeDB_Entry
 {
-    uint64_t Checksum;
-    uint8_t BasicType;
-    uint8_t Flags;
-    uint16_t NumSubElements;
-    EdsLib_SizeInfo_t SizeInfo;
+    uint64_t                        Checksum;
+    uint8_t                         BasicType;
+    uint8_t                         Flags;
+    uint16_t                        NumSubElements;
+    EdsLib_SizeInfo_t               SizeInfo;
     EdsLib_ObjectDetailDescriptor_t Detail;
 };
 
 typedef struct EdsLib_DataTypeDB_Entry EdsLib_DataTypeDB_Entry_t;
 
-
 typedef enum
 {
-    EDSLIB_IDENT_SEQUENCE_INVALID = 0,      /**< Reserved marker, processing should stop when encountered */
-    EDSLIB_IDENT_SEQUENCE_ENTITY_LOCATION,  /**< Load/Save entity from location */
-    EDSLIB_IDENT_SEQUENCE_CHECK_CONDITION,  /**< Set/Check current value using the value constraint table */
-    EDSLIB_IDENT_SEQUENCE_REFOBJ_RESULT,    /**< A positive identification entry that refers to an object type */
-    EDSLIB_IDENT_SEQUENCE_BOOLEAN_RESULT    /**< A positive identification entry that is a boolean */
+    EDSLIB_IDENT_SEQUENCE_INVALID = 0,     /**< Reserved marker, processing should stop when encountered */
+    EDSLIB_IDENT_SEQUENCE_ENTITY_LOCATION, /**< Load/Save entity from location */
+    EDSLIB_IDENT_SEQUENCE_CHECK_CONDITION, /**< Set/Check current value using the value constraint table */
+    EDSLIB_IDENT_SEQUENCE_REFOBJ_RESULT,   /**< A positive identification entry that refers to an object type */
+    EDSLIB_IDENT_SEQUENCE_BOOLEAN_RESULT   /**< A positive identification entry that is a boolean */
 } EdsLib_IdentSequence_Enum_t;
-
 
 /*******************************************************
  * DISPLAY DATABASE COMPONENTS (extends basic info above)
@@ -378,28 +371,28 @@ typedef enum
 
 struct EdsLib_SymbolTableEntry
 {
-   intmax_t SymValue;
-   const char *SymName;
+    intmax_t    SymValue;
+    const char *SymName;
 };
 
 typedef struct EdsLib_SymbolTableEntry EdsLib_SymbolTableEntry_t;
 
 union EdsLib_DisplayArg
 {
-    EdsLib_DatabaseRef_t RefObj;
-    const char * const *NameTable;
+    EdsLib_DatabaseRef_t             RefObj;
+    const char *const               *NameTable;
     const EdsLib_SymbolTableEntry_t *SymTable;
-    void *ArgValue;
+    void                            *ArgValue;
 };
 
 typedef union EdsLib_DisplayArg EdsLib_DisplayArg_t;
 
 struct EdsLib_DisplayDB_Entry
 {
-    uint16_t DisplayHint;           /**< Type of display logic to apply */
-    uint16_t DisplayArgTableSize;
+    uint16_t            DisplayHint; /**< Type of display logic to apply */
+    uint16_t            DisplayArgTableSize;
     EdsLib_DisplayArg_t DisplayArg; /**< Optional extra data - typically the name table for enums or containers */
-    const char *Name;               /**< Friendly name of data type or component */
+    const char         *Name;       /**< Friendly name of data type or component */
 };
 
 typedef struct EdsLib_DisplayDB_Entry EdsLib_DisplayDB_Entry_t;
@@ -408,7 +401,7 @@ typedef struct EdsLib_DisplayDB_Entry EdsLib_DisplayDB_Entry_t;
  * INTERFACE DATABASE COMPONENTS
  *******************************************************/
 
- typedef enum EdsLib_ArgMode
+typedef enum EdsLib_ArgMode
 {
     EdsLib_ArgMode_UNDEFINED,
     EdsLib_ArgMode_OUT,
@@ -418,58 +411,57 @@ typedef struct EdsLib_DisplayDB_Entry EdsLib_DisplayDB_Entry_t;
 
 typedef struct EdsLib_IntfDB_GenericTypeInfo
 {
-    const char *Name;
+    const char          *Name;
     EdsLib_DatabaseRef_t BaseRefObj;
 } EdsLib_IntfDB_GenericTypeInfo_t;
 
 typedef struct EdsLib_IntfDB_ArgumentEntry
 {
-    const char *Name;
-    EdsLib_DatabaseRef_t RefObj;
+    const char           *Name;
+    EdsLib_DatabaseRef_t  RefObj;
     EdsLib_ArgMode_Enum_t Mode;
 } EdsLib_IntfDB_ArgumentEntry_t;
 
 typedef struct EdsLib_IntfDB_CommandEntry
 {
-    const char *Name;
+    const char                          *Name;
     const EdsLib_IntfDB_ArgumentEntry_t *ArgumentList;
-    uint16_t ParentIdx;
-    uint16_t ArgumentCount;
+    uint16_t                             ParentIdx;
+    uint16_t                             ArgumentCount;
 } EdsLib_IntfDB_CommandEntry_t;
 
 typedef struct EdsLib_IntfDB_DeclIntfEntry
 {
-    const char *Name;
+    const char                         *Name;
     const EdsLib_IntfDB_CommandEntry_t *CommandList;
-    uint16_t FirstIdx;
-    uint16_t CommandCount;
+    uint16_t                            FirstIdx;
+    uint16_t                            CommandCount;
 } EdsLib_IntfDB_DeclIntfEntry_t;
 
 typedef struct EdsLib_IntfDB_GenericTypeMapInfo
 {
-   EdsLib_DatabaseRef_t ActualTypeRef;
-   EdsLib_DatabaseRef_t GenTypeRef;
+    EdsLib_DatabaseRef_t ActualTypeRef;
+    EdsLib_DatabaseRef_t GenTypeRef;
 } EdsLib_IntfDB_GenericTypeMapInfo_t;
 
 typedef struct EdsLib_IntfDB_InterfaceEntry
 {
-    const char *Name;
+    const char                               *Name;
     const EdsLib_IntfDB_GenericTypeMapInfo_t *GenericTypeMapList;
-    uint16_t ParentIdx;
-    uint16_t GenericTypeMapCount;
-    EdsLib_DatabaseRef_t IntfTypeRef;
+    uint16_t                                  ParentIdx;
+    uint16_t                                  GenericTypeMapCount;
+    EdsLib_DatabaseRef_t                      IntfTypeRef;
 } EdsLib_IntfDB_InterfaceEntry_t;
 
 typedef struct EdsLib_IntfDB_ComponentEntry
 {
-    const char *Name;
+    const char                           *Name;
     const EdsLib_IntfDB_InterfaceEntry_t *RequiredIntfList;
     const EdsLib_IntfDB_InterfaceEntry_t *ProvidedIntfList;
-    uint16_t FirstIdx;
-    uint16_t RequiredIntfCount;
-    uint16_t ProvidedIntfCount;
+    uint16_t                              FirstIdx;
+    uint16_t                              RequiredIntfCount;
+    uint16_t                              ProvidedIntfCount;
 } EdsLib_IntfDB_ComponentEntry_t;
-
 
 /*******************************************************
  * TOP LEVEL OBJECTS
@@ -481,24 +473,23 @@ typedef struct EdsLib_IntfDB_ComponentEntry
 
 struct EdsLib_App_DataTypeDB
 {
-   uint16_t MissionIdx;
-   uint16_t DataTypeTableSize;
-   const EdsLib_DataTypeDB_Entry_t *DataTypeTable;
+    uint16_t                         MissionIdx;
+    uint16_t                         DataTypeTableSize;
+    const EdsLib_DataTypeDB_Entry_t *DataTypeTable;
 };
 
 struct EdsLib_App_DisplayDB
 {
-   const char *EdsName;
-   const EdsLib_DisplayDB_Entry_t *DisplayInfoTable;
+    const char                     *EdsName;
+    const EdsLib_DisplayDB_Entry_t *DisplayInfoTable;
 };
 
 struct EdsLib_App_IntfDB
 {
-   const EdsLib_IntfDB_ComponentEntry_t *ComponentListEntries;
-   const EdsLib_IntfDB_DeclIntfEntry_t *DeclIntfListEntries;
-   uint16_t ComponentListSize;
-   uint16_t DeclIntfListSize;
+    const EdsLib_IntfDB_ComponentEntry_t *ComponentListEntries;
+    const EdsLib_IntfDB_DeclIntfEntry_t  *DeclIntfListEntries;
+    uint16_t                              ComponentListSize;
+    uint16_t                              DeclIntfListSize;
 };
 
-
-#endif  /* _EDSLIB_DATABASE_TYPES_H_ */
+#endif /* _EDSLIB_DATABASE_TYPES_H_ */

@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_displaydb_locate.c
  * \ingroup  fsw
@@ -43,27 +42,26 @@
  * EdsLib local helper function
  *
  *-----------------------------------------------------------------*/
-static EdsLib_Iterator_Rc_t EdsLib_DisplayLocateMember_GetContainerPosition_Callback(
-        const EdsLib_DatabaseObject_t *GD,
-        EdsLib_Iterator_CbType_t CbType,
-        const EdsLib_DataTypeIterator_StackEntry_t *EntityInfo,
-        const char *EntityName,
-        void *OpaqueArg)
+static EdsLib_Iterator_Rc_t
+EdsLib_DisplayLocateMember_GetContainerPosition_Callback(const EdsLib_DatabaseObject_t              *GD,
+                                                         EdsLib_Iterator_CbType_t                    CbType,
+                                                         const EdsLib_DataTypeIterator_StackEntry_t *EntityInfo,
+                                                         const char                                 *EntityName,
+                                                         void                                       *OpaqueArg)
 {
     EdsLib_DisplayLocateMember_ControlBlock_t *CtrlBlock = OpaqueArg;
 
-    if (CbType == EDSLIB_ITERATOR_CBTYPE_MEMBER &&
-            EntityName != NULL &&
-            CtrlBlock->MatchQuality != EDSLIB_MATCHQUALITY_EXACT &&
-            strncmp(EntityName, CtrlBlock->ContentPos, CtrlBlock->ContentLength) == 0 &&
-            EntityName[CtrlBlock->ContentLength] == 0)
+    if (CbType == EDSLIB_ITERATOR_CBTYPE_MEMBER && EntityName != NULL
+        && CtrlBlock->MatchQuality != EDSLIB_MATCHQUALITY_EXACT
+        && strncmp(EntityName, CtrlBlock->ContentPos, CtrlBlock->ContentLength) == 0
+        && EntityName[CtrlBlock->ContentLength] == 0)
     {
-        CtrlBlock->MatchQuality = EDSLIB_MATCHQUALITY_EXACT;
-        CtrlBlock->RefObj = EntityInfo->Details.RefObj;
-        CtrlBlock->MaxSize.Bytes = EntityInfo->EndOffset.Bytes - EntityInfo->StartOffset.Bytes;
-        CtrlBlock->MaxSize.Bits = EntityInfo->EndOffset.Bits - EntityInfo->StartOffset.Bits;
+        CtrlBlock->MatchQuality       = EDSLIB_MATCHQUALITY_EXACT;
+        CtrlBlock->RefObj             = EntityInfo->Details.RefObj;
+        CtrlBlock->MaxSize.Bytes      = EntityInfo->EndOffset.Bytes - EntityInfo->StartOffset.Bytes;
+        CtrlBlock->MaxSize.Bits       = EntityInfo->EndOffset.Bits - EntityInfo->StartOffset.Bits;
         CtrlBlock->StartOffset.Bytes += EntityInfo->StartOffset.Bytes;
-        CtrlBlock->StartOffset.Bits += EntityInfo->StartOffset.Bits;
+        CtrlBlock->StartOffset.Bits  += EntityInfo->StartOffset.Bits;
     }
 
     if (CtrlBlock->MatchQuality != EDSLIB_MATCHQUALITY_EXACT)
@@ -79,12 +77,13 @@ static EdsLib_Iterator_Rc_t EdsLib_DisplayLocateMember_GetContainerPosition_Call
  * EdsLib local helper function
  *
  *-----------------------------------------------------------------*/
-static void EdsLib_DisplayLocateMember_GetContainerPosition(const EdsLib_DatabaseObject_t *GD, EdsLib_DisplayLocateMember_ControlBlock_t *CtrlBlock)
+static void EdsLib_DisplayLocateMember_GetContainerPosition(const EdsLib_DatabaseObject_t             *GD,
+                                                            EdsLib_DisplayLocateMember_ControlBlock_t *CtrlBlock)
 {
     EDSLIB_DECLARE_DISPLAY_ITERATOR_CB(IteratorState,
-            EDSLIB_ITERATOR_MAX_BASETYPE_DEPTH,
-            EdsLib_DisplayLocateMember_GetContainerPosition_Callback,
-            CtrlBlock);
+                                       EDSLIB_ITERATOR_MAX_BASETYPE_DEPTH,
+                                       EdsLib_DisplayLocateMember_GetContainerPosition_Callback,
+                                       CtrlBlock);
 
     EDSLIB_RESET_DISPLAY_ITERATOR_FROM_REFOBJ(IteratorState, CtrlBlock->RefObj);
 
@@ -96,12 +95,13 @@ static void EdsLib_DisplayLocateMember_GetContainerPosition(const EdsLib_Databas
  * EdsLib local helper function
  *
  *-----------------------------------------------------------------*/
-static void EdsLib_DisplayLocateMember_GetArrayPosition(const EdsLib_DatabaseObject_t *GD, EdsLib_DisplayLocateMember_ControlBlock_t *CtrlBlock)
+static void EdsLib_DisplayLocateMember_GetArrayPosition(const EdsLib_DatabaseObject_t             *GD,
+                                                        EdsLib_DisplayLocateMember_ControlBlock_t *CtrlBlock)
 {
-    const EdsLib_DisplayDB_Entry_t *DisplayInf;
+    const EdsLib_DisplayDB_Entry_t  *DisplayInf;
     const EdsLib_SymbolTableEntry_t *Sym = NULL;
-    const char *ConvEnd;
-    int32_t LocalIdx;
+    const char                      *ConvEnd;
+    int32_t                          LocalIdx;
 
     DisplayInf = EdsLib_DisplayDB_GetEntry(GD, &CtrlBlock->RefObj);
     while (DisplayInf != NULL && DisplayInf->DisplayHint == EDSLIB_DISPLAYHINT_REFERENCE_TYPE)
@@ -109,15 +109,16 @@ static void EdsLib_DisplayLocateMember_GetArrayPosition(const EdsLib_DatabaseObj
         DisplayInf = EdsLib_DisplayDB_GetEntry(GD, &DisplayInf->DisplayArg.RefObj);
     }
 
-    if (DisplayInf != NULL &&
-            DisplayInf->DisplayHint == EDSLIB_DISPLAYHINT_ENUM_SYMTABLE)
+    if (DisplayInf != NULL && DisplayInf->DisplayHint == EDSLIB_DISPLAYHINT_ENUM_SYMTABLE)
     {
-        Sym = EdsLib_DisplaySymbolLookup_GetByName(DisplayInf->DisplayArg.SymTable, DisplayInf->DisplayArgTableSize,
-                CtrlBlock->ContentPos, CtrlBlock->ContentLength);
+        Sym = EdsLib_DisplaySymbolLookup_GetByName(DisplayInf->DisplayArg.SymTable,
+                                                   DisplayInf->DisplayArgTableSize,
+                                                   CtrlBlock->ContentPos,
+                                                   CtrlBlock->ContentLength);
     }
     if (Sym != NULL)
     {
-        LocalIdx = Sym->SymValue;
+        LocalIdx                = Sym->SymValue;
         CtrlBlock->MatchQuality = EDSLIB_MATCHQUALITY_EXACT;
     }
     else
@@ -131,11 +132,11 @@ static void EdsLib_DisplayLocateMember_GetArrayPosition(const EdsLib_DatabaseObj
     }
     if (CtrlBlock->MatchQuality != EDSLIB_MATCHQUALITY_NONE)
     {
-        CtrlBlock->RefObj = CtrlBlock->DataDict->Detail.Array->ElementRefObj;
-        CtrlBlock->MaxSize.Bytes = (CtrlBlock->DataDict->SizeInfo.Bytes / CtrlBlock->DataDict->NumSubElements);
-        CtrlBlock->MaxSize.Bits = (CtrlBlock->DataDict->SizeInfo.Bits / CtrlBlock->DataDict->NumSubElements);
+        CtrlBlock->RefObj             = CtrlBlock->DataDict->Detail.Array->ElementRefObj;
+        CtrlBlock->MaxSize.Bytes      = (CtrlBlock->DataDict->SizeInfo.Bytes / CtrlBlock->DataDict->NumSubElements);
+        CtrlBlock->MaxSize.Bits       = (CtrlBlock->DataDict->SizeInfo.Bits / CtrlBlock->DataDict->NumSubElements);
         CtrlBlock->StartOffset.Bytes += LocalIdx * CtrlBlock->MaxSize.Bytes;
-        CtrlBlock->StartOffset.Bits += LocalIdx * CtrlBlock->MaxSize.Bits;
+        CtrlBlock->StartOffset.Bits  += LocalIdx * CtrlBlock->MaxSize.Bits;
     }
 }
 
@@ -145,7 +146,8 @@ static void EdsLib_DisplayLocateMember_GetArrayPosition(const EdsLib_DatabaseObj
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-void EdsLib_DisplayLocateMember_Impl(const EdsLib_DatabaseObject_t *GD, EdsLib_DisplayLocateMember_ControlBlock_t *CtrlBlock)
+void EdsLib_DisplayLocateMember_Impl(const EdsLib_DatabaseObject_t             *GD,
+                                     EdsLib_DisplayLocateMember_ControlBlock_t *CtrlBlock)
 {
     const char *EndPos;
 
@@ -155,19 +157,46 @@ void EdsLib_DisplayLocateMember_Impl(const EdsLib_DatabaseObject_t *GD, EdsLib_D
     }
 
     CtrlBlock->DataDict = EdsLib_DataTypeDB_GetEntry(GD, &CtrlBlock->RefObj);
-    if (*CtrlBlock->ContentPos != 0 && CtrlBlock->DataDict != NULL &&
-            CtrlBlock->DataDict->NumSubElements > 0)
+    if (*CtrlBlock->ContentPos != 0 && CtrlBlock->DataDict != NULL && CtrlBlock->DataDict->NumSubElements > 0)
     {
         switch (CtrlBlock->DataDict->BasicType)
         {
-        case EDSLIB_BASICTYPE_ARRAY:
-            if (*CtrlBlock->ContentPos == '[')
-            {
-                do
+            case EDSLIB_BASICTYPE_ARRAY:
+                if (*CtrlBlock->ContentPos == '[')
                 {
-                    ++CtrlBlock->ContentPos;
+                    do
+                    {
+                        ++CtrlBlock->ContentPos;
+                    } while (isspace((int)*CtrlBlock->ContentPos));
+
+                    EndPos = CtrlBlock->ContentPos;
+                    while (isalnum((int)*EndPos) || *EndPos == '_')
+                    {
+                        ++CtrlBlock->ContentLength;
+                        ++EndPos;
+                    }
+
+                    while (isspace((int)*EndPos))
+                    {
+                        ++EndPos;
+                    }
+
+                    if (*EndPos == ']' && CtrlBlock->ContentLength > 0)
+                    {
+                        CtrlBlock->NextTokenPos = EndPos + 1;
+                        EdsLib_DisplayLocateMember_GetArrayPosition(GD, CtrlBlock);
+                    }
                 }
-                while (isspace((int)*CtrlBlock->ContentPos));
+                break;
+            case EDSLIB_BASICTYPE_CONTAINER:
+            case EDSLIB_BASICTYPE_COMPONENT:
+                if (*CtrlBlock->ContentPos == '.')
+                {
+                    do
+                    {
+                        ++CtrlBlock->ContentPos;
+                    } while (isspace((int)*CtrlBlock->ContentPos));
+                }
 
                 EndPos = CtrlBlock->ContentPos;
                 while (isalnum((int)*EndPos) || *EndPos == '_')
@@ -176,44 +205,14 @@ void EdsLib_DisplayLocateMember_Impl(const EdsLib_DatabaseObject_t *GD, EdsLib_D
                     ++EndPos;
                 }
 
-                while (isspace((int)*EndPos))
+                if (CtrlBlock->ContentLength > 0)
                 {
-                    ++EndPos;
+                    CtrlBlock->NextTokenPos = EndPos;
+                    EdsLib_DisplayLocateMember_GetContainerPosition(GD, CtrlBlock);
                 }
-
-                if (*EndPos == ']' && CtrlBlock->ContentLength > 0)
-                {
-                    CtrlBlock->NextTokenPos = EndPos + 1;
-                    EdsLib_DisplayLocateMember_GetArrayPosition(GD, CtrlBlock);
-                }
-            }
-            break;
-        case EDSLIB_BASICTYPE_CONTAINER:
-        case EDSLIB_BASICTYPE_COMPONENT:
-            if (*CtrlBlock->ContentPos == '.')
-            {
-                do
-                {
-                    ++CtrlBlock->ContentPos;
-                }
-                while (isspace((int)*CtrlBlock->ContentPos));
-            }
-
-            EndPos = CtrlBlock->ContentPos;
-            while (isalnum((int)*EndPos) || *EndPos == '_')
-            {
-                ++CtrlBlock->ContentLength;
-                ++EndPos;
-            }
-
-            if (CtrlBlock->ContentLength > 0)
-            {
-                CtrlBlock->NextTokenPos = EndPos;
-                EdsLib_DisplayLocateMember_GetContainerPosition(GD, CtrlBlock);
-            }
-            break;
-        default:
-            break;
+                break;
+            default:
+                break;
         }
     }
 }

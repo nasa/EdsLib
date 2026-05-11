@@ -18,34 +18,30 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_python_scalar.c
  * \ingroup  python
  * \author   joseph.p.hickey@nasa.gov
  *
-**   Implement Python data type for EDS scalar objects.
-**
-**   This is to provide a better implementation of the "str" routine, which
-**   converts EDS objects into strings.  Without this, the "repr" function
-**   would be used which produces less useful results for passing into another
-**   function which expects a string.
+ **   Implement Python data type for EDS scalar objects.
+ **
+ **   This is to provide a better implementation of the "str" routine, which
+ **   converts EDS objects into strings.  Without this, the "repr" function
+ **   would be used which produces less useful results for passing into another
+ **   function which expects a string.
  */
 
 #include "edslib_python_internal.h"
 
 static PyObject *EdsLib_Python_NativeObject_ScalarType_str(PyObject *obj);
 
-PyTypeObject EdsLib_Python_ObjectScalarType =
-{
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = EDSLIB_PYTHON_ENTITY_NAME("Scalar"),
-    .tp_basicsize = sizeof(EdsLib_Python_ObjectBase_t),
-    .tp_base = &EdsLib_Python_ObjectBaseType,
-    .tp_str = EdsLib_Python_NativeObject_ScalarType_str,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_doc = PyDoc_STR("EDS ScalarDataType")
-};
+PyTypeObject EdsLib_Python_ObjectScalarType = { PyVarObject_HEAD_INIT(NULL, 0).tp_name =
+                                                    EDSLIB_PYTHON_ENTITY_NAME("Scalar"),
+                                                .tp_basicsize = sizeof(EdsLib_Python_ObjectBase_t),
+                                                .tp_base      = &EdsLib_Python_ObjectBaseType,
+                                                .tp_str       = EdsLib_Python_NativeObject_ScalarType_str,
+                                                .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+                                                .tp_doc       = PyDoc_STR("EDS ScalarDataType") };
 
 static PyObject *EdsLib_Python_NativeObject_ScalarType_str(PyObject *obj)
 {

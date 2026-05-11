@@ -62,7 +62,10 @@ void Test_Contents(void *Arg, const EdsLib_EntityDescriptor_t *Param)
 
     if (Pair->ref)
     {
-        EdsLib_Scalar_ToString(&UT_DATABASE, Param->EntityInfo.EdsId, ref_buffer, sizeof(ref_buffer),
+        EdsLib_Scalar_ToString(&UT_DATABASE,
+                               Param->EntityInfo.EdsId,
+                               ref_buffer,
+                               sizeof(ref_buffer),
                                &Pair->ref[Param->EntityInfo.Offset.Bytes]);
     }
     else
@@ -72,7 +75,10 @@ void Test_Contents(void *Arg, const EdsLib_EntityDescriptor_t *Param)
 
     if (Pair->actual)
     {
-        EdsLib_Scalar_ToString(&UT_DATABASE, Param->EntityInfo.EdsId, actual_buffer, sizeof(actual_buffer),
+        EdsLib_Scalar_ToString(&UT_DATABASE,
+                               Param->EntityInfo.EdsId,
+                               actual_buffer,
+                               sizeof(actual_buffer),
                                &Pair->actual[Param->EntityInfo.Offset.Bytes]);
     }
     else
@@ -80,14 +86,16 @@ void Test_Contents(void *Arg, const EdsLib_EntityDescriptor_t *Param)
         actual_buffer[0] = 0;
     }
 
-    UtPrintf("FullName=%s Offset=%lu Value=%s", Param->FullName, (unsigned long)Param->EntityInfo.Offset.Bytes,
+    UtPrintf("FullName=%s Offset=%lu Value=%s",
+             Param->FullName,
+             (unsigned long)Param->EntityInfo.Offset.Bytes,
              actual_buffer);
     UtAssert_STRINGBUF_EQ(actual_buffer, sizeof(actual_buffer), ref_buffer, sizeof(ref_buffer));
 }
 
 void UtAssert_Eds_Contents(EdsLib_Id_t EdsId, const void *ref, const void *actual)
 {
-    Test_ComparePair_t Pair = {.actual = actual, .ref = ref};
+    Test_ComparePair_t Pair = { .actual = actual, .ref = ref };
     EdsLib_DisplayDB_IterateAllEntities(&UT_DATABASE, EdsId, Test_Contents, &Pair);
 }
 
@@ -96,15 +104,19 @@ void Test_ALL_BOOLEANS(void)
     unsigned char *vector       = TESTDATA_ALL_BOOLEANS_bin;
     size_t         len          = TESTDATA_ALL_BOOLEANS_bin_len;
     EdsLib_Id_t    EdsId_Expect = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_ALL_BOOLEANS_DATADICTIONARY);
+                                              EdsContainer_CCSDS_SOIS_SAMPLETYPES_ALL_BOOLEANS_DATADICTIONARY);
     EdsLib_Id_t    EdsId_Base   = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_ALL_BOOLEANS_DATADICTIONARY);
+                                            EdsContainer_CCSDS_SOIS_SAMPLETYPES_ALL_BOOLEANS_DATADICTIONARY);
 
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_ALL_BOOLEANS_t NativeObj;
 
     UtAssert_EQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_ALL_BOOLEANS_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -123,8 +135,12 @@ void Test_ALL_FLOATS(void)
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_ALL_FLOATS_t NativeObj;
 
     UtAssert_EQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_ALL_FLOATS_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -136,15 +152,19 @@ void Test_ALL_SIGNED_INTS(void)
     unsigned char *vector       = TESTDATA_ALL_SIGNED_INTS_bin;
     size_t         len          = TESTDATA_ALL_SIGNED_INTS_bin_len;
     EdsLib_Id_t    EdsId_Expect = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_ALL_SIGNED_INTS_DATADICTIONARY);
+                                              EdsContainer_CCSDS_SOIS_SAMPLETYPES_ALL_SIGNED_INTS_DATADICTIONARY);
     EdsLib_Id_t    EdsId_Base   = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_ALL_SIGNED_INTS_DATADICTIONARY);
+                                            EdsContainer_CCSDS_SOIS_SAMPLETYPES_ALL_SIGNED_INTS_DATADICTIONARY);
 
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_ALL_SIGNED_INTS_t NativeObj;
 
     UtAssert_EQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_ALL_SIGNED_INTS_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -156,15 +176,19 @@ void Test_ALL_UNSIGNED_INTS(void)
     unsigned char *vector       = TESTDATA_ALL_UNSIGNED_INTS_bin;
     size_t         len          = TESTDATA_ALL_UNSIGNED_INTS_bin_len;
     EdsLib_Id_t    EdsId_Expect = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_ALL_UNSIGNED_INTS_DATADICTIONARY);
+                                              EdsContainer_CCSDS_SOIS_SAMPLETYPES_ALL_UNSIGNED_INTS_DATADICTIONARY);
     EdsLib_Id_t    EdsId_Base   = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_ALL_UNSIGNED_INTS_DATADICTIONARY);
+                                            EdsContainer_CCSDS_SOIS_SAMPLETYPES_ALL_UNSIGNED_INTS_DATADICTIONARY);
 
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_ALL_UNSIGNED_INTS_t NativeObj;
 
     UtAssert_EQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_ALL_UNSIGNED_INTS_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -176,15 +200,19 @@ void Test_COMPOUND_TYPES(void)
     unsigned char *vector       = TESTDATA_COMPOUND_TYPES_bin;
     size_t         len          = TESTDATA_COMPOUND_TYPES_bin_len;
     EdsLib_Id_t    EdsId_Expect = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_COMPOUND_TYPES_DATADICTIONARY);
+                                              EdsContainer_CCSDS_SOIS_SAMPLETYPES_COMPOUND_TYPES_DATADICTIONARY);
     EdsLib_Id_t    EdsId_Base   = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_COMPOUND_TYPES_DATADICTIONARY);
+                                            EdsContainer_CCSDS_SOIS_SAMPLETYPES_COMPOUND_TYPES_DATADICTIONARY);
 
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_COMPOUND_TYPES_t NativeObj;
 
     UtAssert_EQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_COMPOUND_TYPES_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -204,8 +232,12 @@ void Test_DERIV_F64(void)
 
     UtAssert_EQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_DERIV_F64_t));
     UtAssert_LTEQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_BASE_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -224,8 +256,12 @@ void Test_DERIV_U16(void)
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_DERIV_U16_t NativeObj;
 
     UtAssert_EQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_DERIV_U16_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -244,8 +280,12 @@ void Test_DERIV_U32(void)
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_DERIV_U32_t NativeObj;
 
     UtAssert_EQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_DERIV_U32_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -264,8 +304,12 @@ void Test_ER_EVEN_FOUR(void)
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_ER_EVEN_t NativeObj;
 
     UtAssert_LTEQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_ER_EVEN_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -284,8 +328,12 @@ void Test_ER_EVEN_SIX(void)
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_ER_EVEN_t NativeObj;
 
     UtAssert_LTEQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_ER_EVEN_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -304,8 +352,12 @@ void Test_ER_EVEN_TWO(void)
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_ER_EVEN_t NativeObj;
 
     UtAssert_LTEQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_ER_EVEN_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -324,8 +376,12 @@ void Test_ER_ODD_ONE(void)
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_ER_ODD_t NativeObj;
 
     UtAssert_LTEQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_ER_ODD_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -344,8 +400,12 @@ void Test_ER_ODD_SEVEN(void)
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_ER_ODD_t NativeObj;
 
     UtAssert_LTEQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_ER_ODD_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -364,8 +424,12 @@ void Test_ER_ODD_THREE(void)
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_ER_ODD_t NativeObj;
 
     UtAssert_LTEQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_ER_ODD_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -377,15 +441,19 @@ void Test_ERRCTL_CHECKSUM(void)
     unsigned char *vector       = TESTDATA_ERRCTL_CHECKSUM_bin;
     size_t         len          = TESTDATA_ERRCTL_CHECKSUM_bin_len;
     EdsLib_Id_t    EdsId_Expect = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_ERRCTL_CHECKSUM_DATADICTIONARY);
+                                              EdsContainer_CCSDS_SOIS_SAMPLETYPES_ERRCTL_CHECKSUM_DATADICTIONARY);
     EdsLib_Id_t    EdsId_Base   = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_ERRCTL_CHECKSUM_DATADICTIONARY);
+                                            EdsContainer_CCSDS_SOIS_SAMPLETYPES_ERRCTL_CHECKSUM_DATADICTIONARY);
 
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_ERRCTL_CHECKSUM_t NativeObj;
 
     UtAssert_EQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_ERRCTL_CHECKSUM_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -406,8 +474,12 @@ void Test_ERRCTL_CHECKSUM_LONGITUDINAL(void)
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_ERRCTL_CHECKSUM_LONGITUDINAL_t NativeObj;
 
     UtAssert_EQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_ERRCTL_CHECKSUM_LONGITUDINAL_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -419,15 +491,19 @@ void Test_ERRCTL_CRC16EL(void)
     unsigned char *vector       = TESTDATA_ERRCTL_CRC16EL_bin;
     size_t         len          = TESTDATA_ERRCTL_CRC16EL_bin_len;
     EdsLib_Id_t    EdsId_Expect = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_ERRCTL_CRC16EL_DATADICTIONARY);
+                                              EdsContainer_CCSDS_SOIS_SAMPLETYPES_ERRCTL_CRC16EL_DATADICTIONARY);
     EdsLib_Id_t    EdsId_Base   = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_ERRCTL_CRC16EL_DATADICTIONARY);
+                                            EdsContainer_CCSDS_SOIS_SAMPLETYPES_ERRCTL_CRC16EL_DATADICTIONARY);
 
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_ERRCTL_CRC16EL_t NativeObj;
 
     UtAssert_EQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_ERRCTL_CRC16EL_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -446,8 +522,12 @@ void Test_ERRCTL_CRC8(void)
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_ERRCTL_CRC8_t NativeObj;
 
     UtAssert_EQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_ERRCTL_CRC8_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -466,8 +546,12 @@ void Test_MFLOAT32EBxEU3(void)
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_MFLOAT32EBxEU3_t NativeObj;
 
     UtAssert_EQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_MFLOAT32EBxEU3_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -479,15 +563,19 @@ void Test_OPTIONAL_DIRECT_350(void)
     unsigned char *vector       = TESTDATA_OPTIONAL_DIRECT_350_bin;
     size_t         len          = TESTDATA_OPTIONAL_DIRECT_350_bin_len;
     EdsLib_Id_t    EdsId_Base   = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_DIRECT_DATADICTIONARY);
+                                            EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_DIRECT_DATADICTIONARY);
     EdsLib_Id_t    EdsId_Expect = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_DIRECT_DATADICTIONARY);
+                                              EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_DIRECT_DATADICTIONARY);
 
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_DIRECT_t NativeObj;
 
     UtAssert_LTEQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_DIRECT_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -499,15 +587,19 @@ void Test_OPTIONAL_DIRECT_450(void)
     unsigned char *vector       = TESTDATA_OPTIONAL_DIRECT_450_bin;
     size_t         len          = TESTDATA_OPTIONAL_DIRECT_450_bin_len;
     EdsLib_Id_t    EdsId_Base   = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_DIRECT_DATADICTIONARY);
+                                            EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_DIRECT_DATADICTIONARY);
     EdsLib_Id_t    EdsId_Expect = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_DIRECT_DATADICTIONARY);
+                                              EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_DIRECT_DATADICTIONARY);
 
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_DIRECT_t NativeObj;
 
     UtAssert_LTEQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_DIRECT_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -519,15 +611,19 @@ void Test_OPTIONAL_FIRST_4(void)
     unsigned char *vector       = TESTDATA_OPTIONAL_FIRST_4_bin;
     size_t         len          = TESTDATA_OPTIONAL_FIRST_4_bin_len;
     EdsLib_Id_t    EdsId_Base   = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_FIRST_DATADICTIONARY);
+                                            EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_FIRST_DATADICTIONARY);
     EdsLib_Id_t    EdsId_Expect = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_FIRST_DATADICTIONARY);
+                                              EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_FIRST_DATADICTIONARY);
 
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_FIRST_t NativeObj;
 
     UtAssert_LTEQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_FIRST_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -539,15 +635,19 @@ void Test_OPTIONAL_FIRST_5(void)
     unsigned char *vector       = TESTDATA_OPTIONAL_FIRST_5_bin;
     size_t         len          = TESTDATA_OPTIONAL_FIRST_5_bin_len;
     EdsLib_Id_t    EdsId_Base   = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_FIRST_DATADICTIONARY);
+                                            EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_FIRST_DATADICTIONARY);
     EdsLib_Id_t    EdsId_Expect = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_FIRST_DATADICTIONARY);
+                                              EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_FIRST_DATADICTIONARY);
 
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_FIRST_t NativeObj;
 
     UtAssert_LTEQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_FIRST_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -559,15 +659,19 @@ void Test_OPTIONAL_LAST_8(void)
     unsigned char *vector       = TESTDATA_OPTIONAL_LAST_8_bin;
     size_t         len          = TESTDATA_OPTIONAL_LAST_8_bin_len;
     EdsLib_Id_t    EdsId_Base   = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_LAST_DATADICTIONARY);
+                                            EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_LAST_DATADICTIONARY);
     EdsLib_Id_t    EdsId_Expect = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_LAST_DATADICTIONARY);
+                                              EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_LAST_DATADICTIONARY);
 
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_LAST_t NativeObj;
 
     UtAssert_LTEQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_LAST_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -579,15 +683,19 @@ void Test_OPTIONAL_LAST_9(void)
     unsigned char *vector       = TESTDATA_OPTIONAL_LAST_9_bin;
     size_t         len          = TESTDATA_OPTIONAL_LAST_9_bin_len;
     EdsLib_Id_t    EdsId_Base   = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_LAST_DATADICTIONARY);
+                                            EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_LAST_DATADICTIONARY);
     EdsLib_Id_t    EdsId_Expect = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_LAST_DATADICTIONARY);
+                                              EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_LAST_DATADICTIONARY);
 
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_LAST_t NativeObj;
 
     UtAssert_LTEQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_LAST_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -599,15 +707,19 @@ void Test_OPTIONAL_MID_6(void)
     unsigned char *vector       = TESTDATA_OPTIONAL_MID_6_bin;
     size_t         len          = TESTDATA_OPTIONAL_MID_6_bin_len;
     EdsLib_Id_t    EdsId_Base   = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MID_DATADICTIONARY);
+                                            EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MID_DATADICTIONARY);
     EdsLib_Id_t    EdsId_Expect = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MID_DATADICTIONARY);
+                                              EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MID_DATADICTIONARY);
 
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MID_t NativeObj;
 
     UtAssert_LTEQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MID_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -619,15 +731,19 @@ void Test_OPTIONAL_MID_7(void)
     unsigned char *vector       = TESTDATA_OPTIONAL_MID_7_bin;
     size_t         len          = TESTDATA_OPTIONAL_MID_7_bin_len;
     EdsLib_Id_t    EdsId_Base   = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MID_DATADICTIONARY);
+                                            EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MID_DATADICTIONARY);
     EdsLib_Id_t    EdsId_Expect = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MID_DATADICTIONARY);
+                                              EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MID_DATADICTIONARY);
 
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MID_t NativeObj;
 
     UtAssert_LTEQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MID_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -639,15 +755,19 @@ void Test_OPTIONAL_MULTI_10(void)
     unsigned char *vector       = TESTDATA_OPTIONAL_MULTI_10_bin;
     size_t         len          = TESTDATA_OPTIONAL_MULTI_10_bin_len;
     EdsLib_Id_t    EdsId_Base   = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_DATADICTIONARY);
+                                            EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_DATADICTIONARY);
     EdsLib_Id_t    EdsId_Expect = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_DATADICTIONARY);
+                                              EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_DATADICTIONARY);
 
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_t NativeObj;
 
     UtAssert_LTEQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -659,15 +779,19 @@ void Test_OPTIONAL_MULTI_11(void)
     unsigned char *vector       = TESTDATA_OPTIONAL_MULTI_11_bin;
     size_t         len          = TESTDATA_OPTIONAL_MULTI_11_bin_len;
     EdsLib_Id_t    EdsId_Base   = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_DATADICTIONARY);
+                                            EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_DATADICTIONARY);
     EdsLib_Id_t    EdsId_Expect = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_DATADICTIONARY);
+                                              EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_DATADICTIONARY);
 
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_t NativeObj;
 
     UtAssert_LTEQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -679,15 +803,19 @@ void Test_OPTIONAL_MULTI_12(void)
     unsigned char *vector       = TESTDATA_OPTIONAL_MULTI_12_bin;
     size_t         len          = TESTDATA_OPTIONAL_MULTI_12_bin_len;
     EdsLib_Id_t    EdsId_Base   = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_DATADICTIONARY);
+                                            EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_DATADICTIONARY);
     EdsLib_Id_t    EdsId_Expect = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_DATADICTIONARY);
+                                              EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_DATADICTIONARY);
 
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_t NativeObj;
 
     UtAssert_LTEQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -699,15 +827,19 @@ void Test_OPTIONAL_MULTI_13(void)
     unsigned char *vector       = TESTDATA_OPTIONAL_MULTI_13_bin;
     size_t         len          = TESTDATA_OPTIONAL_MULTI_13_bin_len;
     EdsLib_Id_t    EdsId_Base   = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_DATADICTIONARY);
+                                            EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_DATADICTIONARY);
     EdsLib_Id_t    EdsId_Expect = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_DATADICTIONARY);
+                                              EdsContainer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_DATADICTIONARY);
 
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_t NativeObj;
 
     UtAssert_LTEQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_OPTIONAL_MULTI_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -719,15 +851,19 @@ void Test_OVERRIDE_TYPES(void)
     unsigned char *vector       = TESTDATA_OVERRIDE_TYPES_bin;
     size_t         len          = TESTDATA_OVERRIDE_TYPES_bin_len;
     EdsLib_Id_t    EdsId_Expect = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OVERRIDE_TYPES_DATADICTIONARY);
+                                              EdsContainer_CCSDS_SOIS_SAMPLETYPES_OVERRIDE_TYPES_DATADICTIONARY);
     EdsLib_Id_t    EdsId_Base   = EDSLIB_MAKE_ID(UT_INDEX_CCSDS_SOIS_SAMPLETYPES,
-                                                 EdsContainer_CCSDS_SOIS_SAMPLETYPES_OVERRIDE_TYPES_DATADICTIONARY);
+                                            EdsContainer_CCSDS_SOIS_SAMPLETYPES_OVERRIDE_TYPES_DATADICTIONARY);
 
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_OVERRIDE_TYPES_t NativeObj;
 
     UtAssert_EQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_OVERRIDE_TYPES_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 
@@ -746,8 +882,12 @@ void Test_S6EBx4(void)
     EdsDataType_CCSDS_SOIS_SAMPLETYPES_S6EBx4_t NativeObj;
 
     UtAssert_EQ(size_t, len, sizeof(EdsPackedBuffer_CCSDS_SOIS_SAMPLETYPES_S6EBx4_t));
-    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE, &EdsId_Base, &NativeObj, vector,
-                                                             sizeof(NativeObj), len * 8),
+    UtAssert_INT32_EQ(EdsLib_DataTypeDB_UnpackCompleteObject(&UT_DATABASE,
+                                                             &EdsId_Base,
+                                                             &NativeObj,
+                                                             vector,
+                                                             sizeof(NativeObj),
+                                                             len * 8),
                       EDSLIB_SUCCESS);
     UtAssert_INT32_EQ(EdsId_Base, EdsId_Expect);
 

@@ -86,7 +86,6 @@ PyMODINIT_FUNC PyInit_CFE_MissionLib(void)
 #define PyMODINIT_FUNC void
 #endif
 
-
 PyMODINIT_FUNC initCFE_MissionLib(void)
 {
     /* python2 does not want module object */
@@ -94,4 +93,3 @@ PyMODINIT_FUNC initCFE_MissionLib(void)
 }
 
 #endif
-

@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_lua_objects.c
  * \ingroup  lua
@@ -52,7 +51,7 @@
 #include "edslib_binding_objects.h"
 #include "edslib_lua_objects.h"
 
-#define EDSLIB_MAX_BUFFER_SIZE          65528
+#define EDSLIB_MAX_BUFFER_SIZE 65528
 
 static int EdsLib_LuaBinding_DestroyObject(lua_State *lua)
 {
@@ -84,7 +83,10 @@ static EdsLib_Binding_DescriptorObject_t *EdsLib_LuaBinding_NewDescriptor(lua_St
     return ObjectUserData;
 }
 
-static EdsLib_Binding_DescriptorObject_t *EdsLib_LuaBinding_NewSubObject(lua_State *lua, const EdsLib_Binding_DescriptorObject_t *ParentObj, const EdsLib_DataTypeDB_EntityInfo_t *Component)
+static EdsLib_Binding_DescriptorObject_t *
+EdsLib_LuaBinding_NewSubObject(lua_State                               *lua,
+                               const EdsLib_Binding_DescriptorObject_t *ParentObj,
+                               const EdsLib_DataTypeDB_EntityInfo_t    *Component)
 {
     EdsLib_Binding_DescriptorObject_t *SubObject = EdsLib_LuaBinding_NewDescriptor(lua);
     EdsLib_Binding_InitSubObject(SubObject, ParentObj, Component);
@@ -94,8 +96,8 @@ static EdsLib_Binding_DescriptorObject_t *EdsLib_LuaBinding_NewSubObject(lua_Sta
 static int EdsLib_LuaBinding_GetField(lua_State *lua)
 {
     EdsLib_Binding_DescriptorObject_t *Object;
-    EdsLib_DataTypeDB_EntityInfo_t ComponentInfo;
-    int32_t Status;
+    EdsLib_DataTypeDB_EntityInfo_t     ComponentInfo;
+    int32_t                            Status;
 
     /*
      * Expected LUA stack:
@@ -109,46 +111,43 @@ static int EdsLib_LuaBinding_GetField(lua_State *lua)
 
     switch (Object->TypeInfo.ElemType)
     {
-    case EDSLIB_BASICTYPE_CONTAINER:
-    case EDSLIB_BASICTYPE_COMPONENT:
-    {
-        /* For containers, the field should be a name */
-        const char *Name = luaL_checkstring(lua, 2);
-        Status = EdsLib_DisplayDB_LocateSubEntity(Object->GD,
-                Object->EdsId,
-                Name, &ComponentInfo);
-        break;
-    }
-    case EDSLIB_BASICTYPE_ARRAY:
-    {
-        /* For arrays, the field can be an integer (normal case)
-         * or an enumeration label if the array was defined using an "indexTypeRef" of an enumeration
-         */
-        uint16_t SubIndex;
+        case EDSLIB_BASICTYPE_CONTAINER:
+        case EDSLIB_BASICTYPE_COMPONENT:
+        {
+            /* For containers, the field should be a name */
+            const char *Name = luaL_checkstring(lua, 2);
+            Status           = EdsLib_DisplayDB_LocateSubEntity(Object->GD, Object->EdsId, Name, &ComponentInfo);
+            break;
+        }
+        case EDSLIB_BASICTYPE_ARRAY:
+        {
+            /* For arrays, the field can be an integer (normal case)
+             * or an enumeration label if the array was defined using an "indexTypeRef" of an enumeration
+             */
+            uint16_t SubIndex;
 
-        if (lua_type(lua, 2) == LUA_TNUMBER)
-        {
-            /* In Lua array indices should start at 1, not 0 */
-            SubIndex = luaL_checkinteger(lua, 2) - 1;
-            Status = EDSLIB_SUCCESS;
-        }
-        else
-        {
-            Status = EdsLib_DisplayDB_GetIndexByName(Object->GD, Object->EdsId, lua_tostring(lua, 2), &SubIndex);
-        }
+            if (lua_type(lua, 2) == LUA_TNUMBER)
+            {
+                /* In Lua array indices should start at 1, not 0 */
+                SubIndex = luaL_checkinteger(lua, 2) - 1;
+                Status   = EDSLIB_SUCCESS;
+            }
+            else
+            {
+                Status = EdsLib_DisplayDB_GetIndexByName(Object->GD, Object->EdsId, lua_tostring(lua, 2), &SubIndex);
+            }
 
-        if (Status == EDSLIB_SUCCESS)
-        {
-            Status = EdsLib_DataTypeDB_GetMemberByIndex(Object->GD, Object->EdsId,
-                    SubIndex, &ComponentInfo);
+            if (Status == EDSLIB_SUCCESS)
+            {
+                Status = EdsLib_DataTypeDB_GetMemberByIndex(Object->GD, Object->EdsId, SubIndex, &ComponentInfo);
+            }
+            break;
         }
-        break;
-    }
-    default:
-    {
-        Status = EDSLIB_NAME_NOT_FOUND;
-        break;
-    }
+        default:
+        {
+            Status = EDSLIB_NAME_NOT_FOUND;
+            break;
+        }
     }
 
     if (Status != EDSLIB_SUCCESS)
@@ -159,13 +158,12 @@ static int EdsLib_LuaBinding_GetField(lua_State *lua)
     /* Push a temporary EdsLib userdata object to reflect the sub-structure */
     EdsLib_LuaBinding_NewSubObject(lua, Object, &ComponentInfo);
     return 1;
-
 }
 
 static void EdsLib_LuaBinding_EnumerateMembers_Callback(void *Arg, const EdsLib_EntityDescriptor_t *ParamDesc)
 {
-    lua_State *lua = Arg;
-    int idx;
+    lua_State                         *lua = Arg;
+    int                                idx;
     EdsLib_Binding_DescriptorObject_t *BaseObj = luaL_checkudata(lua, -3, "EdsLib_Object");
 
     luaL_checktype(lua, -2, LUA_TTABLE);
@@ -194,8 +192,8 @@ static void EdsLib_LuaBinding_EnumerateMembers_Callback(void *Arg, const EdsLib_
 static int EdsLib_LuaBinding_EdsObjectToLuaObject(lua_State *lua)
 {
     EdsLib_Binding_DescriptorObject_t *Object;
-    EdsLib_DisplayHint_t DispHint;
-    int start_top = lua_gettop(lua);
+    EdsLib_DisplayHint_t               DispHint;
+    int                                start_top = lua_gettop(lua);
 
     Object = luaL_testudata(lua, start_top, "EdsLib_Object");
 
@@ -219,8 +217,8 @@ static int EdsLib_LuaBinding_EdsObjectToLuaObject(lua_State *lua)
     {
         if (Object->TypeInfo.ElemType == EDSLIB_BASICTYPE_BINARY)
         {
-            const char *Str = (const char*)EdsLib_Binding_GetNativeObject(Object);
-            uint32_t StrSize = 0;
+            const char *Str     = (const char *)EdsLib_Binding_GetNativeObject(Object);
+            uint32_t    StrSize = 0;
 
             if (DispHint == EDSLIB_DISPLAYHINT_STRING)
             {
@@ -243,9 +241,12 @@ static int EdsLib_LuaBinding_EdsObjectToLuaObject(lua_State *lua)
         {
             char StringBuffer[256];
 
-            if (EdsLib_Scalar_ToString(Object->GD, Object->EdsId,
-                    StringBuffer, sizeof(StringBuffer),
-                    EdsLib_Binding_GetNativeObject(Object)) == EDSLIB_SUCCESS)
+            if (EdsLib_Scalar_ToString(Object->GD,
+                                       Object->EdsId,
+                                       StringBuffer,
+                                       sizeof(StringBuffer),
+                                       EdsLib_Binding_GetNativeObject(Object))
+                == EDSLIB_SUCCESS)
             {
                 lua_pushstring(lua, StringBuffer);
             }
@@ -256,35 +257,35 @@ static int EdsLib_LuaBinding_EdsObjectToLuaObject(lua_State *lua)
 
             EdsLib_Binding_LoadValue(Object, &ValueBuff);
 
-            switch(ValueBuff.ValueType)
+            switch (ValueBuff.ValueType)
             {
-            case EDSLIB_BASICTYPE_SIGNED_INT:
-                if (DispHint == EDSLIB_DISPLAYHINT_BOOLEAN)
-                {
-                    /* preserve the boolean nature of the integer field */
-                    lua_pushboolean(lua, ValueBuff.Value.SignedInteger);
-                }
-                else
-                {
-                    lua_pushinteger(lua, ValueBuff.Value.SignedInteger);
-                }
-                break;
-            case EDSLIB_BASICTYPE_UNSIGNED_INT:
-                if (DispHint == EDSLIB_DISPLAYHINT_BOOLEAN)
-                {
-                    /* preserve the boolean nature of the integer field */
-                    lua_pushboolean(lua, ValueBuff.Value.UnsignedInteger);
-                }
-                else
-                {
-                    lua_pushinteger(lua, ValueBuff.Value.UnsignedInteger);
-                }
-                break;
-            case EDSLIB_BASICTYPE_FLOAT:
-                lua_pushnumber(lua, ValueBuff.Value.FloatingPoint);
-                break;
-            default:
-                break;
+                case EDSLIB_BASICTYPE_SIGNED_INT:
+                    if (DispHint == EDSLIB_DISPLAYHINT_BOOLEAN)
+                    {
+                        /* preserve the boolean nature of the integer field */
+                        lua_pushboolean(lua, ValueBuff.Value.SignedInteger);
+                    }
+                    else
+                    {
+                        lua_pushinteger(lua, ValueBuff.Value.SignedInteger);
+                    }
+                    break;
+                case EDSLIB_BASICTYPE_UNSIGNED_INT:
+                    if (DispHint == EDSLIB_DISPLAYHINT_BOOLEAN)
+                    {
+                        /* preserve the boolean nature of the integer field */
+                        lua_pushboolean(lua, ValueBuff.Value.UnsignedInteger);
+                    }
+                    else
+                    {
+                        lua_pushinteger(lua, ValueBuff.Value.UnsignedInteger);
+                    }
+                    break;
+                case EDSLIB_BASICTYPE_FLOAT:
+                    lua_pushnumber(lua, ValueBuff.Value.FloatingPoint);
+                    break;
+                default:
+                    break;
             }
         }
     }
@@ -293,22 +294,24 @@ static int EdsLib_LuaBinding_EdsObjectToLuaObject(lua_State *lua)
         int idx;
 
         /* Create a temporary table with the name name/userdata pairs */
-        lua_newtable(lua);  /* index 2 -- contains the names */
-        lua_newtable(lua);  /* index 3 -- contains the value types (userdata) */
-        EdsLib_DisplayDB_IterateBaseEntities(Object->GD, Object->EdsId,
-                EdsLib_LuaBinding_EnumerateMembers_Callback, lua);
+        lua_newtable(lua); /* index 2 -- contains the names */
+        lua_newtable(lua); /* index 3 -- contains the value types (userdata) */
+        EdsLib_DisplayDB_IterateBaseEntities(Object->GD,
+                                             Object->EdsId,
+                                             EdsLib_LuaBinding_EnumerateMembers_Callback,
+                                             lua);
 
         /* Create the table that will be returned */
-        lua_newtable(lua);  /* index 4 -- final result */
+        lua_newtable(lua); /* index 4 -- final result */
 
         /* Attempt to convert each userdata into a Lua object, recursing as necessary */
         for (idx = 1; idx <= lua_rawlen(lua, 2); ++idx)
         {
-            lua_rawgeti(lua, 2, idx);   /* get name from first temp table */
+            lua_rawgeti(lua, 2, idx); /* get name from first temp table */
             lua_pushcfunction(lua, EdsLib_LuaBinding_EdsObjectToLuaObject);
-            lua_rawgeti(lua, 3, idx);   /* get userdata from second temp table */
-            lua_call(lua, 1, 1);        /* recursive call to convert sub-userdata to Lua object */
-            lua_rawset(lua, 4);         /* store in final table */
+            lua_rawgeti(lua, 3, idx); /* get userdata from second temp table */
+            lua_call(lua, 1, 1);      /* recursive call to convert sub-userdata to Lua object */
+            lua_rawset(lua, 4);       /* store in final table */
         }
 
         /* note that the two intermediate tables will be dropped; only the top is returned */
@@ -326,7 +329,7 @@ static int EdsLib_LuaBinding_EdsObjectToLuaObject(lua_State *lua)
 static int EdsLib_LuaBinding_LuaObjectToEdsObject(lua_State *lua)
 {
     EdsLib_Binding_DescriptorObject_t *Object;
-    int start_top = lua_gettop(lua);
+    int                                start_top = lua_gettop(lua);
 
     Object = luaL_checkudata(lua, start_top - 1, "EdsLib_Object");
 
@@ -335,7 +338,7 @@ static int EdsLib_LuaBinding_LuaObjectToEdsObject(lua_State *lua)
         if (lua_type(lua, start_top) == LUA_TSTRING)
         {
             const char *SrcString = lua_tostring(lua, start_top);
-            uint32_t SrcLength = lua_rawlen(lua, start_top);
+            uint32_t    SrcLength = lua_rawlen(lua, start_top);
 
             /*
              * If the target is a binary field (which includes EDS strings)
@@ -360,11 +363,8 @@ static int EdsLib_LuaBinding_LuaObjectToEdsObject(lua_State *lua)
                  * This will attempt to parse the string as the appropriate EDS type.
                  * (therefore slower than the simple case above)
                  */
-                EdsLib_Scalar_FromString(Object->GD, Object->EdsId,
-                        EdsLib_Binding_GetNativeObject(Object),
-                        SrcString);
+                EdsLib_Scalar_FromString(Object->GD, Object->EdsId, EdsLib_Binding_GetNativeObject(Object), SrcString);
             }
-
         }
         else
         {
@@ -374,12 +374,12 @@ static int EdsLib_LuaBinding_LuaObjectToEdsObject(lua_State *lua)
             {
                 /* in Lua all numbers are floats */
                 ValueBuff.Value.FloatingPoint = lua_tonumber(lua, start_top);
-                ValueBuff.ValueType = EDSLIB_BASICTYPE_FLOAT;
+                ValueBuff.ValueType           = EDSLIB_BASICTYPE_FLOAT;
             }
             else if (lua_type(lua, start_top) == LUA_TBOOLEAN)
             {
                 ValueBuff.Value.SignedInteger = lua_toboolean(lua, start_top);
-                ValueBuff.ValueType = EDSLIB_BASICTYPE_SIGNED_INT;
+                ValueBuff.ValueType           = EDSLIB_BASICTYPE_SIGNED_INT;
             }
             else
             {
@@ -394,7 +394,7 @@ static int EdsLib_LuaBinding_LuaObjectToEdsObject(lua_State *lua)
         if (lua_istable(lua, start_top))
         {
             lua_pushnil(lua);
-            while(lua_next(lua, start_top))
+            while (lua_next(lua, start_top))
             {
                 lua_pushcfunction(lua, EdsLib_LuaBinding_LuaObjectToEdsObject);
                 lua_pushcfunction(lua, EdsLib_LuaBinding_GetField);
@@ -470,17 +470,16 @@ static int EdsLib_LuaBinding_EdsObjectAssignValue(lua_State *lua)
         SrcObject = NULL;
     }
 
-    if (SrcObject != NULL && EdsLib_Binding_IsDescBufferValid(SrcObject) &&
-            EdsLib_Binding_CheckEdsObjectsCompatible(DestObject, SrcObject) !=
-                    EDSLIB_BINDING_COMPATIBILITY_NONE)
+    if (SrcObject != NULL && EdsLib_Binding_IsDescBufferValid(SrcObject)
+        && EdsLib_Binding_CheckEdsObjectsCompatible(DestObject, SrcObject) != EDSLIB_BINDING_COMPATIBILITY_NONE)
     {
         /*
          * In the simple case, the objects are binary compatible, and the
          * value can be simply memcpy()'ed to the destination object
          */
         memcpy(EdsLib_Binding_GetNativeObject(DestObject),
-                EdsLib_Binding_GetNativeObject(SrcObject),
-                SrcObject->TypeInfo.Size.Bytes);
+               EdsLib_Binding_GetNativeObject(SrcObject),
+               SrcObject->TypeInfo.Size.Bytes);
     }
     else
     {
@@ -505,7 +504,7 @@ static int EdsLib_LuaBinding_EdsObjectAssignValue(lua_State *lua)
             lua_call(lua, 1, 1);
         }
 
-        lua_call(lua, 2, 0);        /* Calling LuaObjectToEdsObject */
+        lua_call(lua, 2, 0); /* Calling LuaObjectToEdsObject */
     }
 
     return 0;
@@ -520,7 +519,7 @@ static int EdsLib_LuaBinding_SetField(lua_State *lua)
      *  Field Value           @ 3
      */
 
-    lua_settop(lua, 3);  /* adjust stack in case different number of args were passed in */
+    lua_settop(lua, 3); /* adjust stack in case different number of args were passed in */
 
     lua_pushcfunction(lua, EdsLib_LuaBinding_EdsObjectAssignValue);
 
@@ -536,12 +535,13 @@ static int EdsLib_LuaBinding_SetField(lua_State *lua)
     return 0;
 }
 
-static void EdsLib_LuaBinding_PushBufferAsString(lua_State *lua, const char *Desc, const uint8_t *Buffer, uint32_t ContentBitSize)
+static void
+EdsLib_LuaBinding_PushBufferAsString(lua_State *lua, const char *Desc, const uint8_t *Buffer, uint32_t ContentBitSize)
 {
     luaL_Buffer lbuf;
-    char TempString[5];
-    uint32_t i;
-    uint32_t ContentByteSize = (ContentBitSize + 7) / 8;
+    char        TempString[5];
+    uint32_t    i;
+    uint32_t    ContentByteSize = (ContentBitSize + 7) / 8;
 
     lua_pushfstring(lua, "%s(%d", Desc, (int)ContentBitSize);
     luaL_buffinit(lua, &lbuf);
@@ -549,7 +549,7 @@ static void EdsLib_LuaBinding_PushBufferAsString(lua_State *lua, const char *Des
     if (ContentByteSize > 0)
     {
         luaL_addstring(&lbuf, ":");
-        for(i = 0; i < ContentByteSize; ++i)
+        for (i = 0; i < ContentByteSize; ++i)
         {
             snprintf(TempString, sizeof(TempString), " %02x", Buffer[i]);
             luaL_addstring(&lbuf, TempString);
@@ -559,7 +559,6 @@ static void EdsLib_LuaBinding_PushBufferAsString(lua_State *lua, const char *Des
     luaL_pushresult(&lbuf);
     lua_pushstring(lua, ")");
     lua_concat(lua, 3);
-
 }
 
 static int EdsLib_LuaBinding_BufferToString(lua_State *lua)
@@ -568,9 +567,8 @@ static int EdsLib_LuaBinding_BufferToString(lua_State *lua)
 
     if (lua_type(lua, 1) == LUA_TSTRING)
     {
-        const uint8_t *Buffer = (const uint8_t*)lua_tostring(lua, 1);
-        EdsLib_LuaBinding_PushBufferAsString(lua, "BITSTREAM",
-                Buffer, 8 * lua_rawlen(lua, 1));
+        const uint8_t *Buffer = (const uint8_t *)lua_tostring(lua, 1);
+        EdsLib_LuaBinding_PushBufferAsString(lua, "BITSTREAM", Buffer, 8 * lua_rawlen(lua, 1));
         nret = 1;
     }
     else if (lua_type(lua, 1) == LUA_TUSERDATA)
@@ -579,10 +577,11 @@ static int EdsLib_LuaBinding_BufferToString(lua_State *lua)
         if (EdsLib_Binding_IsDescBufferValid(Object))
         {
             char TypeName[128];
-            EdsLib_LuaBinding_PushBufferAsString(lua,
-                    EdsLib_DisplayDB_GetTypeName(Object->GD, Object->EdsId, TypeName, sizeof(TypeName)),
-                    EdsLib_Binding_GetNativeObject(Object),
-                    8 * Object->TypeInfo.Size.Bytes);
+            EdsLib_LuaBinding_PushBufferAsString(
+                lua,
+                EdsLib_DisplayDB_GetTypeName(Object->GD, Object->EdsId, TypeName, sizeof(TypeName)),
+                EdsLib_Binding_GetNativeObject(Object),
+                8 * Object->TypeInfo.Size.Bytes);
             nret = 1;
         }
     }
@@ -593,7 +592,7 @@ static int EdsLib_LuaBinding_BufferToString(lua_State *lua)
 static int EdsLib_LuaBinding_ObjectToString(lua_State *lua)
 {
     EdsLib_Binding_DescriptorObject_t *ObjectUserData;
-    char StringBuffer[256];
+    char                               StringBuffer[256];
 
     ObjectUserData = luaL_checkudata(lua, 1, "EdsLib_Object");
 
@@ -604,20 +603,29 @@ static int EdsLib_LuaBinding_ObjectToString(lua_State *lua)
     if (!EdsLib_Binding_IsDescBufferValid(ObjectUserData))
     {
         /* Object is a descriptor only; return a string containing the EDS type descriptor */
-        lua_pushstring(lua, EdsLib_DisplayDB_GetTypeName(ObjectUserData->GD, ObjectUserData->EdsId, StringBuffer, sizeof(StringBuffer)));
+        lua_pushstring(lua,
+                       EdsLib_DisplayDB_GetTypeName(ObjectUserData->GD,
+                                                    ObjectUserData->EdsId,
+                                                    StringBuffer,
+                                                    sizeof(StringBuffer)));
     }
-    else if (ObjectUserData->TypeInfo.NumSubElements == 0 && ObjectUserData->TypeInfo.Size.Bytes > 0 &&
-            EdsLib_Scalar_ToString(ObjectUserData->GD, ObjectUserData->EdsId, StringBuffer, sizeof(StringBuffer),
-                    EdsLib_Binding_GetNativeObject(ObjectUserData)) == EDSLIB_SUCCESS)
+    else if (ObjectUserData->TypeInfo.NumSubElements == 0 && ObjectUserData->TypeInfo.Size.Bytes > 0
+             && EdsLib_Scalar_ToString(ObjectUserData->GD,
+                                       ObjectUserData->EdsId,
+                                       StringBuffer,
+                                       sizeof(StringBuffer),
+                                       EdsLib_Binding_GetNativeObject(ObjectUserData))
+                    == EDSLIB_SUCCESS)
     {
         lua_pushstring(lua, StringBuffer);
     }
     else
     {
-        EdsLib_LuaBinding_PushBufferAsString(lua,
-                EdsLib_DisplayDB_GetTypeName(ObjectUserData->GD, ObjectUserData->EdsId, StringBuffer, sizeof(StringBuffer)),
-                EdsLib_Binding_GetNativeObject(ObjectUserData),
-                8 * ObjectUserData->TypeInfo.Size.Bytes);
+        EdsLib_LuaBinding_PushBufferAsString(
+            lua,
+            EdsLib_DisplayDB_GetTypeName(ObjectUserData->GD, ObjectUserData->EdsId, StringBuffer, sizeof(StringBuffer)),
+            EdsLib_Binding_GetNativeObject(ObjectUserData),
+            8 * ObjectUserData->TypeInfo.Size.Bytes);
     }
 
     return 1;
@@ -625,10 +633,10 @@ static int EdsLib_LuaBinding_ObjectToString(lua_State *lua)
 
 static int EdsLib_LuaBinding_NewObject(lua_State *lua)
 {
-    EdsLib_Lua_Database_Userdata_t *DbObj = luaL_checkudata(lua, lua_upvalueindex(1), "EdsDb");
-    EdsLib_Binding_DescriptorObject_t *ObjectUserData;
+    EdsLib_Lua_Database_Userdata_t     *DbObj = luaL_checkudata(lua, lua_upvalueindex(1), "EdsDb");
+    EdsLib_Binding_DescriptorObject_t  *ObjectUserData;
     EdsLib_DataTypeDB_DerivedTypeInfo_t DerivInfo;
-    EdsLib_Binding_DescriptorObject_t *SrcObject;
+    EdsLib_Binding_DescriptorObject_t  *SrcObject;
 
     /*
      * The second argument to this function is an optional initializer.
@@ -646,8 +654,9 @@ static int EdsLib_LuaBinding_NewObject(lua_State *lua)
 
     if (lua_type(lua, 1) == LUA_TSTRING)
     {
-        EdsLib_Binding_InitDescriptor(ObjectUserData, DbObj->GD,
-                EdsLib_DisplayDB_LookupTypeName(DbObj->GD, luaL_checkstring(lua, 1)));
+        EdsLib_Binding_InitDescriptor(ObjectUserData,
+                                      DbObj->GD,
+                                      EdsLib_DisplayDB_LookupTypeName(DbObj->GD, luaL_checkstring(lua, 1)));
     }
     else if (lua_type(lua, 1) == LUA_TUSERDATA)
     {
@@ -679,13 +688,10 @@ static int EdsLib_LuaBinding_NewObject(lua_State *lua)
 
     if (!EdsLib_Binding_IsDescBufferValid(ObjectUserData))
     {
-        return luaL_error(lua, "Memory allocation error obtaining buffer for %d bytes",
-                (int)DerivInfo.MaxSize.Bytes);
+        return luaL_error(lua, "Memory allocation error obtaining buffer for %d bytes", (int)DerivInfo.MaxSize.Bytes);
     }
 
-
-    if (ObjectUserData->TypeInfo.NumSubElements > 0 &&
-            lua_type(lua, 2) == LUA_TSTRING)
+    if (ObjectUserData->TypeInfo.NumSubElements > 0 && lua_type(lua, 2) == LUA_TSTRING)
     {
         /*
          * When initializing a compound object (array or container) from a string,
@@ -693,20 +699,21 @@ static int EdsLib_LuaBinding_NewObject(lua_State *lua)
          *
          * Initialize the new object from the serialized object
          */
-        EdsLib_DataTypeDB_UnpackCompleteObject(DbObj->GD, &ObjectUserData->EdsId,
-                EdsLib_Binding_GetNativeObject(ObjectUserData),
-                lua_tostring(lua, 2), DerivInfo.MaxSize.Bytes, 8 * lua_rawlen(lua, 2));
+        EdsLib_DataTypeDB_UnpackCompleteObject(DbObj->GD,
+                                               &ObjectUserData->EdsId,
+                                               EdsLib_Binding_GetNativeObject(ObjectUserData),
+                                               lua_tostring(lua, 2),
+                                               DerivInfo.MaxSize.Bytes,
+                                               8 * lua_rawlen(lua, 2));
 
         /*
          * The unpack operation may modify the EdsId, so look up details after completion.
          */
-        EdsLib_DataTypeDB_GetTypeInfo(DbObj->GD, ObjectUserData->EdsId,
-                &ObjectUserData->TypeInfo);
+        EdsLib_DataTypeDB_GetTypeInfo(DbObj->GD, ObjectUserData->EdsId, &ObjectUserData->TypeInfo);
     }
     else
     {
-        EdsLib_DataTypeDB_GetTypeInfo(DbObj->GD, ObjectUserData->EdsId,
-                &ObjectUserData->TypeInfo);
+        EdsLib_DataTypeDB_GetTypeInfo(DbObj->GD, ObjectUserData->EdsId, &ObjectUserData->TypeInfo);
 
         /*
          * Initialize the new object from scratch, optionally using a Lua value to prepare internal fields
@@ -716,32 +723,30 @@ static int EdsLib_LuaBinding_NewObject(lua_State *lua)
         if (!lua_isnil(lua, 2))
         {
             lua_pushcfunction(lua, EdsLib_LuaBinding_EdsObjectAssignValue);
-            lua_pushvalue(lua, 3);  /* new object */
-            lua_pushvalue(lua, 2);  /* initializer object */
+            lua_pushvalue(lua, 3); /* new object */
+            lua_pushvalue(lua, 2); /* initializer object */
             lua_call(lua, 2, 0);
         }
     }
-
 
     return 1;
 }
 
 static int EdsLib_LuaBinding_EncodeObject(lua_State *lua)
 {
-    EdsLib_Binding_DescriptorObject_t *ObjectUserData;
+    EdsLib_Binding_DescriptorObject_t  *ObjectUserData;
     EdsLib_DataTypeDB_DerivedTypeInfo_t DerivInfo;
-    EdsLib_Id_t PackMsg;
-    EdsLib_SizeInfo_t ActualSize;
-    uint32_t MaxPackedSize;
-    uint8_t LocalScratchBuffer[64];
-    void *PackBufPtr;
-    int32_t PackStatus;
-    int nret;
+    EdsLib_Id_t                         PackMsg;
+    EdsLib_SizeInfo_t                   ActualSize;
+    uint32_t                            MaxPackedSize;
+    uint8_t                             LocalScratchBuffer[64];
+    void                               *PackBufPtr;
+    int32_t                             PackStatus;
+    int                                 nret;
 
     ObjectUserData = luaL_checkudata(lua, 1, "EdsLib_Object");
 
-    if (EdsLib_DataTypeDB_GetDerivedInfo(ObjectUserData->GD, ObjectUserData->EdsId,
-            &DerivInfo) == EDSLIB_SUCCESS)
+    if (EdsLib_DataTypeDB_GetDerivedInfo(ObjectUserData->GD, ObjectUserData->EdsId, &DerivInfo) == EDSLIB_SUCCESS)
     {
         /* allocate enough buffer storage for the largest derivative type */
         MaxPackedSize = DerivInfo.MaxSize.Bits;
@@ -752,8 +757,8 @@ static int EdsLib_LuaBinding_EncodeObject(lua_State *lua)
         MaxPackedSize = ObjectUserData->TypeInfo.Size.Bits;
     }
 
-    nret = 0;
-    PackMsg = ObjectUserData->EdsId;
+    nret          = 0;
+    PackMsg       = ObjectUserData->EdsId;
     MaxPackedSize = EdsLib_BITS_TO_OCTETS(MaxPackedSize);
 
     /*
@@ -773,14 +778,14 @@ static int EdsLib_LuaBinding_EncodeObject(lua_State *lua)
     {
         memset(PackBufPtr, 0, MaxPackedSize);
 
-        ActualSize.Bits = EdsLib_OCTETS_TO_BITS(MaxPackedSize);
+        ActualSize.Bits  = EdsLib_OCTETS_TO_BITS(MaxPackedSize);
         ActualSize.Bytes = EdsLib_Binding_GetNativeSize(ObjectUserData);
 
         PackStatus = EdsLib_DataTypeDB_PackCompleteObjectVarSize(ObjectUserData->GD,
-                &PackMsg,
-                PackBufPtr,
-                EdsLib_Binding_GetNativeObject(ObjectUserData),
-                &ActualSize);
+                                                                 &PackMsg,
+                                                                 PackBufPtr,
+                                                                 EdsLib_Binding_GetNativeObject(ObjectUserData),
+                                                                 &ActualSize);
 
         if (PackStatus == EDSLIB_SUCCESS)
         {
@@ -800,9 +805,8 @@ static int EdsLib_LuaBinding_EncodeObject(lua_State *lua)
 
 static int EdsLib_LuaBinding_GetMetaData(lua_State *lua)
 {
-    EdsLib_Binding_DescriptorObject_t *ObjectUserData =
-            luaL_checkudata(lua, 1, "EdsLib_Object");
-    char StringBuffer[128];
+    EdsLib_Binding_DescriptorObject_t *ObjectUserData = luaL_checkudata(lua, 1, "EdsLib_Object");
+    char                               StringBuffer[128];
 
     lua_newtable(lua);
     lua_pushinteger(lua, ObjectUserData->TypeInfo.Size.Bits);
@@ -815,38 +819,40 @@ static int EdsLib_LuaBinding_GetMetaData(lua_State *lua)
     lua_setfield(lua, -2, "BytePosition");
     lua_pushinteger(lua, ObjectUserData->EdsId);
     lua_setfield(lua, -2, "TypeId");
-    lua_pushstring(lua, EdsLib_DisplayDB_GetTypeName(ObjectUserData->GD, ObjectUserData->EdsId, StringBuffer, sizeof(StringBuffer)));
+    lua_pushstring(
+        lua,
+        EdsLib_DisplayDB_GetTypeName(ObjectUserData->GD, ObjectUserData->EdsId, StringBuffer, sizeof(StringBuffer)));
     lua_setfield(lua, -2, "TypeName");
 
     switch (ObjectUserData->TypeInfo.ElemType)
     {
-    case EDSLIB_BASICTYPE_SIGNED_INT:
-        lua_pushstring(lua, "SIGNED_INT");
-        break;
-    case EDSLIB_BASICTYPE_UNSIGNED_INT:
-        lua_pushstring(lua, "UNSIGNED_INT");
-        break;
-    case EDSLIB_BASICTYPE_FLOAT:
-        lua_pushstring(lua, "IEEE_FLOAT");
-        break;
-    case EDSLIB_BASICTYPE_BINARY:
-        lua_pushstring(lua, "BINARY");
-        break;
-    case EDSLIB_BASICTYPE_CONTAINER:
-        lua_pushstring(lua, "CONTAINER");
-        break;
-    case EDSLIB_BASICTYPE_COMPONENT:
-        lua_pushstring(lua, "COMPONENT");
-        break;
-    case EDSLIB_BASICTYPE_ARRAY:
-        lua_pushstring(lua, "ARRAY");
-        break;
-    case EDSLIB_BASICTYPE_GENERIC:
-        lua_pushstring(lua, "GENERIC");
-        break;
-    default:
-        lua_pushnil(lua);
-        break;
+        case EDSLIB_BASICTYPE_SIGNED_INT:
+            lua_pushstring(lua, "SIGNED_INT");
+            break;
+        case EDSLIB_BASICTYPE_UNSIGNED_INT:
+            lua_pushstring(lua, "UNSIGNED_INT");
+            break;
+        case EDSLIB_BASICTYPE_FLOAT:
+            lua_pushstring(lua, "IEEE_FLOAT");
+            break;
+        case EDSLIB_BASICTYPE_BINARY:
+            lua_pushstring(lua, "BINARY");
+            break;
+        case EDSLIB_BASICTYPE_CONTAINER:
+            lua_pushstring(lua, "CONTAINER");
+            break;
+        case EDSLIB_BASICTYPE_COMPONENT:
+            lua_pushstring(lua, "COMPONENT");
+            break;
+        case EDSLIB_BASICTYPE_ARRAY:
+            lua_pushstring(lua, "ARRAY");
+            break;
+        case EDSLIB_BASICTYPE_GENERIC:
+            lua_pushstring(lua, "GENERIC");
+            break;
+        default:
+            lua_pushnil(lua);
+            break;
     }
     lua_setfield(lua, -2, "TypeClass");
 
@@ -867,12 +873,11 @@ static int EdsLib_LuaBinding_GetMemberIterator(lua_State *lua)
 {
     EdsLib_Binding_DescriptorObject_t *Object = luaL_checkudata(lua, 1, "EdsLib_Object");
 
-    lua_newtable(lua);      /* table to hold names */
-    lua_newtable(lua);      /* table to hold values (userdata) */
+    lua_newtable(lua); /* table to hold names */
+    lua_newtable(lua); /* table to hold values (userdata) */
 
     /* fill in the two temporary tables */
-    EdsLib_DisplayDB_IterateBaseEntities(Object->GD, Object->EdsId,
-            EdsLib_LuaBinding_EnumerateMembers_Callback, lua);
+    EdsLib_DisplayDB_IterateBaseEntities(Object->GD, Object->EdsId, EdsLib_LuaBinding_EnumerateMembers_Callback, lua);
 
     lua_pushinteger(lua, 0); /* "next index" into the table */
     lua_pushcclosure(lua, EdsLib_LuaBinding_MemberIterator_Impl, 3);
@@ -887,8 +892,8 @@ static void EdsLib_LuaBinding_CountMembers_Callback(void *Arg, const EdsLib_Enti
 
 static int EdsLib_LuaBinding_GetObjectLength(lua_State *lua)
 {
-    EdsLib_Binding_DescriptorObject_t *Object = luaL_checkudata(lua, 1, "EdsLib_Object");
-    lua_Integer ResultLen = 0;
+    EdsLib_Binding_DescriptorObject_t *Object    = luaL_checkudata(lua, 1, "EdsLib_Object");
+    lua_Integer                        ResultLen = 0;
 
     if (Object->TypeInfo.ElemType == EDSLIB_BASICTYPE_ARRAY)
     {
@@ -901,8 +906,10 @@ static int EdsLib_LuaBinding_GetObjectLength(lua_State *lua)
          * the possible presence of unnamed base types.  The number returned here
          * reflect the same number that one would get from an iterator.
          */
-        EdsLib_DisplayDB_IterateBaseEntities(Object->GD, Object->EdsId,
-                EdsLib_LuaBinding_CountMembers_Callback, &ResultLen);
+        EdsLib_DisplayDB_IterateBaseEntities(Object->GD,
+                                             Object->EdsId,
+                                             EdsLib_LuaBinding_CountMembers_Callback,
+                                             &ResultLen);
     }
 
     lua_pushinteger(lua, ResultLen);
@@ -927,8 +934,8 @@ static int EdsLib_LuaBinding_TypeEqualCheck(lua_State *lua)
     }
     else
     {
-        lua_pushboolean(lua, EdsLib_Binding_CheckEdsObjectsCompatible(Obj1, Obj2) ==
-                EDSLIB_BINDING_COMPATIBILITY_EXACT);
+        lua_pushboolean(lua,
+                        EdsLib_Binding_CheckEdsObjectsCompatible(Obj1, Obj2) == EDSLIB_BINDING_COMPATIBILITY_EXACT);
     }
 
     return 1;
@@ -942,8 +949,6 @@ static int EdsLib_LuaBinding_API(lua_State *lua)
     lua_rawget(lua, -2);
     return 1;
 }
-
-
 
 /* *********************************************************
  * PUBLIC API FUNCTIONS BELOW HERE
@@ -976,7 +981,8 @@ void EdsLib_LuaBinding_GetNativeObject(EdsLib_LuaBinding_State_t *lua, int narg,
     }
 }
 
-EdsLib_LuaBinding_DescriptorObject_t *EdsLib_LuaBinding_CreateEmptyObject(EdsLib_LuaBinding_State_t *lua, size_t MaxSize)
+EdsLib_LuaBinding_DescriptorObject_t *EdsLib_LuaBinding_CreateEmptyObject(EdsLib_LuaBinding_State_t *lua,
+                                                                          size_t                     MaxSize)
 {
     EdsLib_Binding_DescriptorObject_t *ObjectUserData;
 
@@ -997,8 +1003,8 @@ void EdsLib_Lua_Attach(EdsLib_LuaBinding_State_t *lua, const EdsLib_LuaBinding_D
     }
 
     EdsLib_Lua_Database_Userdata_t *DbObj = lua_newuserdata(lua, sizeof(EdsLib_Lua_Database_Userdata_t));
-    DbObj->GD = MissionObj;
-    Obj = lua_gettop(lua);
+    DbObj->GD                             = MissionObj;
+    Obj                                   = lua_gettop(lua);
 
     lua_newtable(lua);
 

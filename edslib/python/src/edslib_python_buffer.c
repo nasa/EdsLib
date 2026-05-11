@@ -18,33 +18,27 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_python_buffer.c
  * \ingroup  python
  * \author   joseph.p.hickey@nasa.gov
  *
-**   Implement Python wrapper type for EdsLib buffer objects
+ **   Implement Python wrapper type for EdsLib buffer objects
  */
 
 #include "edslib_python_internal.h"
 
-static PyObject *   EdsLib_Python_Buffer_repr(PyObject *obj);
-static void         EdsLib_Python_Buffer_dealloc(PyObject *obj);
+static PyObject *EdsLib_Python_Buffer_repr(PyObject *obj);
+static void      EdsLib_Python_Buffer_dealloc(PyObject *obj);
 
-PyTypeObject EdsLib_Python_BufferType =
-{
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = EDSLIB_PYTHON_ENTITY_NAME("Buffer"),
-    .tp_dealloc = EdsLib_Python_Buffer_dealloc,
-    .tp_basicsize = sizeof(EdsLib_Python_Buffer_t),
-    .tp_repr = EdsLib_Python_Buffer_repr,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_doc = PyDoc_STR("EDS Buffer")
-};
+PyTypeObject EdsLib_Python_BufferType = { PyVarObject_HEAD_INIT(NULL, 0).tp_name = EDSLIB_PYTHON_ENTITY_NAME("Buffer"),
+                                          .tp_dealloc                            = EdsLib_Python_Buffer_dealloc,
+                                          .tp_basicsize                          = sizeof(EdsLib_Python_Buffer_t),
+                                          .tp_repr                               = EdsLib_Python_Buffer_repr,
+                                          .tp_flags                              = Py_TPFLAGS_DEFAULT,
+                                          .tp_doc                                = PyDoc_STR("EDS Buffer") };
 
-
-EdsLib_Binding_Buffer_Content_t* EdsLib_Python_Buffer_GetContentRef(EdsLib_Python_Buffer_t *self, int userflags)
+EdsLib_Binding_Buffer_Content_t *EdsLib_Python_Buffer_GetContentRef(EdsLib_Python_Buffer_t *self, int userflags)
 {
     /*
      * Confirm writability
@@ -84,16 +78,16 @@ EdsLib_Binding_Buffer_Content_t* EdsLib_Python_Buffer_GetContentRef(EdsLib_Pytho
     return &self->edsbuf;
 }
 
-void EdsLib_Python_Buffer_ReleaseContentRef(EdsLib_Binding_Buffer_Content_t* ref)
+void EdsLib_Python_Buffer_ReleaseContentRef(EdsLib_Binding_Buffer_Content_t *ref)
 {
     union
     {
-        uint8_t *byte;
-        const EdsLib_Binding_Buffer_Content_t* ref;
-        EdsLib_Python_Buffer_t *self;
+        uint8_t                               *byte;
+        const EdsLib_Binding_Buffer_Content_t *ref;
+        EdsLib_Python_Buffer_t                *self;
     } ptr;
 
-    ptr.ref = ref;
+    ptr.ref   = ref;
     ptr.byte -= offsetof(EdsLib_Python_Buffer_t, edsbuf);
 
     if (ptr.self->edsbuf.ReferenceCount > 0)
@@ -109,7 +103,7 @@ void EdsLib_Python_Buffer_ReleaseContentRef(EdsLib_Binding_Buffer_Content_t* ref
 
 static void EdsLib_Python_Buffer_dealloc(PyObject *obj)
 {
-    EdsLib_Python_Buffer_t *self = (EdsLib_Python_Buffer_t*)obj;
+    EdsLib_Python_Buffer_t *self = (EdsLib_Python_Buffer_t *)obj;
     if (self->bufobj)
     {
         Py_DECREF(self->bufobj->pyobj);
@@ -126,25 +120,26 @@ static void EdsLib_Python_Buffer_dealloc(PyObject *obj)
 
 static PyObject *EdsLib_Python_Buffer_repr(PyObject *obj)
 {
-    EdsLib_Python_Buffer_t *self = (EdsLib_Python_Buffer_t*)obj;
-    PyObject *result;
+    EdsLib_Python_Buffer_t *self = (EdsLib_Python_Buffer_t *)obj;
+    PyObject               *result;
 
     if (self->bufobj != NULL)
     {
-        result = PyUnicode_FromFormat("%s(%R)",obj->ob_type->tp_name,self->bufobj->pyobj);
+        result = PyUnicode_FromFormat("%s(%R)", obj->ob_type->tp_name, self->bufobj->pyobj);
     }
     else
     {
-        result = PyUnicode_FromFormat("%s(%p,%zu)",obj->ob_type->tp_name, self->edsbuf.Data, self->edsbuf.MaxContentSize);
+        result =
+            PyUnicode_FromFormat("%s(%p,%zu)", obj->ob_type->tp_name, self->edsbuf.Data, self->edsbuf.MaxContentSize);
     }
 
     return result;
 }
 
-EdsLib_Python_Buffer_t* EdsLib_Python_Buffer_FromObject(PyObject *bufobj, int readonly)
+EdsLib_Python_Buffer_t *EdsLib_Python_Buffer_FromObject(PyObject *bufobj, int readonly)
 {
-    EdsLib_Python_Buffer_t *self = NULL;
-    EdsLib_Python_View_t *viewobj = NULL;
+    EdsLib_Python_Buffer_t *self    = NULL;
+    EdsLib_Python_View_t   *viewobj = NULL;
 
     do
     {
@@ -159,7 +154,7 @@ EdsLib_Python_Buffer_t* EdsLib_Python_Buffer_FromObject(PyObject *bufobj, int re
             break;
         }
 
-        viewobj = PyMem_Malloc(sizeof(EdsLib_Python_View_t*));
+        viewobj = PyMem_Malloc(sizeof(EdsLib_Python_View_t *));
         if (viewobj == NULL)
         {
             PyErr_NoMemory();
@@ -180,14 +175,13 @@ EdsLib_Python_Buffer_t* EdsLib_Python_Buffer_FromObject(PyObject *bufobj, int re
          */
         memset(viewobj, 0, sizeof(*viewobj));
         Py_INCREF(bufobj);
-        viewobj->pyobj = bufobj;
-        self->bufobj = viewobj;
-        self->is_readonly = readonly;
-        self->is_dynamic = 0;
+        viewobj->pyobj       = bufobj;
+        self->bufobj         = viewobj;
+        self->is_readonly    = readonly;
+        self->is_dynamic     = 0;
         self->is_initialized = 1;
         memset(&self->edsbuf, 0, sizeof(self->edsbuf));
-    }
-    while(0);
+    } while (0);
 
     if (self == NULL && viewobj != NULL)
     {
@@ -197,10 +191,10 @@ EdsLib_Python_Buffer_t* EdsLib_Python_Buffer_FromObject(PyObject *bufobj, int re
     return self;
 }
 
-EdsLib_Python_Buffer_t* EdsLib_Python_Buffer_New(Py_ssize_t len)
+EdsLib_Python_Buffer_t *EdsLib_Python_Buffer_New(Py_ssize_t len)
 {
-    EdsLib_Python_Buffer_t* self;
-    void *mem;
+    EdsLib_Python_Buffer_t *self;
+    void                   *mem;
 
     mem = PyMem_Malloc(len);
     if (mem == NULL)
@@ -218,9 +212,9 @@ EdsLib_Python_Buffer_t* EdsLib_Python_Buffer_New(Py_ssize_t len)
          * Each must be individually set here or else unpredictable
          * behavior ensues.
          */
-        self->bufobj = NULL;
-        self->is_readonly = 0;
-        self->is_dynamic = 1;
+        self->bufobj         = NULL;
+        self->is_readonly    = 0;
+        self->is_dynamic     = 1;
         self->is_initialized = 0;
         memset(mem, 0, len);
         EdsLib_Binding_InitUnmanagedBuffer(&self->edsbuf, mem, len);
@@ -233,9 +227,9 @@ EdsLib_Python_Buffer_t* EdsLib_Python_Buffer_New(Py_ssize_t len)
     return self;
 }
 
-EdsLib_Python_Buffer_t* EdsLib_Python_Buffer_FromPtrAndSize(void *buf, Py_ssize_t len)
+EdsLib_Python_Buffer_t *EdsLib_Python_Buffer_FromPtrAndSize(void *buf, Py_ssize_t len)
 {
-    EdsLib_Python_Buffer_t* self;
+    EdsLib_Python_Buffer_t *self;
 
     self = PyObject_New(EdsLib_Python_Buffer_t, &EdsLib_Python_BufferType);
     if (self != NULL)
@@ -246,9 +240,9 @@ EdsLib_Python_Buffer_t* EdsLib_Python_Buffer_FromPtrAndSize(void *buf, Py_ssize_
          * Each must be individually set here or else unpredictable
          * behavior ensues.
          */
-        self->bufobj = NULL;
-        self->is_readonly = 0;
-        self->is_dynamic = 0;
+        self->bufobj         = NULL;
+        self->is_readonly    = 0;
+        self->is_dynamic     = 0;
         self->is_initialized = 1;
         EdsLib_Binding_InitUnmanagedBuffer(&self->edsbuf, buf, len);
     }
@@ -256,9 +250,9 @@ EdsLib_Python_Buffer_t* EdsLib_Python_Buffer_FromPtrAndSize(void *buf, Py_ssize_
     return self;
 }
 
-EdsLib_Python_Buffer_t* EdsLib_Python_Buffer_Copy(const void *buf, Py_ssize_t len)
+EdsLib_Python_Buffer_t *EdsLib_Python_Buffer_Copy(const void *buf, Py_ssize_t len)
 {
-    EdsLib_Python_Buffer_t* self = (EdsLib_Python_Buffer_t*)EdsLib_Python_Buffer_New(len);
+    EdsLib_Python_Buffer_t *self = (EdsLib_Python_Buffer_t *)EdsLib_Python_Buffer_New(len);
 
     if (self != NULL)
     {
@@ -269,9 +263,9 @@ EdsLib_Python_Buffer_t* EdsLib_Python_Buffer_Copy(const void *buf, Py_ssize_t le
     return self;
 }
 
-EdsLib_Python_Buffer_t* EdsLib_Python_Buffer_FromConstPtrAndSize(const void *buf, Py_ssize_t len)
+EdsLib_Python_Buffer_t *EdsLib_Python_Buffer_FromConstPtrAndSize(const void *buf, Py_ssize_t len)
 {
-    EdsLib_Python_Buffer_t* self;
+    EdsLib_Python_Buffer_t *self;
 
     self = PyObject_New(EdsLib_Python_Buffer_t, &EdsLib_Python_BufferType);
     if (self != NULL)
@@ -282,17 +276,17 @@ EdsLib_Python_Buffer_t* EdsLib_Python_Buffer_FromConstPtrAndSize(const void *buf
          * Each must be individually set here or else unpredictable
          * behavior ensues.
          */
-        self->bufobj = NULL;
-        self->is_readonly = 1;
-        self->is_dynamic = 0;
+        self->bufobj         = NULL;
+        self->is_readonly    = 1;
+        self->is_dynamic     = 0;
         self->is_initialized = 1;
-        EdsLib_Binding_InitUnmanagedBuffer(&self->edsbuf, (void*)buf, len);
+        EdsLib_Binding_InitUnmanagedBuffer(&self->edsbuf, (void *)buf, len);
     }
 
     return self;
 }
 
-const void *EdsLib_Python_Buffer_Peek(EdsLib_Python_Buffer_t* buf)
+const void *EdsLib_Python_Buffer_Peek(EdsLib_Python_Buffer_t *buf)
 {
     /* cannot peek into Python-backed objects */
     if (buf->bufobj != NULL)
@@ -303,10 +297,10 @@ const void *EdsLib_Python_Buffer_Peek(EdsLib_Python_Buffer_t* buf)
     return buf->edsbuf.Data;
 }
 
-Py_ssize_t EdsLib_Python_Buffer_GetMaxSize(EdsLib_Python_Buffer_t* buf)
+Py_ssize_t EdsLib_Python_Buffer_GetMaxSize(EdsLib_Python_Buffer_t *buf)
 {
     EdsLib_Binding_Buffer_Content_t *content;
-    Py_ssize_t MaxSize = -1;
+    Py_ssize_t                       MaxSize = -1;
 
     content = EdsLib_Python_Buffer_GetContentRef(buf, PyBUF_SIMPLE);
     if (content != NULL)
@@ -318,13 +312,12 @@ Py_ssize_t EdsLib_Python_Buffer_GetMaxSize(EdsLib_Python_Buffer_t* buf)
     return MaxSize;
 }
 
-bool EdsLib_Python_Buffer_IsInitialized(EdsLib_Python_Buffer_t* buf)
+bool EdsLib_Python_Buffer_IsInitialized(EdsLib_Python_Buffer_t *buf)
 {
     return buf->is_initialized;
 }
 
-void EdsLib_Python_Buffer_SetInitialized(EdsLib_Python_Buffer_t* buf)
+void EdsLib_Python_Buffer_SetInitialized(EdsLib_Python_Buffer_t *buf)
 {
     buf->is_initialized = 1;
 }
-

@@ -37,7 +37,8 @@ void UT_DefaultHandler_CFE_MissionLib_GetTopicInfo(void *, UT_EntryKey_t, const 
  * ----------------------------------------------------
  */
 void CFE_MissionLib_EnumerateTopics(const CFE_MissionLib_SoftwareBus_Interface_t *SBDB,
-                                    CFE_MissionLib_TopicInfo_Callback_t Callback, void *OpaqueArg)
+                                    CFE_MissionLib_TopicInfo_Callback_t           Callback,
+                                    void                                         *OpaqueArg)
 {
     UT_GenStub_AddParam(CFE_MissionLib_EnumerateTopics, const CFE_MissionLib_SoftwareBus_Interface_t *, SBDB);
     UT_GenStub_AddParam(CFE_MissionLib_EnumerateTopics, CFE_MissionLib_TopicInfo_Callback_t, Callback);
@@ -51,8 +52,9 @@ void CFE_MissionLib_EnumerateTopics(const CFE_MissionLib_SoftwareBus_Interface_t
  * Generated stub function for CFE_MissionLib_FindTopicIdFromIntfId()
  * ----------------------------------------------------
  */
-int32_t CFE_MissionLib_FindTopicIdFromIntfId(const CFE_MissionLib_SoftwareBus_Interface_t *SBDB, EdsLib_Id_t IntfEdsId,
-                                             uint16_t *TopicIdBuffer)
+int32_t CFE_MissionLib_FindTopicIdFromIntfId(const CFE_MissionLib_SoftwareBus_Interface_t *SBDB,
+                                             EdsLib_Id_t                                   IntfEdsId,
+                                             uint16_t                                     *TopicIdBuffer)
 {
     UT_GenStub_SetupReturnBuffer(CFE_MissionLib_FindTopicIdFromIntfId, int32_t);
 
@@ -60,7 +62,8 @@ int32_t CFE_MissionLib_FindTopicIdFromIntfId(const CFE_MissionLib_SoftwareBus_In
     UT_GenStub_AddParam(CFE_MissionLib_FindTopicIdFromIntfId, EdsLib_Id_t, IntfEdsId);
     UT_GenStub_AddParam(CFE_MissionLib_FindTopicIdFromIntfId, uint16_t *, TopicIdBuffer);
 
-    UT_GenStub_Execute(CFE_MissionLib_FindTopicIdFromIntfId, Basic,
+    UT_GenStub_Execute(CFE_MissionLib_FindTopicIdFromIntfId,
+                       Basic,
                        UT_DefaultHandler_CFE_MissionLib_FindTopicIdFromIntfId);
 
     return UT_GenStub_GetReturnValue(CFE_MissionLib_FindTopicIdFromIntfId, int32_t);
@@ -172,8 +175,9 @@ const EdsLib_DatabaseObject_t *CFE_MissionLib_GetParent(const CFE_MissionLib_Sof
  * Generated stub function for CFE_MissionLib_GetTopicInfo()
  * ----------------------------------------------------
  */
-int32_t CFE_MissionLib_GetTopicInfo(const CFE_MissionLib_SoftwareBus_Interface_t *SBDB, uint16_t TopicId,
-                                    CFE_MissionLib_TopicInfo_t *TopicInfo)
+int32_t CFE_MissionLib_GetTopicInfo(const CFE_MissionLib_SoftwareBus_Interface_t *SBDB,
+                                    uint16_t                                      TopicId,
+                                    CFE_MissionLib_TopicInfo_t                   *TopicInfo)
 {
     UT_GenStub_SetupReturnBuffer(CFE_MissionLib_GetTopicInfo, int32_t);
 

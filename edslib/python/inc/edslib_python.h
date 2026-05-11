@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_python.h
  * \ingroup  python
@@ -30,7 +29,6 @@
 #ifndef _EDSLIB_PYTHON_H_
 #define _EDSLIB_PYTHON_H_
 
-
 #include <Python.h>
 #include <edslib_api_types.h>
 #include <edslib_id.h>
@@ -40,7 +38,7 @@
  *
  * This is provided for applications that supply their own custom init routine.
  */
-#define EDSLIB_PYTHON_DOC            "Module which provides an interface to the EDS Runtime Library."
+#define EDSLIB_PYTHON_DOC "Module which provides an interface to the EDS Runtime Library."
 
 /**
  * Base Name of the Python module
@@ -50,7 +48,7 @@
  * as the base name, which carries through to the respective "repr()"
  * implementation and other user-visible items.
  */
-#define EDSLIB_PYTHON_MODULE_NAME    "EdsLib"
+#define EDSLIB_PYTHON_MODULE_NAME "EdsLib"
 
 /**
  * Get the name of a Python entity
@@ -59,8 +57,7 @@
  * by adding a prefix of EDSLIB_PYTHON_MODULE_NAME.  It is used
  * by all types to keep the naming consistent.
  */
-#define EDSLIB_PYTHON_ENTITY_NAME(x)   EDSLIB_PYTHON_MODULE_NAME "." x
-
+#define EDSLIB_PYTHON_ENTITY_NAME(x) EDSLIB_PYTHON_MODULE_NAME "." x
 
 /**
  * Main Initializer function that sets up a newly-minted module object
@@ -75,7 +72,7 @@
  * different naming and calling conventions).  So it is expected that
  * an additional wrapper around this will be added to accommodate this.
  */
-PyObject* EdsLib_Python_CreateModule(void);
+PyObject *EdsLib_Python_CreateModule(void);
 
 /**
  * Creates a Python EDS Database object from a C Database Object
@@ -151,7 +148,7 @@ const void *EdsLib_Python_ObjectPeek(PyObject *obj);
  * is the base type for other types, then this will return
  * the size of the largest possible derivative type.
  */
-Py_ssize_t EdsLib_Python_DatabaseEntry_GetMaxSize(PyTypeObject* objtype);
+Py_ssize_t EdsLib_Python_DatabaseEntry_GetMaxSize(PyTypeObject *objtype);
 
 /**
  * Create an EDS dynamic array from a C array.
@@ -165,7 +162,8 @@ Py_ssize_t EdsLib_Python_DatabaseEntry_GetMaxSize(PyTypeObject* objtype);
  * buffer storage.  The buffer will be "read-write" so modifications
  * are possible from Python and these will be visible from C.
  */
-PyObject *EdsLib_Python_DynamicArray_FromPtrAndSize(PyTypeObject *objtype, void *ptr, Py_ssize_t nelem, Py_ssize_t elemsz);
+PyObject *
+EdsLib_Python_DynamicArray_FromPtrAndSize(PyTypeObject *objtype, void *ptr, Py_ssize_t nelem, Py_ssize_t elemsz);
 
 /**
  * Create an EDS dynamic array from a C array.
@@ -180,8 +178,9 @@ PyObject *EdsLib_Python_DynamicArray_FromPtrAndSize(PyTypeObject *objtype, void 
  * are not possible from Python.  Attempts to get a writable buffer
  * using the buffer protocol will fail.
  */
-PyObject *EdsLib_Python_DynamicArray_FromConstPtrAndSize(PyTypeObject *objtype, const void *ptr, Py_ssize_t nelem, Py_ssize_t elemsz);
+PyObject *EdsLib_Python_DynamicArray_FromConstPtrAndSize(PyTypeObject *objtype,
+                                                         const void   *ptr,
+                                                         Py_ssize_t    nelem,
+                                                         Py_ssize_t    elemsz);
 
-
-#endif  /* _EDSLIB_PYTHON_H_ */
-
+#endif /* _EDSLIB_PYTHON_H_ */

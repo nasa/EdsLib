@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     seds_plugin.h
  * \ingroup  tool
@@ -33,12 +32,10 @@
 
 #include "seds_global.h"
 
-
 /*******************************************************************************/
 /*                  Function documentation and prototypes                      */
 /*      (everything referenced outside this unit should be described here)     */
 /*******************************************************************************/
-
 
 /**
  * Load a Lua runtime script plugin from the C source directory.
@@ -77,7 +74,4 @@ void seds_plugin_load_so(lua_State *lua, const char *filename);
  */
 void seds_plugin_register_globals(lua_State *lua);
 
-
-
-#endif  /* _SEDS_PLUGIN_H_ */
-
+#endif /* _SEDS_PLUGIN_H_ */

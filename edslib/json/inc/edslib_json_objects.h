@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_json_objects.h
  * \ingroup  json
@@ -32,26 +31,24 @@
 
 #include <stdint.h>
 
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-/*
- * decouple from json-c headers;
- * json_object will be an abstract struct
- */
-typedef struct json_object                      EdsLib_JsonBinding_Object_t;
-typedef struct EdsLib_Binding_DescriptorObject  EdsLib_JsonBinding_DescriptorObject_t;
+    /*
+     * decouple from json-c headers;
+     * json_object will be an abstract struct
+     */
+    typedef struct json_object                     EdsLib_JsonBinding_Object_t;
+    typedef struct EdsLib_Binding_DescriptorObject EdsLib_JsonBinding_DescriptorObject_t;
 
-void EdsLib_JSON_EdsObjectFromJSON(EdsLib_JsonBinding_DescriptorObject_t *DstObject, EdsLib_JsonBinding_Object_t *SrcObject);
-EdsLib_JsonBinding_Object_t *EdsLib_JSON_EdsObjectToJSON(const EdsLib_JsonBinding_DescriptorObject_t *SrcObject);
+    void                         EdsLib_JSON_EdsObjectFromJSON(EdsLib_JsonBinding_DescriptorObject_t *DstObject,
+                                                               EdsLib_JsonBinding_Object_t           *SrcObject);
+    EdsLib_JsonBinding_Object_t *EdsLib_JSON_EdsObjectToJSON(const EdsLib_JsonBinding_DescriptorObject_t *SrcObject);
 
 #ifdef __cplusplus
-}   /* extern "C" */
+} /* extern "C" */
 #endif
 
-
-#endif  /* _EDSLIB_JSON_OBJECTS_H_ */
-
+#endif /* _EDSLIB_JSON_OBJECTS_H_ */

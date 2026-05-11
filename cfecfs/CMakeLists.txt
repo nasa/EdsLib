@@ -24,9 +24,4 @@
 add_subdirectory(missionlib)
 add_subdirectory(eds2cfetbl)
 add_subdirectory(util)
-
-# the test executive is an optional component to provide a black-box
-# style test framework.  It is built using OSAL and UT-Assert.
-if (ENABLE_EDS_TESTEXEC)
-    add_subdirectory(testexecutive)
-endif (ENABLE_EDS_TESTEXEC)
+add_subdirectory(testrunner)

@@ -19,13 +19,12 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_python_setup.c
  * \ingroup  python
  * \author   joseph.p.hickey@nasa.gov
  *
-**   Implement setup function / initializer for EDS/Python module objects
+ **   Implement setup function / initializer for EDS/Python module objects
  */
 
 #include "edslib_python_internal.h"
@@ -39,15 +38,12 @@
  */
 #if (PY_MAJOR_VERSION >= 3)
 
-static PyModuleDef EdsLib_Python_ModuleDef =
-{
-    PyModuleDef_HEAD_INIT,
-    EDSLIB_PYTHON_MODULE_NAME,
-    PyDoc_STR(EDSLIB_PYTHON_DOC),
-    -1
-};
+static PyModuleDef EdsLib_Python_ModuleDef = { PyModuleDef_HEAD_INIT,
+                                               EDSLIB_PYTHON_MODULE_NAME,
+                                               PyDoc_STR(EDSLIB_PYTHON_DOC),
+                                               -1 };
 
-static inline PyObject* EdsLib_Python_InstantiateModule(void)
+static inline PyObject *EdsLib_Python_InstantiateModule(void)
 {
     /* python3 uses PyModule_Create() API */
     return PyModule_Create(&EdsLib_Python_ModuleDef);
@@ -55,7 +51,7 @@ static inline PyObject* EdsLib_Python_InstantiateModule(void)
 
 #else
 
-static inline PyObject* EdsLib_Python_InstantiateModule(void)
+static inline PyObject *EdsLib_Python_InstantiateModule(void)
 {
     /* python2 uses Py_InitModule3() API */
     return Py_InitModule3(EDSLIB_PYTHON_MODULE_NAME, NULL, EDSLIB_PYTHON_DOC);
@@ -63,8 +59,7 @@ static inline PyObject* EdsLib_Python_InstantiateModule(void)
 
 #endif
 
-
-PyObject* EdsLib_Python_CreateModule(void)
+PyObject *EdsLib_Python_CreateModule(void)
 {
     PyObject *m = NULL;
 
@@ -73,20 +68,16 @@ PyObject* EdsLib_Python_CreateModule(void)
         /*
          * Prepare all of the types defined here
          */
-        if (PyType_Ready(&EdsLib_Python_DatabaseType) != 0 ||
-                PyType_Ready(&EdsLib_Python_DatabaseEntryType) != 0 ||
-                PyType_Ready(&EdsLib_Python_BufferType) != 0 ||
-                PyType_Ready(&EdsLib_Python_AccessorType) != 0 ||
-                PyType_Ready(&EdsLib_Python_PackedObjectType) != 0 ||
-                PyType_Ready(&EdsLib_Python_ContainerIteratorType) != 0 ||
-                PyType_Ready(&EdsLib_Python_EnumEntryIteratorType) != 0 ||
-                PyType_Ready(&EdsLib_Python_ContainerEntryIteratorType) != 0 ||
-                PyType_Ready(&EdsLib_Python_ObjectBaseType) != 0 ||
-                PyType_Ready(&EdsLib_Python_ObjectScalarType) != 0 ||
-                PyType_Ready(&EdsLib_Python_ObjectNumberType) != 0 ||
-                PyType_Ready(&EdsLib_Python_ObjectContainerType) != 0 ||
-                PyType_Ready(&EdsLib_Python_ObjectArrayType) != 0 ||
-                PyType_Ready(&EdsLib_Python_DynamicArrayType) != 0)
+        if (PyType_Ready(&EdsLib_Python_DatabaseType) != 0 || PyType_Ready(&EdsLib_Python_DatabaseEntryType) != 0
+            || PyType_Ready(&EdsLib_Python_BufferType) != 0 || PyType_Ready(&EdsLib_Python_AccessorType) != 0
+            || PyType_Ready(&EdsLib_Python_PackedObjectType) != 0
+            || PyType_Ready(&EdsLib_Python_ContainerIteratorType) != 0
+            || PyType_Ready(&EdsLib_Python_EnumEntryIteratorType) != 0
+            || PyType_Ready(&EdsLib_Python_ContainerEntryIteratorType) != 0
+            || PyType_Ready(&EdsLib_Python_ObjectBaseType) != 0 || PyType_Ready(&EdsLib_Python_ObjectScalarType) != 0
+            || PyType_Ready(&EdsLib_Python_ObjectNumberType) != 0
+            || PyType_Ready(&EdsLib_Python_ObjectContainerType) != 0
+            || PyType_Ready(&EdsLib_Python_ObjectArrayType) != 0 || PyType_Ready(&EdsLib_Python_DynamicArrayType) != 0)
         {
             break;
         }
@@ -109,14 +100,12 @@ PyObject* EdsLib_Python_CreateModule(void)
         /*
          * Add appropriate types so object instances can be constructed
          */
-        PyModule_AddObject(m, "Database", (PyObject*)&EdsLib_Python_DatabaseType);
-        PyModule_AddObject(m, "DatabaseEntry", (PyObject*)&EdsLib_Python_DatabaseEntryType);
-        PyModule_AddObject(m, "PackedObject", (PyObject*)&EdsLib_Python_PackedObjectType);
-        PyModule_AddObject(m, "ElementAccessor", (PyObject*)&EdsLib_Python_AccessorType);
-        PyModule_AddObject(m, "DynamicArray", (PyObject*)&EdsLib_Python_DynamicArrayType);
-    }
-    while(0);
+        PyModule_AddObject(m, "Database", (PyObject *)&EdsLib_Python_DatabaseType);
+        PyModule_AddObject(m, "DatabaseEntry", (PyObject *)&EdsLib_Python_DatabaseEntryType);
+        PyModule_AddObject(m, "PackedObject", (PyObject *)&EdsLib_Python_PackedObjectType);
+        PyModule_AddObject(m, "ElementAccessor", (PyObject *)&EdsLib_Python_AccessorType);
+        PyModule_AddObject(m, "DynamicArray", (PyObject *)&EdsLib_Python_DynamicArrayType);
+    } while (0);
 
     return m;
 }
-

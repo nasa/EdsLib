@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_datatypedb_errorcontrol.c
  * \ingroup  fsw
@@ -44,7 +43,7 @@
  * Output Reflection: False
  * XOR Output: 0x0000
  */
-#define EDSLIB_CRC16_CCITT_POLY     0x1021  /* x^16 + x^12 + x^5 + 1 */
+#define EDSLIB_CRC16_CCITT_POLY 0x1021 /* x^16 + x^12 + x^5 + 1 */
 
 /*
  * CRC Algorithm: CRC-8
@@ -54,34 +53,30 @@
  * Output Reflection: False
  * XOR Output: 0x00
  */
-#define EDSLIB_CRC8_POLY            0x07    /* x^8 + x^2 + x^1 + 1 */
-
+#define EDSLIB_CRC8_POLY 0x07 /* x^8 + x^2 + x^1 + 1 */
 
 typedef uintmax_t (*EdsLib_ErrorControlImpl_t)(const void *Buffer, uint32_t BufferSizeBytes, uint32_t ErrCtlBitPos);
 
 static uintmax_t EdsLib_ErrorControlAlgorithm_ZERO(const void *Base, uint32_t Size, uint32_t ErrCtlBitPos);
-static uintmax_t EdsLib_ErrorControlAlgorithm_CHECKSUM_LONGITUDINAL(const void *Base, uint32_t Size, uint32_t ErrCtlBitPos);
+static uintmax_t
+EdsLib_ErrorControlAlgorithm_CHECKSUM_LONGITUDINAL(const void *Base, uint32_t Size, uint32_t ErrCtlBitPos);
 static uintmax_t EdsLib_ErrorControlAlgorithm_CRC16_CCITT(const void *Base, uint32_t Size, uint32_t ErrCtlBitPos);
 static uintmax_t EdsLib_ErrorControlAlgorithm_CRC8(const void *Base, uint32_t Size, uint32_t ErrCtlBitPos);
 static uintmax_t EdsLib_ErrorControlAlgorithm_CHECKSUM(const void *Base, uint32_t Size, uint32_t ErrCtlBitPos);
 
-
-static const EdsLib_ErrorControlImpl_t EDSLIB_ERRCTL_DISPATCH[EdsLib_ErrorControlType_MAX] =
-{
-        [EdsLib_ErrorControlType_INVALID] = EdsLib_ErrorControlAlgorithm_ZERO,
-        [EdsLib_ErrorControlType_ALWAYS_ZERO] = EdsLib_ErrorControlAlgorithm_ZERO,
-        [EdsLib_ErrorControlType_CHECKSUM] = EdsLib_ErrorControlAlgorithm_CHECKSUM,
-        [EdsLib_ErrorControlType_CHECKSUM_LONGITUDINAL] = EdsLib_ErrorControlAlgorithm_CHECKSUM_LONGITUDINAL,
-        [EdsLib_ErrorControlType_CRC8] = EdsLib_ErrorControlAlgorithm_CRC8,
-        [EdsLib_ErrorControlType_CRC16_CCITT] = EdsLib_ErrorControlAlgorithm_CRC16_CCITT,
-        [EdsLib_ErrorControlType_CRC32] = EdsLib_ErrorControlAlgorithm_ZERO, /* placeholder; not implemented yet */
-        [EdsLib_ErrorControlType_CRC32C] = EdsLib_ErrorControlAlgorithm_ZERO /* placeholder; not implemented yet */
+static const EdsLib_ErrorControlImpl_t EDSLIB_ERRCTL_DISPATCH[EdsLib_ErrorControlType_MAX] = {
+    [EdsLib_ErrorControlType_INVALID]               = EdsLib_ErrorControlAlgorithm_ZERO,
+    [EdsLib_ErrorControlType_ALWAYS_ZERO]           = EdsLib_ErrorControlAlgorithm_ZERO,
+    [EdsLib_ErrorControlType_CHECKSUM]              = EdsLib_ErrorControlAlgorithm_CHECKSUM,
+    [EdsLib_ErrorControlType_CHECKSUM_LONGITUDINAL] = EdsLib_ErrorControlAlgorithm_CHECKSUM_LONGITUDINAL,
+    [EdsLib_ErrorControlType_CRC8]                  = EdsLib_ErrorControlAlgorithm_CRC8,
+    [EdsLib_ErrorControlType_CRC16_CCITT]           = EdsLib_ErrorControlAlgorithm_CRC16_CCITT,
+    [EdsLib_ErrorControlType_CRC32]  = EdsLib_ErrorControlAlgorithm_ZERO, /* placeholder; not implemented yet */
+    [EdsLib_ErrorControlType_CRC32C] = EdsLib_ErrorControlAlgorithm_ZERO  /* placeholder; not implemented yet */
 };
-
 
 static uint16_t EDSLIB_CRC16_CCITT_TABLE[256];
 static uint8_t  EDSLIB_CRC8_TABLE[256];
-
 
 /*----------------------------------------------------------------
  *
@@ -107,7 +102,7 @@ void EdsLib_ErrorControl_Initialize(void)
     for (i = 0; i < 256; ++i)
     {
         crc16_shiftreg = i << 8;
-        crc8_shiftreg = 0;
+        crc8_shiftreg  = 0;
 
         for (bit = 0; bit < 8; ++bit)
         {
@@ -120,7 +115,7 @@ void EdsLib_ErrorControl_Initialize(void)
         for (bit = 0; bit < 8; ++bit)
         {
             crc16_shiftreg <<= 1;
-            crc8_shiftreg <<= 1;
+            crc8_shiftreg  <<= 1;
             if (crc16_shiftreg & 0x10000)
             {
                 crc16_shiftreg ^= EDSLIB_CRC16_CCITT_POLY;
@@ -154,28 +149,28 @@ uintmax_t EdsLib_ErrorControlAlgorithm_ZERO(const void *Base, uint32_t TotalBitS
     return 0;
 }
 
-
 /*----------------------------------------------------------------
  *
  * EdsLib local helper function
  *
  *-----------------------------------------------------------------*/
-uintmax_t EdsLib_ErrorControlAlgorithm_CHECKSUM_LONGITUDINAL(const void *Base, uint32_t TotalBitSize, uint32_t ErrCtlBitPos)
+uintmax_t
+EdsLib_ErrorControlAlgorithm_CHECKSUM_LONGITUDINAL(const void *Base, uint32_t TotalBitSize, uint32_t ErrCtlBitPos)
 {
     const uint8_t *SrcPtr;
-    uint32_t ErrCtlByte;
-    uint32_t CurrByte;
-    uint32_t TotalByte;
-    uint8_t NextMask;
-    uint8_t Byte;
-    uint8_t Checksum;
+    uint32_t       ErrCtlByte;
+    uint32_t       CurrByte;
+    uint32_t       TotalByte;
+    uint8_t        NextMask;
+    uint8_t        Byte;
+    uint8_t        Checksum;
 
-    NextMask = 0xFF;
-    Checksum = 0xFF;
-    TotalByte = (TotalBitSize + 7) >> 3;
+    NextMask   = 0xFF;
+    Checksum   = 0xFF;
+    TotalByte  = (TotalBitSize + 7) >> 3;
     ErrCtlByte = ErrCtlBitPos >> 3;
-    CurrByte = 0;
-    SrcPtr = Base;
+    CurrByte   = 0;
+    SrcPtr     = Base;
     while (CurrByte < TotalByte)
     {
         Byte = *SrcPtr;
@@ -183,13 +178,13 @@ uintmax_t EdsLib_ErrorControlAlgorithm_CHECKSUM_LONGITUDINAL(const void *Base, u
 
         if (CurrByte == ErrCtlByte)
         {
-            NextMask = (0x100 >> (ErrCtlBitPos & 0x07)) - 1;
-            Byte &= ~NextMask;
+            NextMask  = (0x100 >> (ErrCtlBitPos & 0x07)) - 1;
+            Byte     &= ~NextMask;
         }
         else
         {
-            Byte &= NextMask;
-            NextMask = 0xFF;
+            Byte     &= NextMask;
+            NextMask  = 0xFF;
         }
 
         Checksum ^= Byte;
@@ -207,15 +202,15 @@ uintmax_t EdsLib_ErrorControlAlgorithm_CHECKSUM_LONGITUDINAL(const void *Base, u
 uintmax_t EdsLib_ErrorControlAlgorithm_CRC16_CCITT(const void *Base, uint32_t TotalBitSize, uint32_t ErrCtlBitPos)
 {
     const uint8_t *SrcPtr;
-    uint32_t NextBitPos;
-    uint32_t CurrBitPos;
-    uint32_t BreakpointBitPos;
-    uint32_t CurrShift;
-    uint16_t crc;
-    uint8_t byte;
+    uint32_t       NextBitPos;
+    uint32_t       CurrBitPos;
+    uint32_t       BreakpointBitPos;
+    uint32_t       CurrShift;
+    uint16_t       crc;
+    uint8_t        byte;
 
-    crc = 0xFFFF;
-    SrcPtr = Base;
+    crc        = 0xFFFF;
+    SrcPtr     = Base;
     CurrBitPos = 0;
     if (ErrCtlBitPos < TotalBitSize)
     {
@@ -227,18 +222,17 @@ uintmax_t EdsLib_ErrorControlAlgorithm_CRC16_CCITT(const void *Base, uint32_t To
     }
 
     CurrShift = 0;
-    while(CurrBitPos < TotalBitSize)
+    while (CurrBitPos < TotalBitSize)
     {
-        byte = SrcPtr[CurrBitPos >> 3];
+        byte       = SrcPtr[CurrBitPos >> 3];
         NextBitPos = CurrBitPos + 8;
         if (CurrShift == 0 && NextBitPos <= BreakpointBitPos)
         {
-            crc = EDSLIB_CRC16_CCITT_TABLE[(byte ^ (crc >> 8)) & 0xff] ^
-                    (crc << 8);
+            crc = EDSLIB_CRC16_CCITT_TABLE[(byte ^ (crc >> 8)) & 0xff] ^ (crc << 8);
         }
         else
         {
-            byte = byte << CurrShift;
+            byte        = byte << CurrShift;
             NextBitPos -= CurrShift;
 
             if (NextBitPos > BreakpointBitPos)
@@ -246,7 +240,7 @@ uintmax_t EdsLib_ErrorControlAlgorithm_CRC16_CCITT(const void *Base, uint32_t To
                 NextBitPos = BreakpointBitPos;
             }
 
-            while(CurrBitPos < NextBitPos)
+            while (CurrBitPos < NextBitPos)
             {
                 if (byte & 0x80)
                 {
@@ -268,7 +262,6 @@ uintmax_t EdsLib_ErrorControlAlgorithm_CRC16_CCITT(const void *Base, uint32_t To
         CurrBitPos = NextBitPos;
     }
 
-
     return crc;
 }
 
@@ -280,15 +273,15 @@ uintmax_t EdsLib_ErrorControlAlgorithm_CRC16_CCITT(const void *Base, uint32_t To
 uintmax_t EdsLib_ErrorControlAlgorithm_CRC8(const void *Base, uint32_t TotalBitSize, uint32_t ErrCtlBitPos)
 {
     const uint8_t *SrcPtr;
-    uint32_t NextBitPos;
-    uint32_t CurrBitPos;
-    uint32_t BreakpointBitPos;
-    uint32_t CurrShift;
-    uint8_t crc;
-    uint8_t byte;
+    uint32_t       NextBitPos;
+    uint32_t       CurrBitPos;
+    uint32_t       BreakpointBitPos;
+    uint32_t       CurrShift;
+    uint8_t        crc;
+    uint8_t        byte;
 
-    crc = 0;
-    SrcPtr = Base;
+    crc        = 0;
+    SrcPtr     = Base;
     CurrBitPos = 0;
     if (ErrCtlBitPos < TotalBitSize)
     {
@@ -300,9 +293,9 @@ uintmax_t EdsLib_ErrorControlAlgorithm_CRC8(const void *Base, uint32_t TotalBitS
     }
 
     CurrShift = 0;
-    while(CurrBitPos < TotalBitSize)
+    while (CurrBitPos < TotalBitSize)
     {
-        byte = SrcPtr[CurrBitPos >> 3];
+        byte       = SrcPtr[CurrBitPos >> 3];
         NextBitPos = CurrBitPos + 8;
         if (CurrShift == 0 && NextBitPos <= BreakpointBitPos)
         {
@@ -310,7 +303,7 @@ uintmax_t EdsLib_ErrorControlAlgorithm_CRC8(const void *Base, uint32_t TotalBitS
         }
         else
         {
-            byte = byte << CurrShift;
+            byte        = byte << CurrShift;
             NextBitPos -= CurrShift;
 
             if (NextBitPos > BreakpointBitPos)
@@ -318,7 +311,7 @@ uintmax_t EdsLib_ErrorControlAlgorithm_CRC8(const void *Base, uint32_t TotalBitS
                 NextBitPos = BreakpointBitPos;
             }
 
-            while(CurrBitPos < NextBitPos)
+            while (CurrBitPos < NextBitPos)
             {
                 if (byte & 0x80)
                 {
@@ -333,12 +326,11 @@ uintmax_t EdsLib_ErrorControlAlgorithm_CRC8(const void *Base, uint32_t TotalBitS
                 NextBitPos = CurrBitPos + 8;
             }
 
-            CurrShift = (0 - NextBitPos) & 0x7;
+            CurrShift        = (0 - NextBitPos) & 0x7;
             BreakpointBitPos = TotalBitSize;
         }
         CurrBitPos = NextBitPos;
     }
-
 
     return crc;
 }
@@ -351,13 +343,13 @@ uintmax_t EdsLib_ErrorControlAlgorithm_CRC8(const void *Base, uint32_t TotalBitS
 uintmax_t EdsLib_ErrorControlAlgorithm_CHECKSUM(const void *Base, uint32_t TotalBitSize, uint32_t ErrCtlBitPos)
 {
     const uint8_t *SrcPtr;
-    uint32_t sum = 0;
-    uint32_t NextMask = 0xFFFFFFFF;
-    uint32_t offset = 0;
-    uint32_t intermediate = 0;
+    uint32_t       sum          = 0;
+    uint32_t       NextMask     = 0xFFFFFFFF;
+    uint32_t       offset       = 0;
+    uint32_t       intermediate = 0;
 
     SrcPtr = Base;
-    for (offset=0; offset < TotalBitSize; offset += 8)
+    for (offset = 0; offset < TotalBitSize; offset += 8)
     {
         intermediate = (intermediate << 8) | *SrcPtr;
         if ((offset & 0x18) == 0x18)
@@ -365,13 +357,13 @@ uintmax_t EdsLib_ErrorControlAlgorithm_CHECKSUM(const void *Base, uint32_t Total
             /* mask out bits that are part of the error control field itself */
             if ((offset >> 5) == (ErrCtlBitPos >> 5))
             {
-                NextMask = (UINT32_C(1) << (32-(ErrCtlBitPos & 0x1F))) - 1;
+                NextMask      = (UINT32_C(1) << (32 - (ErrCtlBitPos & 0x1F))) - 1;
                 intermediate &= ~NextMask;
             }
             else
             {
                 intermediate &= NextMask;
-                NextMask = 0xFFFFFFFF;
+                NextMask      = 0xFFFFFFFF;
             }
 
             sum += intermediate;
@@ -382,18 +374,20 @@ uintmax_t EdsLib_ErrorControlAlgorithm_CHECKSUM(const void *Base, uint32_t Total
     if ((offset & 0x1F) != 0)
     {
         intermediate <<= 32 - (offset & 0x1F);
-        intermediate &= NextMask;
-        sum += intermediate;
+        intermediate  &= NextMask;
+        sum           += intermediate;
     }
 
     return sum;
 }
 
-
 /*******************************************************
  * MAIN ERROR CONTROL IMPLEMENTATION FUNCTION
  *******************************************************/
-uintmax_t EdsLib_ErrorControlCompute(EdsLib_ErrorControlType_t Algorithm, const void *Buffer, uint32_t BufferSizeBits, uint32_t ErrCtlBitPos)
+uintmax_t EdsLib_ErrorControlCompute(EdsLib_ErrorControlType_t Algorithm,
+                                     const void               *Buffer,
+                                     uint32_t                  BufferSizeBits,
+                                     uint32_t                  ErrCtlBitPos)
 {
     uint32_t Idx;
 

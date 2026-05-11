@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     seds_outputfile.c
  * \ingroup  tool
@@ -34,7 +33,6 @@
  *  - Grouping rules
  *  - Indentation rules
  */
-
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -54,33 +52,32 @@
 #include "seds_user_message.h"
 #include "seds_outputfile.h"
 
-static const char SEDS_CDECL_OUTPUT_DEFAULT_LINE_ENDING[]  = "\n";
+static const char SEDS_CDECL_OUTPUT_DEFAULT_LINE_ENDING[] = "\n";
 
 /**
  * Output file record which maps to a Lua userdata filehandle object
  */
 typedef struct
 {
-    FILE *outfp;
-    const char *static_line_ending;
-    const char *comment_start;
-    const char *comment_docstart;
-    const char *comment_multiline;
-    const char *comment_end;
-    long content_start;
-    long content_end;
+    FILE          *outfp;
+    const char    *static_line_ending;
+    const char    *comment_start;
+    const char    *comment_docstart;
+    const char    *comment_multiline;
+    const char    *comment_end;
+    long           content_start;
+    long           content_end;
     seds_integer_t indent_depth;
-    char output_file_name[256];
-    char output_buffer[512];
-    char cheader_guard_string[128];
-    char user_line_ending[4];
+    char           output_file_name[256];
+    char           output_buffer[512];
+    char           cheader_guard_string[128];
+    char           user_line_ending[4];
 } seds_output_file_t;
 
 /*******************************************************************************/
 /*                      Internal / static Helper Functions                     */
 /*                  (these are not referenced outside this unit)               */
 /*******************************************************************************/
-
 
 /* ------------------------------------------------------------------- */
 /**
@@ -96,7 +93,7 @@ void seds_output_file_flush(seds_output_file_t *pfile)
     {
         if (pfile->indent_depth > 0)
         {
-            fprintf(pfile->outfp,"%*s", (int)pfile->indent_depth * 3, "");
+            fprintf(pfile->outfp, "%*s", (int)pfile->indent_depth * 3, "");
         }
 
         fprintf(pfile->outfp, "%s%s%s", pfile->output_buffer, pfile->user_line_ending, pfile->static_line_ending);
@@ -104,7 +101,6 @@ void seds_output_file_flush(seds_output_file_t *pfile)
     }
     pfile->user_line_ending[0] = 0;
 }
-
 
 /* ------------------------------------------------------------------- */
 /**
@@ -121,12 +117,11 @@ void seds_output_file_add_whitespace(seds_output_file_t *pfile, seds_integer_t n
     {
         while (nlines > 0)
         {
-            fprintf(pfile->outfp,"%s",pfile->static_line_ending);
+            fprintf(pfile->outfp, "%s", pfile->static_line_ending);
             --nlines;
         }
     }
 }
-
 
 /* ------------------------------------------------------------------- */
 /**
@@ -154,7 +149,6 @@ void seds_output_file_append_previous(seds_output_file_t *pfile, const char *str
     pfile->user_line_ending[sizeof(pfile->user_line_ending) - 1] = 0;
 }
 
-
 /* ------------------------------------------------------------------- */
 /**
  * Writes a the line into the output file
@@ -164,7 +158,7 @@ void seds_output_file_append_previous(seds_output_file_t *pfile, const char *str
 void seds_output_file_write_line(seds_output_file_t *pfile, const char *format, ...)
 {
     va_list va;
-    int outsz;
+    int     outsz;
 
     /* Output any current buffer contents to the actual file */
     seds_output_file_flush(pfile);
@@ -179,13 +173,12 @@ void seds_output_file_write_line(seds_output_file_t *pfile, const char *format, 
     }
 
     /* trim trailing whitespace (including any newlines, which will be replaced with the preferred newline sequence) */
-    while(outsz > 0 && isspace((int)pfile->output_buffer[outsz - 1]))
+    while (outsz > 0 && isspace((int)pfile->output_buffer[outsz - 1]))
     {
         --outsz;
     }
     pfile->output_buffer[outsz] = 0;
 }
-
 
 /* ------------------------------------------------------------------- */
 /**
@@ -210,7 +203,6 @@ void seds_output_file_start_indent_group(seds_output_file_t *pfile, const char *
     ++pfile->indent_depth;
 }
 
-
 /* ------------------------------------------------------------------- */
 /**
  * Close an indented output group
@@ -233,7 +225,6 @@ void seds_output_file_end_indent_group(seds_output_file_t *pfile, const char *st
         /* Do not flush yet, in case append needs to be done */
     }
 }
-
 
 /* ------------------------------------------------------------------- */
 /**
@@ -258,12 +249,19 @@ void seds_output_file_section_marker(seds_output_file_t *pfile, const char *sect
             seds_output_file_write_line(pfile, "%s", pfile->comment_start);
         }
 
-        seds_output_file_write_line(pfile, "%s ******************************************************************************",
-                pfile->comment_multiline);
-        seds_output_file_write_line(pfile, "%s ** %*s%*s **",
-                pfile->comment_multiline,72 - padlen, section_name, padlen, "");
-        seds_output_file_write_line(pfile, "%s ******************************************************************************",
-                pfile->comment_multiline);
+        seds_output_file_write_line(pfile,
+                                    "%s ******************************************************************************",
+                                    pfile->comment_multiline);
+        seds_output_file_write_line(pfile,
+                                    "%s ** %*s%*s **",
+                                    pfile->comment_multiline,
+                                    72 - padlen,
+                                    section_name,
+                                    padlen,
+                                    "");
+        seds_output_file_write_line(pfile,
+                                    "%s ******************************************************************************",
+                                    pfile->comment_multiline);
 
         if (pfile->comment_end)
         {
@@ -273,7 +271,6 @@ void seds_output_file_section_marker(seds_output_file_t *pfile, const char *sect
     seds_output_file_add_whitespace(pfile, 1);
 }
 
-
 /* ------------------------------------------------------------------- */
 /**
  * Add a documentation style comment to an output file
@@ -282,12 +279,15 @@ void seds_output_file_section_marker(seds_output_file_t *pfile, const char *sect
  * particular item in the file.  The intent is to be compatible with the "doxygen"
  * tool for C code, but other languages could be implemented as well.
  */
-void seds_output_file_write_doxytags(seds_output_file_t *pfile, const char *shortdesc, const char *longdesc, seds_boolean_t delim)
+void seds_output_file_write_doxytags(seds_output_file_t *pfile,
+                                     const char         *shortdesc,
+                                     const char         *longdesc,
+                                     seds_boolean_t      delim)
 {
-    char linebuffer[120];
-    const char *end;
+    char           linebuffer[120];
+    const char    *end;
     seds_boolean_t shortdesc_present;
-    size_t sz;
+    size_t         sz;
 
     seds_output_file_flush(pfile);
 
@@ -297,14 +297,12 @@ void seds_output_file_write_doxytags(seds_output_file_t *pfile, const char *shor
         {
             /* add opening delimiter, if indicated */
             seds_output_file_add_whitespace(pfile, 1);
-            seds_output_file_write_line(pfile, "%s",
-                    pfile->comment_docstart);
+            seds_output_file_write_line(pfile, "%s", pfile->comment_docstart);
         }
 
         if (shortdesc != NULL && *shortdesc != 0 && pfile->comment_multiline != NULL)
         {
-            seds_output_file_write_line(pfile, "%s@brief %s",
-                    pfile->comment_multiline, shortdesc);
+            seds_output_file_write_line(pfile, "%s@brief %s", pfile->comment_multiline, shortdesc);
             shortdesc_present = true;
         }
         else
@@ -317,11 +315,10 @@ void seds_output_file_write_doxytags(seds_output_file_t *pfile, const char *shor
             /* if both long and short descriptions are present, add a line between them */
             if (shortdesc_present)
             {
-                seds_output_file_write_line(pfile, "%s",
-                        pfile->comment_multiline);
+                seds_output_file_write_line(pfile, "%s", pfile->comment_multiline);
             }
 
-            sz = 0;
+            sz  = 0;
             end = longdesc;
             while (*end != 0)
             {
@@ -335,7 +332,8 @@ void seds_output_file_write_doxytags(seds_output_file_t *pfile, const char *shor
                     if (sz >= (sizeof(linebuffer) - 1))
                     {
                         /* Back up to a whitespace or punctuation character, if possible */
-                        while (sz > (sizeof(linebuffer) / 2) && !ispunct(linebuffer[sz-1]) && !isspace(linebuffer[sz-1]))
+                        while (sz > (sizeof(linebuffer) / 2) && !ispunct(linebuffer[sz - 1])
+                               && !isspace(linebuffer[sz - 1]))
                         {
                             --end;
                             --sz;
@@ -356,13 +354,16 @@ void seds_output_file_write_doxytags(seds_output_file_t *pfile, const char *shor
                     ++end;
                 }
                 /* Trim trailing whitespace */
-                while (sz > 0 && isspace(linebuffer[sz-1]))
+                while (sz > 0 && isspace(linebuffer[sz - 1]))
                 {
                     --sz;
                 }
                 linebuffer[sz] = 0;
-                seds_output_file_write_line(pfile,"%s%s%s",
-                        pfile->comment_multiline, linebuffer, pfile->static_line_ending);
+                seds_output_file_write_line(pfile,
+                                            "%s%s%s",
+                                            pfile->comment_multiline,
+                                            linebuffer,
+                                            pfile->static_line_ending);
                 sz = 0;
             }
         }
@@ -370,14 +371,12 @@ void seds_output_file_write_doxytags(seds_output_file_t *pfile, const char *shor
         if (delim && pfile->comment_end != NULL)
         {
             /* add closing delimiter, if indicated */
-            seds_output_file_write_line(pfile,"%s",
-                    pfile->comment_end);
+            seds_output_file_write_line(pfile, "%s", pfile->comment_end);
         }
     }
 
     seds_output_file_flush(pfile);
 }
-
 
 /* ------------------------------------------------------------------- */
 /**
@@ -399,14 +398,13 @@ void seds_output_file_write_doxytags(seds_output_file_t *pfile, const char *shor
  */
 static seds_boolean_t seds_verify_final_file(seds_output_file_t *pfile)
 {
-    FILE *refp;
-    char refline[sizeof(pfile->output_buffer)];
-    size_t linelen;
-    size_t endlen;
-    long ref_start;
-    long ref_end;
+    FILE          *refp;
+    char           refline[sizeof(pfile->output_buffer)];
+    size_t         linelen;
+    size_t         endlen;
+    long           ref_start;
+    long           ref_end;
     seds_boolean_t result_match;
-
 
     /*
      * Now re-read the existing file, if any, to see if it is substantively identical
@@ -429,7 +427,7 @@ static seds_boolean_t seds_verify_final_file(seds_output_file_t *pfile)
     }
 
     result_match = true;
-    endlen = strlen(pfile->static_line_ending);
+    endlen       = strlen(pfile->static_line_ending);
 
     if (pfile->comment_multiline == NULL)
     {
@@ -451,15 +449,14 @@ static seds_boolean_t seds_verify_final_file(seds_output_file_t *pfile)
             /* content should be identical.  Note that comparing 1+linelen chars
              * includes the terminating NUL char, so if one line is longer than the
              * other one then this check will fail. */
-            if (fgets(pfile->output_buffer, sizeof(pfile->output_buffer), pfile->outfp) == NULL ||
-                    memcmp(pfile->output_buffer, refline, 1 + linelen) != 0)
+            if (fgets(pfile->output_buffer, sizeof(pfile->output_buffer), pfile->outfp) == NULL
+                || memcmp(pfile->output_buffer, refline, 1 + linelen) != 0)
             {
                 result_match = false;
                 break;
             }
         }
-        else if (linelen < endlen ||
-                    memcmp(&refline[linelen - endlen], pfile->static_line_ending, endlen) != 0)
+        else if (linelen < endlen || memcmp(&refline[linelen - endlen], pfile->static_line_ending, endlen) != 0)
         {
             result_match = false;
             break;
@@ -474,7 +471,7 @@ static seds_boolean_t seds_verify_final_file(seds_output_file_t *pfile)
 
     if (result_match)
     {
-        ref_end = ftell(refp);
+        ref_end      = ftell(refp);
         result_match = ((ref_end - ref_start) == (pfile->content_end - pfile->content_start));
     }
 
@@ -482,7 +479,6 @@ static seds_boolean_t seds_verify_final_file(seds_output_file_t *pfile)
 
     return result_match;
 }
-
 
 /* ------------------------------------------------------------------- */
 /**
@@ -492,7 +488,7 @@ static seds_boolean_t seds_verify_final_file(seds_output_file_t *pfile)
  */
 void seds_output_file_close(seds_output_file_t *pfile)
 {
-    char namebuf[sizeof(pfile->output_file_name) + 4];
+    char           namebuf[sizeof(pfile->output_file_name) + 4];
     seds_boolean_t result_match;
 
     if (pfile->outfp != NULL)
@@ -503,8 +499,11 @@ void seds_output_file_close(seds_output_file_t *pfile)
         if (pfile->cheader_guard_string[0] != 0)
         {
             seds_output_file_add_whitespace(pfile, 1);
-            seds_output_file_write_line(pfile, "#endif    %s _%s_ %s",
-                    pfile->comment_start, pfile->cheader_guard_string, pfile->comment_end);
+            seds_output_file_write_line(pfile,
+                                        "#endif    %s _%s_ %s",
+                                        pfile->comment_start,
+                                        pfile->cheader_guard_string,
+                                        pfile->comment_end);
             pfile->cheader_guard_string[0] = 0;
         }
 
@@ -512,11 +511,11 @@ void seds_output_file_close(seds_output_file_t *pfile)
         seds_output_file_flush(pfile);
         fflush(pfile->outfp);
         pfile->content_end = ftell(pfile->outfp);
-        result_match = seds_verify_final_file(pfile);
+        result_match       = seds_verify_final_file(pfile);
         fclose(pfile->outfp);
         pfile->outfp = NULL;
 
-        snprintf(namebuf,sizeof(namebuf),"%s.tmp",pfile->output_file_name);
+        snprintf(namebuf, sizeof(namebuf), "%s.tmp", pfile->output_file_name);
         if (result_match)
         {
             /*
@@ -530,11 +529,10 @@ void seds_output_file_close(seds_output_file_t *pfile)
         else
         {
             /* result file was different, so rename the new one overwriting the old one */
-            rename(namebuf,pfile->output_file_name);
+            rename(namebuf, pfile->output_file_name);
         }
     }
 }
-
 
 /* ------------------------------------------------------------------- */
 /**
@@ -545,9 +543,13 @@ void seds_output_file_close(seds_output_file_t *pfile)
  * It actually opens a temporary file with a different name first.  Once the file
  * is closed, it will replace the existing copy, making the change atomic.
  */
-void seds_output_file_open(seds_output_file_t *pfile, const char *basedir, const char *subdir, const char *destfile, const char *sourcefile)
+void seds_output_file_open(seds_output_file_t *pfile,
+                           const char         *basedir,
+                           const char         *subdir,
+                           const char         *destfile,
+                           const char         *sourcefile)
 {
-    char namebuf[sizeof(pfile->output_file_name) + 4];
+    char   namebuf[sizeof(pfile->output_file_name) + 4];
     time_t nowtime;
 
     seds_output_file_close(pfile);
@@ -561,14 +563,14 @@ void seds_output_file_open(seds_output_file_t *pfile, const char *basedir, const
         SEDS_REPORT_ERRNO(FATAL, basedir);
     }
 
-    snprintf(namebuf,sizeof(namebuf),"%s/%s",basedir,subdir);
+    snprintf(namebuf, sizeof(namebuf), "%s/%s", basedir, subdir);
     if (mkdir(namebuf, 0755) < 0 && errno != EEXIST)
     {
         SEDS_REPORT_ERRNO(FATAL, namebuf);
     }
 
-    snprintf(pfile->output_file_name,sizeof(pfile->output_file_name),"%s/%s/%s",basedir,subdir,destfile);
-    snprintf(namebuf,sizeof(namebuf),"%s.tmp",pfile->output_file_name);
+    snprintf(pfile->output_file_name, sizeof(pfile->output_file_name), "%s/%s/%s", basedir, subdir, destfile);
+    snprintf(namebuf, sizeof(namebuf), "%s.tmp", pfile->output_file_name);
     pfile->outfp = fopen(namebuf, "w+");
     SEDS_ASSERT_ERRNO(pfile->outfp != NULL, namebuf);
 
@@ -579,8 +581,9 @@ void seds_output_file_open(seds_output_file_t *pfile, const char *basedir, const
             seds_output_file_write_line(pfile, "%s", pfile->comment_start);
         }
 
-        seds_output_file_write_line(pfile, "%s NOTE -- THIS IS A GENERATED FILE -- DO NOT EDIT",
-                pfile->comment_multiline);
+        seds_output_file_write_line(pfile,
+                                    "%s NOTE -- THIS IS A GENERATED FILE -- DO NOT EDIT",
+                                    pfile->comment_multiline);
         seds_output_file_write_line(pfile, "%s", pfile->comment_multiline);
         if (sourcefile != NULL && *sourcefile != 0)
         {
@@ -588,7 +591,11 @@ void seds_output_file_open(seds_output_file_t *pfile, const char *basedir, const
         }
         seds_output_file_write_line(pfile, "%s %16s: %s", pfile->comment_multiline, "Output File", destfile);
         nowtime = time(NULL);
-        seds_output_file_write_line(pfile, "%s %16s: %s", pfile->comment_multiline, "Generation Time", ctime(&nowtime)); /* note - ctime adds '\n' */
+        seds_output_file_write_line(pfile,
+                                    "%s %16s: %s",
+                                    pfile->comment_multiline,
+                                    "Generation Time",
+                                    ctime(&nowtime)); /* note - ctime adds '\n' */
 
         if (pfile->comment_end)
         {
@@ -610,8 +617,8 @@ void seds_output_file_open(seds_output_file_t *pfile, const char *basedir, const
      */
     if (pfile->cheader_guard_string[0] != 0)
     {
-        seds_output_file_write_line(pfile,"#ifndef _%s_", pfile->cheader_guard_string);
-        seds_output_file_write_line(pfile,"#define _%s_", pfile->cheader_guard_string);
+        seds_output_file_write_line(pfile, "#ifndef _%s_", pfile->cheader_guard_string);
+        seds_output_file_write_line(pfile, "#define _%s_", pfile->cheader_guard_string);
         seds_output_file_add_whitespace(pfile, 1);
     }
 }
@@ -692,7 +699,10 @@ static int seds_lua_output_file_section_marker(lua_State *lua)
  */
 static int seds_lua_output_documentation(lua_State *lua)
 {
-    seds_output_file_write_doxytags(luaL_checkudata(lua, 1, "seds_output_file"), luaL_optstring(lua, 2, NULL), luaL_optstring(lua, 3, NULL), true);
+    seds_output_file_write_doxytags(luaL_checkudata(lua, 1, "seds_output_file"),
+                                    luaL_optstring(lua, 2, NULL),
+                                    luaL_optstring(lua, 3, NULL),
+                                    true);
     return 0;
 }
 
@@ -795,12 +805,12 @@ static int seds_lua_output_file_set_method(lua_State *lua)
  *
  * Attempts to call SEDS.get_define() with the given varname, and leaves
  * the result on the top of the stack.  This adjust the stack such that
- * one (and only one) item is added, and it is either the result from 
+ * one (and only one) item is added, and it is either the result from
  * get_define or the fallback string.
  *
  */
 static void seds_get_define_safe(lua_State *lua, const char *varname, const char *fallback)
-{    
+{
     int stack_top = lua_gettop(lua);
 
     lua_getglobal(lua, "SEDS");
@@ -844,12 +854,12 @@ static void seds_get_define_safe(lua_State *lua, const char *varname, const char
  */
 static int seds_lua_output_file_open(lua_State *lua)
 {
-    const char *destfile = luaL_checkstring(lua, 1);
-    const char *sourcefile = luaL_optstring(lua, 2, NULL);
-    const char *outlang = luaL_optstring(lua, 3, NULL);
-    const char *subdir = ".";
-    seds_output_file_t *pfile = lua_newuserdata(lua, sizeof(seds_output_file_t));
-    int stack_top = lua_gettop(lua);
+    const char         *destfile   = luaL_checkstring(lua, 1);
+    const char         *sourcefile = luaL_optstring(lua, 2, NULL);
+    const char         *outlang    = luaL_optstring(lua, 3, NULL);
+    const char         *subdir     = ".";
+    seds_output_file_t *pfile      = lua_newuserdata(lua, sizeof(seds_output_file_t));
+    int                 stack_top  = lua_gettop(lua);
 
     memset(pfile, 0, sizeof(*pfile));
     if (luaL_newmetatable(lua, "seds_output_file"))
@@ -897,14 +907,12 @@ static int seds_lua_output_file_open(lua_State *lua)
      * this also sets up for a preprocessor guard macro around the whole file
      * (only if the filename ends in .h)
      */
-    if (strcasecmp(outlang, "c") == 0 ||
-            strcasecmp(outlang, "h") == 0 ||
-            strcasecmp(outlang, "cpp") == 0 ||
-            strcasecmp(outlang, "hpp") == 0)
+    if (strcasecmp(outlang, "c") == 0 || strcasecmp(outlang, "h") == 0 || strcasecmp(outlang, "cpp") == 0
+        || strcasecmp(outlang, "hpp") == 0)
     {
-        size_t sz = strlen(destfile);
+        size_t      sz  = strlen(destfile);
         const char *inp = destfile + sz;
-        char *outp;
+        char       *outp;
 
         while (sz > 0)
         {
@@ -930,9 +938,9 @@ static int seds_lua_output_file_open(lua_State *lua)
             pfile->cheader_guard_string[sizeof(pfile->cheader_guard_string) - 1] = 0;
             lua_pop(lua, 1);
 
-            inp = destfile;
-            outp = pfile->cheader_guard_string;
-            sz = strlen(pfile->cheader_guard_string);
+            inp   = destfile;
+            outp  = pfile->cheader_guard_string;
+            sz    = strlen(pfile->cheader_guard_string);
             outp += sz;
             while (sz < (sizeof(pfile->cheader_guard_string) - 1) && *inp != 0)
             {
@@ -961,49 +969,44 @@ static int seds_lua_output_file_open(lua_State *lua)
         /*
          * Set up C-style comment blocks
          */
-        pfile->comment_start = "/* ";
-        pfile->comment_docstart = "/**";
+        pfile->comment_start     = "/* ";
+        pfile->comment_docstart  = "/**";
         pfile->comment_multiline = " * ";
-        pfile->comment_end = " */";
+        pfile->comment_end       = " */";
     }
-    else if (strcasecmp(outlang, "make") == 0 ||
-            strcasecmp(outlang, "mk") == 0 ||
-            strcasecmp(outlang, "shell") == 0 ||
-            strcasecmp(outlang, "sh") == 0 ||
-            strcasecmp(outlang, "perl") == 0 ||
-            strcasecmp(outlang, "pl") == 0 ||
-            strcasecmp(outlang, "python") == 0 ||
-            strcasecmp(outlang, "py") == 0)
+    else if (strcasecmp(outlang, "make") == 0 || strcasecmp(outlang, "mk") == 0 || strcasecmp(outlang, "shell") == 0
+             || strcasecmp(outlang, "sh") == 0 || strcasecmp(outlang, "perl") == 0 || strcasecmp(outlang, "pl") == 0
+             || strcasecmp(outlang, "python") == 0 || strcasecmp(outlang, "py") == 0)
     {
         /*
          * Set up shell-style comment blocks
          * This style is applicable to several interpreted languages,
          * including makefiles, perl and python
          */
-        pfile->comment_start = "# ";
-        pfile->comment_docstart = pfile->comment_start;
+        pfile->comment_start     = "# ";
+        pfile->comment_docstart  = pfile->comment_start;
         pfile->comment_multiline = pfile->comment_start;
-        pfile->comment_end = pfile->comment_start;
+        pfile->comment_end       = pfile->comment_start;
     }
     else if (strcasecmp(outlang, "lua") == 0)
     {
         /*
          * Set up lua-style comment blocks
          */
-        pfile->comment_start = "-- ";
-        pfile->comment_docstart = "---";
+        pfile->comment_start     = "-- ";
+        pfile->comment_docstart  = "---";
         pfile->comment_multiline = pfile->comment_start;
-        pfile->comment_end = pfile->comment_start;
+        pfile->comment_end       = pfile->comment_start;
     }
     else if (strcasecmp(outlang, "xml") == 0)
     {
         /*
          * Set up xml-style comment blocks
          */
-        pfile->comment_start = "<!-- ";
-        pfile->comment_docstart = NULL;
+        pfile->comment_start     = "<!-- ";
+        pfile->comment_docstart  = NULL;
         pfile->comment_multiline = NULL;
-        pfile->comment_end = "  -->";
+        pfile->comment_end       = "  -->";
     }
 
     lua_rawgetp(lua, LUA_REGISTRYINDEX, &sedstool.GLOBAL_SYMBOL_TABLE_KEY);
@@ -1043,7 +1046,6 @@ static int seds_lua_output_file_mkdir(lua_State *lua)
 /*                      Externally-Called Functions                            */
 /*      (referenced outside this unit and prototyped in a separate header)     */
 /*******************************************************************************/
-
 
 void seds_outputfile_register_globals(lua_State *lua)
 {

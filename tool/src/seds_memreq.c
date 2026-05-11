@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     seds_memreq.c
  * \ingroup  tool
@@ -47,12 +46,10 @@
 
 #include "seds_memreq.h"
 
-
 /*******************************************************************************/
 /*                      Internal / static Helper Functions                     */
 /*                  (these are not referenced outside this unit)               */
 /*******************************************************************************/
-
 
 /**
  * Lua-callable Helper function to append an element to a container memory requirement
@@ -68,7 +65,7 @@
 static int seds_memreq_add(lua_State *lua)
 {
     seds_memreq_t *psize = luaL_checkudata(lua, 1, "seds_memreq");
-    seds_memreq_t *padd = luaL_checkudata(lua, 2, "seds_memreq");
+    seds_memreq_t *padd  = luaL_checkudata(lua, 2, "seds_memreq");
     seds_integer_t start_offset_bytes;
     seds_integer_t start_offset_bits;
 
@@ -97,8 +94,7 @@ static int seds_memreq_add(lua_State *lua)
         /* inherit the status of the added element */
         psize->packing_status = padd->packing_status;
     }
-    else if (padd->packing_status != SEDS_BYTEPACK_STATUS_UNDEFINED &&
-            psize->packing_status != padd->packing_status)
+    else if (padd->packing_status != SEDS_BYTEPACK_STATUS_UNDEFINED && psize->packing_status != padd->packing_status)
     {
         psize->packing_status = SEDS_BYTEPACK_STATUS_OTHER;
     }
@@ -108,16 +104,16 @@ static int seds_memreq_add(lua_State *lua)
         psize->is_variable_size = true;
     }
 
-    start_offset_bits = psize->raw_bit_size;
-    start_offset_bytes = (psize->endpoint_bytes + padd->local_align_mask) & ~padd->local_align_mask;
+    start_offset_bits     = psize->raw_bit_size;
+    start_offset_bytes    = (psize->endpoint_bytes + padd->local_align_mask) & ~padd->local_align_mask;
     psize->endpoint_bytes = start_offset_bytes + padd->local_storage_bytes;
 
     if (psize->local_align_mask < padd->local_align_mask)
     {
         psize->local_align_mask = padd->local_align_mask;
     }
-    psize->raw_bit_size += padd->raw_bit_size;
-    psize->local_storage_bytes = (psize->endpoint_bytes + psize->local_align_mask) & ~psize->local_align_mask;
+    psize->raw_bit_size        += padd->raw_bit_size;
+    psize->local_storage_bytes  = (psize->endpoint_bytes + psize->local_align_mask) & ~psize->local_align_mask;
 
     psize->checksum = seds_update_checksum_int(psize->checksum, psize->raw_bit_size);
     psize->checksum = seds_update_checksum_int(psize->checksum, padd->checksum);
@@ -136,7 +132,7 @@ static int seds_memreq_add(lua_State *lua)
 static int seds_memreq_union(lua_State *lua)
 {
     seds_memreq_t *psize = luaL_checkudata(lua, 1, "seds_memreq");
-    seds_memreq_t *padd = luaL_checkudata(lua, 2, "seds_memreq");
+    seds_memreq_t *padd  = luaL_checkudata(lua, 2, "seds_memreq");
 
     luaL_argcheck(lua, psize != NULL, 1, "memreq argument expected");
     luaL_argcheck(lua, padd != NULL, 2, "memreq argument expected");
@@ -150,12 +146,12 @@ static int seds_memreq_union(lua_State *lua)
 
     if (padd->raw_bit_size > psize->raw_bit_size)
     {
-        psize->raw_bit_size = padd->raw_bit_size;
+        psize->raw_bit_size     = padd->raw_bit_size;
         psize->is_variable_size = padd->is_variable_size;
     }
 
-    psize->packing_status = SEDS_BYTEPACK_STATUS_OTHER;
-    psize->checksum ^= padd->checksum;
+    psize->packing_status  = SEDS_BYTEPACK_STATUS_OTHER;
+    psize->checksum       ^= padd->checksum;
     return 0;
 }
 
@@ -167,9 +163,9 @@ static int seds_memreq_union(lua_State *lua)
  */
 static int seds_memreq_multiply(lua_State *lua)
 {
-    seds_memreq_t *psize = luaL_checkudata(lua, 1, "seds_memreq");
+    seds_memreq_t *psize      = luaL_checkudata(lua, 1, "seds_memreq");
     seds_integer_t multiplier = luaL_checkinteger(lua, 2);
-    seds_boolean_t byte_pack = lua_toboolean(lua, 3);
+    seds_boolean_t byte_pack  = lua_toboolean(lua, 3);
 
     if (psize->raw_bit_size == 0)
     {
@@ -210,24 +206,24 @@ static int seds_memreq_flavor(lua_State *lua)
 
     switch (lua_type(lua, 2))
     {
-    case LUA_TSTRING:
-        psize->checksum += 2;
-        psize->checksum = seds_update_checksum_string(psize->checksum, lua_tostring(lua, 2));
-        break;
-    case LUA_TNUMBER:
-        psize->checksum += 3;
-        psize->checksum = seds_update_checksum_int(psize->checksum, lua_tointeger(lua, 2));
-        break;
-    case LUA_TBOOLEAN:
-        psize->checksum += 4;
-        psize->checksum = seds_update_checksum_int(psize->checksum, lua_toboolean(lua, 2));
-        break;
-    default:
-        /*
-         * Causes every pass through this routine to modify the checksum in some way
-         */
-        ++psize->checksum;
-        break;
+        case LUA_TSTRING:
+            psize->checksum += 2;
+            psize->checksum  = seds_update_checksum_string(psize->checksum, lua_tostring(lua, 2));
+            break;
+        case LUA_TNUMBER:
+            psize->checksum += 3;
+            psize->checksum  = seds_update_checksum_int(psize->checksum, lua_tointeger(lua, 2));
+            break;
+        case LUA_TBOOLEAN:
+            psize->checksum += 4;
+            psize->checksum  = seds_update_checksum_int(psize->checksum, lua_toboolean(lua, 2));
+            break;
+        default:
+            /*
+             * Causes every pass through this routine to modify the checksum in some way
+             */
+            ++psize->checksum;
+            break;
     }
 
     return 0;
@@ -241,7 +237,7 @@ static int seds_memreq_flavor(lua_State *lua)
  */
 static int seds_memreq_setpack(lua_State *lua)
 {
-    seds_memreq_t *psize = luaL_checkudata(lua, 1, "seds_memreq");
+    seds_memreq_t         *psize = luaL_checkudata(lua, 1, "seds_memreq");
     seds_bytepack_status_t packstat;
 
     if (lua_isnoneornil(lua, 2))
@@ -267,18 +263,16 @@ static int seds_memreq_setpack(lua_State *lua)
 
     /* if packing status was already set _differently_ then
      * set it to OTHER (for mixed values) */
-    if (psize->packing_status != SEDS_BYTEPACK_STATUS_UNDEFINED &&
-            packstat != SEDS_BYTEPACK_STATUS_UNDEFINED &&
-            psize->packing_status != packstat)
+    if (psize->packing_status != SEDS_BYTEPACK_STATUS_UNDEFINED && packstat != SEDS_BYTEPACK_STATUS_UNDEFINED
+        && psize->packing_status != packstat)
     {
         packstat = SEDS_BYTEPACK_STATUS_OTHER;
     }
 
-    if (packstat != SEDS_BYTEPACK_STATUS_UNDEFINED &&
-            psize->packing_status != packstat)
+    if (packstat != SEDS_BYTEPACK_STATUS_UNDEFINED && psize->packing_status != packstat)
     {
         psize->packing_status = packstat;
-        psize->checksum = seds_update_checksum_int(psize->checksum, 100 + packstat);
+        psize->checksum       = seds_update_checksum_int(psize->checksum, 100 + packstat);
     }
 
     return 0;
@@ -305,11 +299,11 @@ static int seds_memreq_setvariable(lua_State *lua)
  */
 static int seds_memreq_pad(lua_State *lua)
 {
-    seds_memreq_t *psize = luaL_checkudata(lua, 1, "seds_memreq");
+    seds_memreq_t *psize    = luaL_checkudata(lua, 1, "seds_memreq");
     seds_integer_t pad_bits = luaL_checkinteger(lua, 2);
 
-    psize->checksum += 5;
-    psize->checksum = seds_update_checksum_int(psize->checksum, pad_bits);
+    psize->checksum     += 5;
+    psize->checksum      = seds_update_checksum_int(psize->checksum, pad_bits);
     psize->raw_bit_size += pad_bits;
 
     /*
@@ -393,7 +387,7 @@ static int seds_memreq_get_property(lua_State *lua)
              * Therefore the checksums are returned as a hex string
              */
             char stringbuf[20];
-            snprintf(stringbuf,sizeof(stringbuf),"%016lx", (unsigned long)psize->checksum);
+            snprintf(stringbuf, sizeof(stringbuf), "%016lx", (unsigned long)psize->checksum);
             lua_pushstring(lua, stringbuf);
             return 1;
         }
@@ -454,14 +448,16 @@ static int seds_memreq_get_property(lua_State *lua)
 static int seds_memreq_to_string(lua_State *lua)
 {
     seds_memreq_t *psize = luaL_checkudata(lua, 1, "seds_memreq");
-    char stringbuf[128];
+    char           stringbuf[128];
 
-    snprintf(stringbuf, sizeof(stringbuf), "bits=%4ld  bytes=%4ld/%-4ld  align=0x%lx  checksum=%016llx",
-            (long)psize->raw_bit_size,
-            (long)psize->endpoint_bytes,
-            (long)psize->local_storage_bytes,
-            (unsigned long)psize->local_align_mask,
-            (unsigned long long)psize->checksum);
+    snprintf(stringbuf,
+             sizeof(stringbuf),
+             "bits=%4ld  bytes=%4ld/%-4ld  align=0x%lx  checksum=%016llx",
+             (long)psize->raw_bit_size,
+             (long)psize->endpoint_bytes,
+             (long)psize->local_storage_bytes,
+             (unsigned long)psize->local_align_mask,
+             (unsigned long long)psize->checksum);
 
     lua_pushstring(lua, stringbuf);
     return 1;
@@ -496,7 +492,7 @@ int seds_memreq_new_object(lua_State *lua)
 
     if (lua_isnumber(lua, 1))
     {
-        psize->raw_bit_size = lua_tointeger(lua, 1);
+        psize->raw_bit_size   = lua_tointeger(lua, 1);
         psize->endpoint_bytes = (psize->raw_bit_size + 7) / 8;
 
         if (lua_isnumber(lua, 2))
@@ -523,8 +519,7 @@ int seds_memreq_new_object(lua_State *lua)
              * Calculate the initial alignment mask and storage based on the supplied size
              */
             psize->local_align_mask = 1;
-            while (psize->local_align_mask < 16 &&
-                    psize->local_align_mask < psize->endpoint_bytes)
+            while (psize->local_align_mask < 16 && psize->local_align_mask < psize->endpoint_bytes)
             {
                 psize->local_align_mask <<= 1;
             }
@@ -532,7 +527,7 @@ int seds_memreq_new_object(lua_State *lua)
         }
 
         psize->local_storage_bytes = (psize->endpoint_bytes + psize->local_align_mask) & ~psize->local_align_mask;
-        psize->checksum = seds_update_checksum_int(psize->checksum, psize->raw_bit_size);
+        psize->checksum            = seds_update_checksum_int(psize->checksum, psize->raw_bit_size);
     }
     else if (lua_isuserdata(lua, 1))
     {
@@ -563,8 +558,8 @@ int seds_memreq_new_object(lua_State *lua)
 unsigned int seds_get_binary_digits(double limit, bool twos_complement)
 {
     unsigned int digits;
-    double val;
-    int exp;
+    double       val;
+    int          exp;
 
     val = frexp(fabs(limit), &exp);
     if (isinf(val))
@@ -577,12 +572,12 @@ unsigned int seds_get_binary_digits(double limit, bool twos_complement)
         digits = exp;
 
         /*
-        * Because numbers are internally "double" values in Lua,
-        * anything above ~52 bits may result in an extra
-        * digit due to rounding up.  This adds a "slop factor"
-        * to avoid triggering false errors (the cost is that
-        * this might not flag a borderline case that is an error)
-        */
+         * Because numbers are internally "double" values in Lua,
+         * anything above ~52 bits may result in an extra
+         * digit due to rounding up.  This adds a "slop factor"
+         * to avoid triggering false errors (the cost is that
+         * this might not flag a borderline case that is an error)
+         */
         if (digits > 52 && val < 0.55)
         {
             --digits;
@@ -590,7 +585,7 @@ unsigned int seds_get_binary_digits(double limit, bool twos_complement)
         else if (twos_complement && val == 0.5 && limit < 0.0)
         {
             /* special handling for twos complement, has one extra
-            * value of range on the negative side */
+             * value of range on the negative side */
             --digits;
         }
     }
@@ -619,7 +614,7 @@ int seds_calulate_range_digits(lua_State *lua)
     double min = lua_tonumber(lua, 2);
     double posdig;
     double negdig;
-    bool twos_complement;
+    bool   twos_complement;
 
     if (lua_type(lua, 3) == LUA_TSTRING)
     {

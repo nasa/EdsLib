@@ -110,6 +110,12 @@ SEDS.to_macro_name = function(ident)
 
   local result = string.gsub(ident, "%W+", "_") -- first scrub non alphanumeric characters
   result = string.gsub(result, "([%u%d])", ".%1") .. "." -- prefix capitalized letters
+  
+  -- Recombine plural acronyms that get broken up.
+  -- For example: ActiveAPs is active action points.
+  -- The "A" and "Ps" should not be separated
+  result = string.gsub(result, "(%u)%.(%us)", "%1%2")
+
   result = string.upper(result) -- make ALL_UPPERCASE
 
   -- find multiple one-letter words, which most likely are some sort
@@ -120,6 +126,7 @@ SEDS.to_macro_name = function(ident)
 
   while(true) do
     local temp = string.gsub(result, "[%.=](%w)%.", "=%1=", 1)
+
     if (temp == result) then
       -- no replacements made, stop now
       break

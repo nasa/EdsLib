@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 /**
  * \file     edslib_datatypedb_pack_unpack.c
  * \ingroup  fsw
@@ -69,17 +68,17 @@
  * Use "long double" internally during encode/decode
  * to minimize loss of precision
  */
-typedef long double         EdsLib_Internal_Float_t;
+typedef long double EdsLib_Internal_Float_t;
 
 /*
  * Use the math library calls with an "l" suffix
  * These should operate on long doubles
  */
-#define EDSLIB_FABS         fabsl
-#define EDSLIB_LDEXP        ldexpl
-#define EDSLIB_FREXP        frexpl
-#define EDSLIB_MODF         modfl
-#define EDSLIB_FLOAT_C(x)   (x ## L)
+#define EDSLIB_FABS       fabsl
+#define EDSLIB_LDEXP      ldexpl
+#define EDSLIB_FREXP      frexpl
+#define EDSLIB_MODF       modfl
+#define EDSLIB_FLOAT_C(x) (x##L)
 
 #else
 
@@ -88,17 +87,17 @@ typedef long double         EdsLib_Internal_Float_t;
  * Use "double" internally, may lose some precision
  * but should have wider C library support
  */
-typedef double              EdsLib_Internal_Float_t;
+typedef double EdsLib_Internal_Float_t;
 
 /*
  * Use the math library calls without the "l" suffix
  * These should operate on regular doubles
  */
-#define EDSLIB_FABS         fabs
-#define EDSLIB_LDEXP        ldexp
-#define EDSLIB_FREXP        frexp
-#define EDSLIB_MODF         modf
-#define EDSLIB_FLOAT_C(x)   (x)
+#define EDSLIB_FABS       fabs
+#define EDSLIB_LDEXP      ldexp
+#define EDSLIB_FREXP      frexp
+#define EDSLIB_MODF       modf
+#define EDSLIB_FLOAT_C(x) (x)
 #endif
 
 /**
@@ -118,41 +117,45 @@ typedef double              EdsLib_Internal_Float_t;
  */
 typedef enum
 {
-    LEADING_PAD_UNDEFINED = 0,  /**< Unknown or no leading invalid bits */
-    LEADING_PAD_MSB,            /**< MSB from leading byte(s) are invalid */
-    LEADING_PAD_LSB             /**< LSB From leading byte(s) are invalid */
+    LEADING_PAD_UNDEFINED = 0, /**< Unknown or no leading invalid bits */
+    LEADING_PAD_MSB,           /**< MSB from leading byte(s) are invalid */
+    LEADING_PAD_LSB            /**< LSB From leading byte(s) are invalid */
 } EdsLib_BitPackLeadingPad_Enum_t;
-
 
 typedef struct
 {
     EdsLib_NumberByteOrder_Enum_t ByteOrder;
-    EdsLib_BasicType_t IntermediateType;
-    size_t IntermediateSize;
-    ptrdiff_t MemStride;
-    ptrdiff_t LeadingPadBits;
-    ptrdiff_t TrailingPadBits;
-    int32_t IntermediateShift;
-    bool Invert;
+    EdsLib_BasicType_t            IntermediateType;
+    size_t                        IntermediateSize;
+    ptrdiff_t                     MemStride;
+    ptrdiff_t                     LeadingPadBits;
+    ptrdiff_t                     TrailingPadBits;
+    int32_t                       IntermediateShift;
+    bool                          Invert;
 } EdsLib_Internal_PackStyleInfo_t;
 
-typedef size_t (*EdsLib_Internal_PackFunc_t)(EdsLib_GenericValueBuffer_t *ValBuf, const uint8_t *SrcPtr, size_t SrcSizeBytes, EdsLib_NumberEncoding_Enum_t EncodingStyle, uint32_t EncodingBits);
-typedef void (*EdsLib_Internal_UnpackFunc_t)(uint8_t *DstPtr, size_t DstSizeBytes, EdsLib_GenericValueBuffer_t *ValBuf, EdsLib_NumberEncoding_Enum_t EncodingStyle, uint32_t EncodingBits);
-
+typedef size_t (*EdsLib_Internal_PackFunc_t)(EdsLib_GenericValueBuffer_t *ValBuf,
+                                             const uint8_t               *SrcPtr,
+                                             size_t                       SrcSizeBytes,
+                                             EdsLib_NumberEncoding_Enum_t EncodingStyle,
+                                             uint32_t                     EncodingBits);
+typedef void (*EdsLib_Internal_UnpackFunc_t)(uint8_t                     *DstPtr,
+                                             size_t                       DstSizeBytes,
+                                             EdsLib_GenericValueBuffer_t *ValBuf,
+                                             EdsLib_NumberEncoding_Enum_t EncodingStyle,
+                                             uint32_t                     EncodingBits);
 
 static const union
 {
-    uint16_t   Value;
-    int8_t     Bytes[2];
-}  EDSLIB_NATIVE_BYTEORDER = { 0x0102 };
+    uint16_t Value;
+    int8_t   Bytes[2];
+} EDSLIB_NATIVE_BYTEORDER = { 0x0102 };
 
 /* An expression that evaluates to 1 on big endian and -1 on little endian */
-#define EDSLIB_BIG_ENDIAN_STRIDE    \
-    (EDSLIB_NATIVE_BYTEORDER.Bytes[1] - EDSLIB_NATIVE_BYTEORDER.Bytes[0])
+#define EDSLIB_BIG_ENDIAN_STRIDE (EDSLIB_NATIVE_BYTEORDER.Bytes[1] - EDSLIB_NATIVE_BYTEORDER.Bytes[0])
 
 /* An expression that evaluates to 1 on little endian and -1 on big endian */
-#define EDSLIB_LITTLE_ENDIAN_STRIDE    \
-    (EDSLIB_NATIVE_BYTEORDER.Bytes[0] - EDSLIB_NATIVE_BYTEORDER.Bytes[1])
+#define EDSLIB_LITTLE_ENDIAN_STRIDE (EDSLIB_NATIVE_BYTEORDER.Bytes[0] - EDSLIB_NATIVE_BYTEORDER.Bytes[1])
 
 /*
  * An expression that evaluates to 1 on big endian and 2 on little endian machines
@@ -160,33 +163,33 @@ static const union
  *  EDSLIB_DATATYPE_FLAG_PACKED_BE
  *  EDSLIB_DATATYPE_FLAG_PACKED_LE
  */
-#define EDSLIB_NATIVE_BYTE_PACK  (EDSLIB_NATIVE_BYTEORDER.Bytes[0])
+#define EDSLIB_NATIVE_BYTE_PACK (EDSLIB_NATIVE_BYTEORDER.Bytes[0])
 
 /*----------------------------------------------------------------
  *
  * EdsLib local helper function
  *
  *-----------------------------------------------------------------*/
-static bool EdsLib_Internal_GetPackStyle(EdsLib_Internal_PackStyleInfo_t *PackStyle, const EdsLib_DataTypeDB_Entry_t *DataDictPtr)
+static bool EdsLib_Internal_GetPackStyle(EdsLib_Internal_PackStyleInfo_t *PackStyle,
+                                         const EdsLib_DataTypeDB_Entry_t *DataDictPtr)
 {
-    bool IsValid = true;
+    bool               IsValid = true;
     EdsLib_BasicType_t RefType;
-    size_t RefSize;
-    ptrdiff_t PadBits;
+    size_t             RefSize;
+    ptrdiff_t          PadBits;
 
     memset(PackStyle, 0, sizeof(*PackStyle));
 
-    if (DataDictPtr->BasicType == EDSLIB_BASICTYPE_SIGNED_INT ||
-            DataDictPtr->BasicType == EDSLIB_BASICTYPE_UNSIGNED_INT ||
-            DataDictPtr->BasicType == EDSLIB_BASICTYPE_FLOAT)
+    if (DataDictPtr->BasicType == EDSLIB_BASICTYPE_SIGNED_INT || DataDictPtr->BasicType == EDSLIB_BASICTYPE_UNSIGNED_INT
+        || DataDictPtr->BasicType == EDSLIB_BASICTYPE_FLOAT)
     {
-        PackStyle->Invert = (DataDictPtr->Detail.Number.BitInvertFlag != 0);
+        PackStyle->Invert    = (DataDictPtr->Detail.Number.BitInvertFlag != 0);
         PackStyle->ByteOrder = DataDictPtr->Detail.Number.ByteOrder;
 
         if (DataDictPtr->BasicType == EDSLIB_BASICTYPE_SIGNED_INT)
         {
-            if (DataDictPtr->Detail.Number.Encoding == EDSLIB_NUMBERENCODING_BCD_OCTET ||
-                    DataDictPtr->Detail.Number.Encoding == EDSLIB_NUMBERENCODING_BCD_PACKED)
+            if (DataDictPtr->Detail.Number.Encoding == EDSLIB_NUMBERENCODING_BCD_OCTET
+                || DataDictPtr->Detail.Number.Encoding == EDSLIB_NUMBERENCODING_BCD_PACKED)
             {
                 PackStyle->IntermediateType = EDSLIB_BASICTYPE_BINARY; /* anticipated intermediate */
                 PackStyle->IntermediateSize = EdsLib_BITS_TO_OCTETS(DataDictPtr->SizeInfo.Bits);
@@ -195,8 +198,8 @@ static bool EdsLib_Internal_GetPackStyle(EdsLib_Internal_PackStyleInfo_t *PackSt
                     IsValid = false;
                 }
             }
-            else if (DataDictPtr->Detail.Number.Encoding != EDSLIB_NUMBERENCODING_TWOS_COMPLEMENT &&
-                    DataDictPtr->Detail.Number.Encoding != EDSLIB_NUMBERENCODING_UNDEFINED)
+            else if (DataDictPtr->Detail.Number.Encoding != EDSLIB_NUMBERENCODING_TWOS_COMPLEMENT
+                     && DataDictPtr->Detail.Number.Encoding != EDSLIB_NUMBERENCODING_UNDEFINED)
             {
                 PackStyle->IntermediateType = EDSLIB_BASICTYPE_UNSIGNED_INT; /* anticipated intermediate */
                 PackStyle->IntermediateSize = sizeof(EdsLib_Generic_UnsignedInt_t);
@@ -228,8 +231,8 @@ static bool EdsLib_Internal_GetPackStyle(EdsLib_Internal_PackStyleInfo_t *PackSt
                     IsValid = false;
                 }
             }
-            else if (DataDictPtr->Detail.Number.Encoding == EDSLIB_NUMBERENCODING_IEEE_754 ||
-                    DataDictPtr->Detail.Number.Encoding == EDSLIB_NUMBERENCODING_UNDEFINED)
+            else if (DataDictPtr->Detail.Number.Encoding == EDSLIB_NUMBERENCODING_IEEE_754
+                     || DataDictPtr->Detail.Number.Encoding == EDSLIB_NUMBERENCODING_UNDEFINED)
             {
                 /*
                  * IEEE-754 supports encodings of 32, 64, or 128 bits.
@@ -341,7 +344,7 @@ static bool EdsLib_Internal_GetPackStyle(EdsLib_Internal_PackStyleInfo_t *PackSt
                  * This shift also helps when unpacking, as it can be used to
                  * sign-extend twos complement data as needed.
                  */
-                PackStyle->MemStride = EDSLIB_LITTLE_ENDIAN_STRIDE;
+                PackStyle->MemStride         = EDSLIB_LITTLE_ENDIAN_STRIDE;
                 PackStyle->IntermediateShift = PadBits;
             }
 
@@ -372,7 +375,7 @@ static bool EdsLib_Internal_GetPackStyle(EdsLib_Internal_PackStyleInfo_t *PackSt
                  * can be used to sign-extend twos complement data.  This
                  * puts extra bits into the last byte LSB instead.
                  */
-                PackStyle->MemStride = EDSLIB_BIG_ENDIAN_STRIDE;
+                PackStyle->MemStride         = EDSLIB_BIG_ENDIAN_STRIDE;
                 PackStyle->IntermediateShift = PadBits;
             }
 
@@ -389,137 +392,139 @@ static bool EdsLib_Internal_GetPackStyle(EdsLib_Internal_PackStyleInfo_t *PackSt
  * EdsLib local helper function
  *
  *-----------------------------------------------------------------*/
-static size_t EdsLib_Internal_DoSignedIntPack(EdsLib_GenericValueUnion_t *ValBuf, const uint8_t *SrcPtr, size_t SrcSizeBytes, EdsLib_NumberEncoding_Enum_t EncodingStyle, uint32_t EncodingBits)
+static size_t EdsLib_Internal_DoSignedIntPack(EdsLib_GenericValueUnion_t  *ValBuf,
+                                              const uint8_t               *SrcPtr,
+                                              size_t                       SrcSizeBytes,
+                                              EdsLib_NumberEncoding_Enum_t EncodingStyle,
+                                              uint32_t                     EncodingBits)
 {
-    EdsLib_ConstPtr_t TempSrc = { .Addr = SrcPtr };
+    EdsLib_ConstPtr_t            TempSrc = { .Addr = SrcPtr };
     EdsLib_Generic_UnsignedInt_t TempUnsigned;
-    size_t ConvSize;
+    size_t                       ConvSize;
 
-    switch(SrcSizeBytes)
+    switch (SrcSizeBytes)
     {
-    case sizeof(TempSrc.u->i8):
-        ValBuf->SignedInteger = TempSrc.u->i8;
-        break;
-    case sizeof(TempSrc.u->i16):
-        ValBuf->SignedInteger = TempSrc.u->i16;
-        break;
-    case sizeof(TempSrc.u->i32):
-        ValBuf->SignedInteger = TempSrc.u->i32;
-        break;
-    case sizeof(TempSrc.u->i64):
-        ValBuf->SignedInteger = TempSrc.u->i64;
-        break;
-    default:
-        /* should never happen, but avoid leaving garbage data into the output */
-        ValBuf->SignedInteger = 0;
-        break;
+        case sizeof(TempSrc.u->i8):
+            ValBuf->SignedInteger = TempSrc.u->i8;
+            break;
+        case sizeof(TempSrc.u->i16):
+            ValBuf->SignedInteger = TempSrc.u->i16;
+            break;
+        case sizeof(TempSrc.u->i32):
+            ValBuf->SignedInteger = TempSrc.u->i32;
+            break;
+        case sizeof(TempSrc.u->i64):
+            ValBuf->SignedInteger = TempSrc.u->i64;
+            break;
+        default:
+            /* should never happen, but avoid leaving garbage data into the output */
+            ValBuf->SignedInteger = 0;
+            break;
     }
 
-    switch(EncodingStyle)
+    switch (EncodingStyle)
     {
-    case EDSLIB_NUMBERENCODING_SIGN_MAGNITUDE:
-    {
-        if (ValBuf->SignedInteger < 0)
+        case EDSLIB_NUMBERENCODING_SIGN_MAGNITUDE:
         {
-            /* convert to a positive unsigned, and set the sign bit */
-            TempUnsigned = -ValBuf->SignedInteger;
-            TempUnsigned |= 1ULL << (EncodingBits-1);
-        }
-        else
-        {
-            TempUnsigned = ValBuf->SignedInteger;
-        }
-        ValBuf->UnsignedInteger = TempUnsigned;
-        ConvSize = sizeof(ValBuf->UnsignedInteger);
-        break;
-    }
-    case EDSLIB_NUMBERENCODING_ONES_COMPLEMENT:
-    {
-        if (ValBuf->SignedInteger < 0)
-        {
-            /* convert to a positive unsigned, and invert all bits */
-            TempUnsigned = -ValBuf->SignedInteger;
-            TempUnsigned = ~TempUnsigned;
-        }
-        else
-        {
-            TempUnsigned = ValBuf->SignedInteger;
-        }
-        ValBuf->UnsignedInteger = TempUnsigned;
-        ConvSize = sizeof(ValBuf->UnsignedInteger);
-        break;
-    }
-    case EDSLIB_NUMBERENCODING_BCD_OCTET:
-    {
-        char *p = ValBuf->StringData;
-        uint8_t *q = ValBuf->BinaryData;
-        size_t len = sizeof(ValBuf->StringData);
-
-        snprintf(p, len, "%0*lld",
-                (int)(EncodingBits / 8), ValBuf->SignedInteger);
-        len = strlen(p);
-        ConvSize = len;
-
-        while(len > 0)
-        {
-            if (isdigit((int)*p))
+            if (ValBuf->SignedInteger < 0)
             {
-                *q = (unsigned int)(*p - '0');
+                /* convert to a positive unsigned, and set the sign bit */
+                TempUnsigned  = -ValBuf->SignedInteger;
+                TempUnsigned |= 1ULL << (EncodingBits - 1);
             }
-            ++p;
-            ++q;
-            --len;
+            else
+            {
+                TempUnsigned = ValBuf->SignedInteger;
+            }
+            ValBuf->UnsignedInteger = TempUnsigned;
+            ConvSize                = sizeof(ValBuf->UnsignedInteger);
+            break;
         }
-        break;
-    }
-    case EDSLIB_NUMBERENCODING_BCD_PACKED:
-    {
-        char *p = ValBuf->StringData;
-        uint8_t *q = ValBuf->BinaryData;
-        size_t len = sizeof(ValBuf->StringData);
-        uint8_t out;
-
-        snprintf(p, len, "%0*lld",
-                (int)(EncodingBits / 4), ValBuf->SignedInteger);
-        len = (strlen(p) + 1) / 2;
-        ConvSize = len;
-
-        /*
-         * NOTE: This doesn't handle negative values properly.
-         * The SOIS Red Book is not exactly clear on this.
-         */
-        while(len > 0)
+        case EDSLIB_NUMBERENCODING_ONES_COMPLEMENT:
         {
-            out = 0;
-            if (isdigit((int)p[0]))
+            if (ValBuf->SignedInteger < 0)
             {
-                out |= (unsigned int)(p[0] - '0') << 4;
+                /* convert to a positive unsigned, and invert all bits */
+                TempUnsigned = -ValBuf->SignedInteger;
+                TempUnsigned = ~TempUnsigned;
             }
-            if (isdigit((int)p[1]))
+            else
             {
-                out |= (unsigned int)(p[1] - '0');
+                TempUnsigned = ValBuf->SignedInteger;
             }
-            *q = out;
-            p += 2;
-            ++q;
-            --len;
+            ValBuf->UnsignedInteger = TempUnsigned;
+            ConvSize                = sizeof(ValBuf->UnsignedInteger);
+            break;
         }
-        break;
-    }
-    case EDSLIB_NUMBERENCODING_TWOS_COMPLEMENT:
-    case EDSLIB_NUMBERENCODING_UNDEFINED:
-    {
-        /* default encoding type is a pass thru
-         * This should work on twos complement machines,
-         * which is basically everything. */
-        ConvSize = sizeof(ValBuf->SignedInteger);
-        break;
-    }
-    default:
-    {
-        ConvSize = 0;
-        break;
-    }
+        case EDSLIB_NUMBERENCODING_BCD_OCTET:
+        {
+            char    *p   = ValBuf->StringData;
+            uint8_t *q   = ValBuf->BinaryData;
+            size_t   len = sizeof(ValBuf->StringData);
+
+            snprintf(p, len, "%0*lld", (int)(EncodingBits / 8), ValBuf->SignedInteger);
+            len      = strlen(p);
+            ConvSize = len;
+
+            while (len > 0)
+            {
+                if (isdigit((int)*p))
+                {
+                    *q = (unsigned int)(*p - '0');
+                }
+                ++p;
+                ++q;
+                --len;
+            }
+            break;
+        }
+        case EDSLIB_NUMBERENCODING_BCD_PACKED:
+        {
+            char    *p   = ValBuf->StringData;
+            uint8_t *q   = ValBuf->BinaryData;
+            size_t   len = sizeof(ValBuf->StringData);
+            uint8_t  out;
+
+            snprintf(p, len, "%0*lld", (int)(EncodingBits / 4), ValBuf->SignedInteger);
+            len      = (strlen(p) + 1) / 2;
+            ConvSize = len;
+
+            /*
+             * NOTE: This doesn't handle negative values properly.
+             * The SOIS Red Book is not exactly clear on this.
+             */
+            while (len > 0)
+            {
+                out = 0;
+                if (isdigit((int)p[0]))
+                {
+                    out |= (unsigned int)(p[0] - '0') << 4;
+                }
+                if (isdigit((int)p[1]))
+                {
+                    out |= (unsigned int)(p[1] - '0');
+                }
+                *q  = out;
+                p  += 2;
+                ++q;
+                --len;
+            }
+            break;
+        }
+        case EDSLIB_NUMBERENCODING_TWOS_COMPLEMENT:
+        case EDSLIB_NUMBERENCODING_UNDEFINED:
+        {
+            /* default encoding type is a pass thru
+             * This should work on twos complement machines,
+             * which is basically everything. */
+            ConvSize = sizeof(ValBuf->SignedInteger);
+            break;
+        }
+        default:
+        {
+            ConvSize = 0;
+            break;
+        }
     }
 
     return ConvSize;
@@ -531,9 +536,12 @@ static size_t EdsLib_Internal_DoSignedIntPack(EdsLib_GenericValueUnion_t *ValBuf
  * Packs a float value according to MIL-STD-1750A
  *
  *-----------------------------------------------------------------*/
-static size_t EdsLib_Internal_DoFloatPack_MilStd1750A(EdsLib_GenericValueUnion_t *ValBuf, uint32_t EncodingBits, EdsLib_Internal_Float_t Significand, int32_t Exponent)
+static size_t EdsLib_Internal_DoFloatPack_MilStd1750A(EdsLib_GenericValueUnion_t *ValBuf,
+                                                      uint32_t                    EncodingBits,
+                                                      EdsLib_Internal_Float_t     Significand,
+                                                      int32_t                     Exponent)
 {
-    size_t ConvSize;
+    size_t   ConvSize;
     uint64_t MantissaBits;
     uint32_t Temp32;
 
@@ -551,7 +559,7 @@ static size_t EdsLib_Internal_DoFloatPack_MilStd1750A(EdsLib_GenericValueUnion_t
     {
         /* Zero is represented by all fields set to zero */
         MantissaBits = 0;
-        Exponent = 0;
+        Exponent     = 0;
     }
     else if (Significand == EDSLIB_FLOAT_C(-0.5))
     {
@@ -561,16 +569,16 @@ static size_t EdsLib_Internal_DoFloatPack_MilStd1750A(EdsLib_GenericValueUnion_t
     }
 
     /* Get 40 bits worth of mantissa (signed twos complement) */
-    MantissaBits = EDSLIB_LDEXP(Significand,39);
+    MantissaBits = EDSLIB_LDEXP(Significand, 39);
 
     /* Pack into the uint32, filling all 32 bits of it */
-    Temp32 = (uint32_t)(MantissaBits >> 8) & 0xFFFFFF00;
+    Temp32  = (uint32_t)(MantissaBits >> 8) & 0xFFFFFF00;
     Temp32 |= (uint32_t)Exponent & 0xFF;
 
     if (EncodingBits == 32)
     {
         ValBuf->u32 = Temp32;
-        ConvSize = sizeof(ValBuf->u32);
+        ConvSize    = sizeof(ValBuf->u32);
     }
     else if (EncodingBits == 48)
     {
@@ -580,9 +588,9 @@ static size_t EdsLib_Internal_DoFloatPack_MilStd1750A(EdsLib_GenericValueUnion_t
          *
          * This will be held in the uint64_t value, with 48 bits valid.
          */
-        ValBuf->u64 = Temp32;  /* extend to 64 bits first */
+        ValBuf->u64 = Temp32; /* extend to 64 bits first */
         ValBuf->u64 = (ValBuf->u64 << 16) | (MantissaBits & 0xFFFF);
-        ConvSize = sizeof(ValBuf->u64);
+        ConvSize    = sizeof(ValBuf->u64);
     }
     else
     {
@@ -599,10 +607,13 @@ static size_t EdsLib_Internal_DoFloatPack_MilStd1750A(EdsLib_GenericValueUnion_t
  * Packs a float value according to IEEE-754
  *
  *-----------------------------------------------------------------*/
-static size_t EdsLib_Internal_DoFloatPack_Ieee754(EdsLib_GenericValueUnion_t *ValBuf, uint32_t EncodingBits, EdsLib_Internal_Float_t Significand, int32_t Exponent)
+static size_t EdsLib_Internal_DoFloatPack_Ieee754(EdsLib_GenericValueUnion_t *ValBuf,
+                                                  uint32_t                    EncodingBits,
+                                                  EdsLib_Internal_Float_t     Significand,
+                                                  int32_t                     Exponent)
 {
-    size_t ConvSize;
-    size_t x;
+    size_t                  ConvSize;
+    size_t                  x;
     EdsLib_Internal_Float_t Frac;
     EdsLib_Internal_Float_t Whole;
 
@@ -635,9 +646,9 @@ static size_t EdsLib_Internal_DoFloatPack_Ieee754(EdsLib_GenericValueUnion_t *Va
 
             /* Fill all bits of mantissa value from MSB to LSB. */
             Frac *= EDSLIB_FLOAT_C(2.0);
-            for (x=2; x < 16; ++x)
+            for (x = 2; x < 16; ++x)
             {
-                Frac = EDSLIB_MODF(EDSLIB_LDEXP(Frac, 8), &Whole);
+                Frac                  = EDSLIB_MODF(EDSLIB_LDEXP(Frac, 8), &Whole);
                 ValBuf->BinaryData[x] = ((uint8_t)Whole) & 0xFF;
             }
         }
@@ -654,7 +665,7 @@ static size_t EdsLib_Internal_DoFloatPack_Ieee754(EdsLib_GenericValueUnion_t *Va
         }
         else
         {
-            ValBuf->u64 = EDSLIB_LDEXP(Frac,53);
+            ValBuf->u64 = EDSLIB_LDEXP(Frac, 53);
 
             ValBuf->u64 &= UINT64_C(0xFFFFFFFFFFFFF);
             ValBuf->u64 |= ((uint64_t)((Exponent + 1022) & 0x7FF)) << 52;
@@ -677,7 +688,7 @@ static size_t EdsLib_Internal_DoFloatPack_Ieee754(EdsLib_GenericValueUnion_t *Va
         }
         else
         {
-            ValBuf->u32 = EDSLIB_LDEXP(Frac,24);
+            ValBuf->u32 = EDSLIB_LDEXP(Frac, 24);
 
             ValBuf->u32 &= UINT32_C(0x7FFFFF);
             ValBuf->u32 |= (uint32_t)((Exponent + 126) & 0xFF) << 23;
@@ -703,7 +714,11 @@ static size_t EdsLib_Internal_DoFloatPack_Ieee754(EdsLib_GenericValueUnion_t *Va
  * EdsLib local helper function
  *
  *-----------------------------------------------------------------*/
-static size_t EdsLib_Internal_DoFloatPack(EdsLib_GenericValueUnion_t *ValBuf, const uint8_t *SrcPtr, size_t SrcSizeBytes, EdsLib_NumberEncoding_Enum_t EncodingStyle, uint32_t EncodingBits)
+static size_t EdsLib_Internal_DoFloatPack(EdsLib_GenericValueUnion_t  *ValBuf,
+                                          const uint8_t               *SrcPtr,
+                                          size_t                       SrcSizeBytes,
+                                          EdsLib_NumberEncoding_Enum_t EncodingStyle,
+                                          uint32_t                     EncodingBits)
 {
     /*
      * All floating point notations (including the less common ones) express
@@ -719,9 +734,9 @@ static size_t EdsLib_Internal_DoFloatPack(EdsLib_GenericValueUnion_t *ValBuf, co
      * in a future version if there is a need for these exception values).
      */
     EdsLib_ConstPtr_t TempSrc = { .Addr = SrcPtr };
-    size_t ConvSize;
+    size_t            ConvSize;
 
-    int Exponent = 0;
+    int                     Exponent    = 0;
     EdsLib_Internal_Float_t Significand = EDSLIB_FLOAT_C(0.0);
 
     /* the base-2 exponent/mantissa can be extracted using the
@@ -743,8 +758,7 @@ static size_t EdsLib_Internal_DoFloatPack(EdsLib_GenericValueUnion_t *ValBuf, co
     {
         ConvSize = EdsLib_Internal_DoFloatPack_MilStd1750A(ValBuf, EncodingBits, Significand, Exponent);
     }
-    else if (EncodingStyle == EDSLIB_NUMBERENCODING_IEEE_754 ||
-            EncodingStyle == EDSLIB_NUMBERENCODING_UNDEFINED)
+    else if (EncodingStyle == EDSLIB_NUMBERENCODING_IEEE_754 || EncodingStyle == EDSLIB_NUMBERENCODING_UNDEFINED)
     {
         ConvSize = EdsLib_Internal_DoFloatPack_Ieee754(ValBuf, EncodingBits, Significand, Exponent);
     }
@@ -762,15 +776,18 @@ static size_t EdsLib_Internal_DoFloatPack(EdsLib_GenericValueUnion_t *ValBuf, co
  * EdsLib local helper function
  *
  *-----------------------------------------------------------------*/
-static void EdsLib_Internal_DoBitwisePack(uint8_t *DstPtr, const uint8_t *SrcPtr, const EdsLib_DataTypeDB_Entry_t *DataDictPtr, uint32_t DstBitOffset)
+static void EdsLib_Internal_DoBitwisePack(uint8_t                         *DstPtr,
+                                          const uint8_t                   *SrcPtr,
+                                          const EdsLib_DataTypeDB_Entry_t *DataDictPtr,
+                                          uint32_t                         DstBitOffset)
 {
-    uint32_t ShiftRegister;
-    uint32_t HighBitPos;
-    uint32_t TotalBits;
-    EdsLib_GenericValueUnion_t NumBuf;
-    const uint8_t *LoadPtr;
+    uint32_t                        ShiftRegister;
+    uint32_t                        HighBitPos;
+    uint32_t                        TotalBits;
+    EdsLib_GenericValueUnion_t      NumBuf;
+    const uint8_t                  *LoadPtr;
     EdsLib_Internal_PackStyleInfo_t Pack;
-    size_t ConvSize;
+    size_t                          ConvSize;
 
     LoadPtr = NULL;
 
@@ -811,23 +828,28 @@ static void EdsLib_Internal_DoBitwisePack(uint8_t *DstPtr, const uint8_t *SrcPtr
     }
 
     /* Do conversion to intermediate type, if indicated */
-    if (Pack.IntermediateType == EDSLIB_BASICTYPE_NONE ||
-            Pack.IntermediateSize == 0)
+    if (Pack.IntermediateType == EDSLIB_BASICTYPE_NONE || Pack.IntermediateSize == 0)
     {
-        LoadPtr = SrcPtr;
+        LoadPtr  = SrcPtr;
         ConvSize = DataDictPtr->SizeInfo.Bytes;
     }
     else
     {
         if (DataDictPtr->BasicType == EDSLIB_BASICTYPE_SIGNED_INT)
         {
-            ConvSize = EdsLib_Internal_DoSignedIntPack(&NumBuf, SrcPtr, DataDictPtr->SizeInfo.Bytes,
-                    DataDictPtr->Detail.Number.Encoding, DataDictPtr->SizeInfo.Bits);
+            ConvSize = EdsLib_Internal_DoSignedIntPack(&NumBuf,
+                                                       SrcPtr,
+                                                       DataDictPtr->SizeInfo.Bytes,
+                                                       DataDictPtr->Detail.Number.Encoding,
+                                                       DataDictPtr->SizeInfo.Bits);
         }
         else if (DataDictPtr->BasicType == EDSLIB_BASICTYPE_FLOAT)
         {
-            ConvSize = EdsLib_Internal_DoFloatPack(&NumBuf, SrcPtr, DataDictPtr->SizeInfo.Bytes,
-                    DataDictPtr->Detail.Number.Encoding, DataDictPtr->SizeInfo.Bits);
+            ConvSize = EdsLib_Internal_DoFloatPack(&NumBuf,
+                                                   SrcPtr,
+                                                   DataDictPtr->SizeInfo.Bytes,
+                                                   DataDictPtr->Detail.Number.Encoding,
+                                                   DataDictPtr->SizeInfo.Bits);
         }
         else
         {
@@ -840,7 +862,7 @@ static void EdsLib_Internal_DoBitwisePack(uint8_t *DstPtr, const uint8_t *SrcPtr
             /* error: pack routine did not output
              * expected size object */
             NumBuf.BinaryData[0] = 0xFF;
-            Pack.MemStride = 0;
+            Pack.MemStride       = 0;
         }
     }
 
@@ -848,50 +870,49 @@ static void EdsLib_Internal_DoBitwisePack(uint8_t *DstPtr, const uint8_t *SrcPtr
     {
         EdsLib_ConstPtr_t Src = { .Addr = LoadPtr };
 
-        switch(ConvSize)
+        switch (ConvSize)
         {
-        case sizeof(Src.u->u8):
-            NumBuf.u8 = Src.u->u8 << Pack.IntermediateShift;
-            break;
-        case sizeof(Src.u->u16):
-            NumBuf.u16 = Src.u->u16 << Pack.IntermediateShift;
-            break;
-        case sizeof(Src.u->u32):
-            NumBuf.u32 = Src.u->u32 << Pack.IntermediateShift;
-            break;
-        case sizeof(Src.u->u64):
-            NumBuf.u64 = Src.u->u64 << Pack.IntermediateShift;
-            break;
-        default:
-            /* error/invalid */
-            break;
+            case sizeof(Src.u->u8):
+                NumBuf.u8 = Src.u->u8 << Pack.IntermediateShift;
+                break;
+            case sizeof(Src.u->u16):
+                NumBuf.u16 = Src.u->u16 << Pack.IntermediateShift;
+                break;
+            case sizeof(Src.u->u32):
+                NumBuf.u32 = Src.u->u32 << Pack.IntermediateShift;
+                break;
+            case sizeof(Src.u->u64):
+                NumBuf.u64 = Src.u->u64 << Pack.IntermediateShift;
+                break;
+            default:
+                /* error/invalid */
+                break;
         }
 
         LoadPtr = NumBuf.BinaryData;
 
         if (Pack.Invert)
         {
-            switch(ConvSize)
+            switch (ConvSize)
             {
-            case sizeof(Src.u->u8):
-                NumBuf.u8 ^= UINT8_C(0xFF);
-                break;
-            case sizeof(Src.u->u16):
-                NumBuf.u16 ^= UINT16_C(0xFFFF);
-                break;
-            case sizeof(Src.u->u32):
-                NumBuf.u32 ^= UINT32_C(0xFFFFFFFF);
-                break;
-            case sizeof(Src.u->u64):
-                NumBuf.u64 ^= UINT64_C(0xFFFFFFFFFFFFFFFF);
-                break;
-            default:
-                /* error/invalid */
-                break;
+                case sizeof(Src.u->u8):
+                    NumBuf.u8 ^= UINT8_C(0xFF);
+                    break;
+                case sizeof(Src.u->u16):
+                    NumBuf.u16 ^= UINT16_C(0xFFFF);
+                    break;
+                case sizeof(Src.u->u32):
+                    NumBuf.u32 ^= UINT32_C(0xFFFFFFFF);
+                    break;
+                case sizeof(Src.u->u64):
+                    NumBuf.u64 ^= UINT64_C(0xFFFFFFFFFFFFFFFF);
+                    break;
+                default:
+                    /* error/invalid */
+                    break;
             }
         }
     }
-
 
     /*
      * Prepare to copy the encoded value to the output buffer.
@@ -963,11 +984,11 @@ static void EdsLib_Internal_DoBitwisePack(uint8_t *DstPtr, const uint8_t *SrcPtr
     {
         /* preload ShiftRegister with exiting bits in output buffer
          * This avoids clobbering any partial byte that was already packed */
-        ShiftRegister = *DstPtr;
+        ShiftRegister   = *DstPtr;
         ShiftRegister >>= 8 - DstBitOffset;
     }
     HighBitPos = DstBitOffset;
-    TotalBits = HighBitPos + DataDictPtr->SizeInfo.Bits;
+    TotalBits  = HighBitPos + DataDictPtr->SizeInfo.Bits;
 
     /*
      * If the first octet is not a whole octet,
@@ -981,39 +1002,39 @@ static void EdsLib_Internal_DoBitwisePack(uint8_t *DstPtr, const uint8_t *SrcPtr
         LoadPtr += (Pack.LeadingPadBits / 8) * Pack.MemStride; /* skip whole bytes */
 
         /* Load the entire byte, then right-shift out the padding */
-        ShiftRegister = (ShiftRegister << 8) | *LoadPtr;
+        ShiftRegister   = (ShiftRegister << 8) | *LoadPtr;
         ShiftRegister >>= RemainderBits;
-        HighBitPos += 8 - RemainderBits; /* add number of REAL bits */
+        HighBitPos     += 8 - RemainderBits; /* add number of REAL bits */
 
-        LoadPtr += Pack.MemStride;   /* account for leading byte just loaded */
+        LoadPtr += Pack.MemStride; /* account for leading byte just loaded */
     }
 
     /* Now load entire bytes into the shift register */
-    while(TotalBits > HighBitPos)
+    while (TotalBits > HighBitPos)
     {
         if (HighBitPos < 24)
         {
             /* Read 8 more bits of data from source into bottom of Shift Register */
-            ShiftRegister = (ShiftRegister << 8) | *LoadPtr;
-            HighBitPos += 8;
-            LoadPtr += Pack.MemStride;
+            ShiftRegister  = (ShiftRegister << 8) | *LoadPtr;
+            HighBitPos    += 8;
+            LoadPtr       += Pack.MemStride;
         }
         else
         {
             /* Output 8 bits of data from top of shift register to destination */
             HighBitPos -= 8;
-            TotalBits -= 8;
-            *DstPtr = ShiftRegister >> HighBitPos;
+            TotalBits  -= 8;
+            *DstPtr     = ShiftRegister >> HighBitPos;
             ++DstPtr;
         }
     }
 
     /* Output any remaining full octets */
-    while(TotalBits >= 8)
+    while (TotalBits >= 8)
     {
         HighBitPos -= 8;
-        TotalBits -= 8;
-        *DstPtr = ShiftRegister >> HighBitPos;
+        TotalBits  -= 8;
+        *DstPtr     = ShiftRegister >> HighBitPos;
         ++DstPtr;
     }
 
@@ -1032,8 +1053,8 @@ static void EdsLib_Internal_DoBitwisePack(uint8_t *DstPtr, const uint8_t *SrcPtr
          * This is important when updating a field in the middle of
          * a packet, such as a CRC/Checksum. */
         ShiftRegister |= *DstPtr & ((1U << (8 - TotalBits)) - 1);
-        *DstPtr = ShiftRegister;
-        HighBitPos = 0;
+        *DstPtr        = ShiftRegister;
+        HighBitPos     = 0;
     }
 }
 
@@ -1042,117 +1063,121 @@ static void EdsLib_Internal_DoBitwisePack(uint8_t *DstPtr, const uint8_t *SrcPtr
  * EdsLib local helper function
  *
  *-----------------------------------------------------------------*/
-static void EdsLib_Internal_DoSignedIntUnpack(uint8_t *DstPtr, size_t DstSizeBytes, EdsLib_GenericValueUnion_t *ValBuf, EdsLib_NumberEncoding_Enum_t EncodingStyle, uint32_t EncodingBits)
+static void EdsLib_Internal_DoSignedIntUnpack(uint8_t                     *DstPtr,
+                                              size_t                       DstSizeBytes,
+                                              EdsLib_GenericValueUnion_t  *ValBuf,
+                                              EdsLib_NumberEncoding_Enum_t EncodingStyle,
+                                              uint32_t                     EncodingBits)
 {
-    EdsLib_Ptr_t TempDst = { .Addr = DstPtr };
-    EdsLib_Generic_SignedInt_t TempSigned;
+    EdsLib_Ptr_t                 TempDst = { .Addr = DstPtr };
+    EdsLib_Generic_SignedInt_t   TempSigned;
     EdsLib_Generic_UnsignedInt_t SignBit;
-    uint32_t count;
-    uint8_t digit;
+    uint32_t                     count;
+    uint8_t                      digit;
 
     TempSigned = 0;
 
-    switch(EncodingStyle)
+    switch (EncodingStyle)
     {
-    case EDSLIB_NUMBERENCODING_SIGN_MAGNITUDE:
-    {
-        SignBit = ((EdsLib_Generic_UnsignedInt_t)1) << (EncodingBits-1);
-        if (ValBuf->UnsignedInteger & SignBit)
+        case EDSLIB_NUMBERENCODING_SIGN_MAGNITUDE:
         {
-            /* convert to a negative signed */
-            TempSigned = 0 - (ValBuf->UnsignedInteger & (SignBit - 1));
-        }
-        else
-        {
-            TempSigned = ValBuf->UnsignedInteger;
-        }
-        break;
-    }
-    case EDSLIB_NUMBERENCODING_ONES_COMPLEMENT:
-    {
-        SignBit = ((EdsLib_Generic_UnsignedInt_t)1) << (EncodingBits-1);
-        if (ValBuf->UnsignedInteger & SignBit)
-        {
-            /* convert to a negative signed, and invert all bits */
-            TempSigned = 0 - (~ValBuf->UnsignedInteger & (SignBit - 1));
-        }
-        else
-        {
-            TempSigned = ValBuf->UnsignedInteger;
-        }
-        break;
-    }
-    case EDSLIB_NUMBERENCODING_BCD_OCTET:
-    {
-        count = 0;
-        while(count < EncodingBits)
-        {
-            digit = ValBuf->BinaryData[count >> 3];
-            if (digit < 10)
+            SignBit = ((EdsLib_Generic_UnsignedInt_t)1) << (EncodingBits - 1);
+            if (ValBuf->UnsignedInteger & SignBit)
             {
-                TempSigned = (TempSigned * 10) + digit;
-            }
-            count += 8;
-        }
-        if (ValBuf->StringData[0] == '-')
-        {
-            TempSigned = -TempSigned;
-        }
-        break;
-    }
-    case EDSLIB_NUMBERENCODING_BCD_PACKED:
-    {
-        count = 0;
-        while(count < EncodingBits)
-        {
-            digit = ValBuf->BinaryData[count >> 3];
-            if (digit == '-')
-            {
-                count += 8;
+                /* convert to a negative signed */
+                TempSigned = 0 - (ValBuf->UnsignedInteger & (SignBit - 1));
             }
             else
             {
-                digit >>= (~count & 4);
-                digit &= 0x0F;
+                TempSigned = ValBuf->UnsignedInteger;
+            }
+            break;
+        }
+        case EDSLIB_NUMBERENCODING_ONES_COMPLEMENT:
+        {
+            SignBit = ((EdsLib_Generic_UnsignedInt_t)1) << (EncodingBits - 1);
+            if (ValBuf->UnsignedInteger & SignBit)
+            {
+                /* convert to a negative signed, and invert all bits */
+                TempSigned = 0 - (~ValBuf->UnsignedInteger & (SignBit - 1));
+            }
+            else
+            {
+                TempSigned = ValBuf->UnsignedInteger;
+            }
+            break;
+        }
+        case EDSLIB_NUMBERENCODING_BCD_OCTET:
+        {
+            count = 0;
+            while (count < EncodingBits)
+            {
+                digit = ValBuf->BinaryData[count >> 3];
                 if (digit < 10)
                 {
                     TempSigned = (TempSigned * 10) + digit;
                 }
-                count += 4;
+                count += 8;
             }
+            if (ValBuf->StringData[0] == '-')
+            {
+                TempSigned = -TempSigned;
+            }
+            break;
         }
-        if (ValBuf->StringData[0] == '-')
+        case EDSLIB_NUMBERENCODING_BCD_PACKED:
         {
-            TempSigned = -TempSigned;
+            count = 0;
+            while (count < EncodingBits)
+            {
+                digit = ValBuf->BinaryData[count >> 3];
+                if (digit == '-')
+                {
+                    count += 8;
+                }
+                else
+                {
+                    digit >>= (~count & 4);
+                    digit  &= 0x0F;
+                    if (digit < 10)
+                    {
+                        TempSigned = (TempSigned * 10) + digit;
+                    }
+                    count += 4;
+                }
+            }
+            if (ValBuf->StringData[0] == '-')
+            {
+                TempSigned = -TempSigned;
+            }
+            break;
         }
-        break;
-    }
-    default:
-    {
-        /* default encoding type is a pass thru.
-         * This should work on twos complement machines */
-        break;
-    }
+        default:
+        {
+            /* default encoding type is a pass thru.
+             * This should work on twos complement machines */
+            break;
+        }
     }
 
-    switch(DstSizeBytes)
+    switch (DstSizeBytes)
     {
-    case sizeof(TempDst.u->i8):
-        TempDst.u->i8 = TempSigned;
-        break;
-    case sizeof(TempDst.u->i16):
-        TempDst.u->i16 = TempSigned;
-        break;
-    case sizeof(TempDst.u->i32):
-        TempDst.u->i32 = TempSigned;
-        break;
-    case sizeof(TempDst.u->i64):
-        TempDst.u->i64 = TempSigned;
-        break;
-    default:
-        /* should never happen, but avoid leaving garbage data into the output */
-        memset(TempDst.Ptr, 0, DstSizeBytes);
-        break;
+        case sizeof(TempDst.u->i8):
+            TempDst.u->i8 = TempSigned;
+            break;
+        case sizeof(TempDst.u->i16):
+            TempDst.u->i16 = TempSigned;
+            break;
+        case sizeof(TempDst.u->i32):
+            TempDst.u->i32 = TempSigned;
+            break;
+        case sizeof(TempDst.u->i64):
+            TempDst.u->i64 = TempSigned;
+            break;
+        default:
+            /* should never happen, but avoid leaving garbage data into the output */
+            memset(TempDst.Ptr, 0, DstSizeBytes);
+            break;
     }
 }
 
@@ -1161,7 +1186,11 @@ static void EdsLib_Internal_DoSignedIntUnpack(uint8_t *DstPtr, size_t DstSizeByt
  * EdsLib local helper function
  *
  *-----------------------------------------------------------------*/
-static void EdsLib_Internal_DoFloatUnpack(uint8_t *DstPtr, size_t DstSizeBytes, EdsLib_GenericValueUnion_t *ValBuf, EdsLib_NumberEncoding_Enum_t EncodingStyle, uint32_t EncodingBits)
+static void EdsLib_Internal_DoFloatUnpack(uint8_t                     *DstPtr,
+                                          size_t                       DstSizeBytes,
+                                          EdsLib_GenericValueUnion_t  *ValBuf,
+                                          EdsLib_NumberEncoding_Enum_t EncodingStyle,
+                                          uint32_t                     EncodingBits)
 {
     /*
      * All floating point notations (including the less common ones) express
@@ -1176,11 +1205,11 @@ static void EdsLib_Internal_DoFloatUnpack(uint8_t *DstPtr, size_t DstSizeBytes, 
      * like NaN or Infinity it will currently encode a zero.  (this could be fixed
      * in a future version if there is a need for these exception values).
      */
-    EdsLib_Ptr_t TempDst = { .Addr = DstPtr };
-    size_t x;
-    int Exponent = -1;
-    int64_t MantissaBits = 0;
-    EdsLib_Internal_Float_t Value = EDSLIB_FLOAT_C(0.0);
+    EdsLib_Ptr_t            TempDst = { .Addr = DstPtr };
+    size_t                  x;
+    int                     Exponent     = -1;
+    int64_t                 MantissaBits = 0;
+    EdsLib_Internal_Float_t Value        = EDSLIB_FLOAT_C(0.0);
 
     if (EncodingStyle == EDSLIB_NUMBERENCODING_MILSTD_1750A)
     {
@@ -1189,7 +1218,7 @@ static void EdsLib_Internal_DoFloatUnpack(uint8_t *DstPtr, size_t DstSizeBytes, 
         if (EncodingBits == 32 && ValBuf->u32 != 0)
         {
             /* 24 bits of mantissa as sign bit + 23 bits, 8 bits of exponent */
-            Exponent = (ValBuf->u32 & UINT32_C(0x000000FF));
+            Exponent     = (ValBuf->u32 & UINT32_C(0x000000FF));
             MantissaBits = (ValBuf->u32 & UINT32_C(0xFFFFFF00));
 
             /* Interpolate mantissa to 64 bits -
@@ -1199,8 +1228,8 @@ static void EdsLib_Internal_DoFloatUnpack(uint8_t *DstPtr, size_t DstSizeBytes, 
         else if (EncodingBits == 48 && ValBuf->u64 != 0)
         {
             /* 40 actual bits of mantissa, split between sign bit, 23 bits and 16 bits */
-            Exponent = (ValBuf->u64 & UINT64_C(0x000000FF0000)) >> 16;
-            MantissaBits =  (ValBuf->u64 & UINT64_C(0xFFFFFF000000)) >> 8;
+            Exponent      = (ValBuf->u64 & UINT64_C(0x000000FF0000)) >> 16;
+            MantissaBits  = (ValBuf->u64 & UINT64_C(0xFFFFFF000000)) >> 8;
             MantissaBits |= (ValBuf->u64 & UINT64_C(0x00000000FFFF));
 
             /* Interpolate mantissa to 64 bits -
@@ -1211,7 +1240,7 @@ static void EdsLib_Internal_DoFloatUnpack(uint8_t *DstPtr, size_t DstSizeBytes, 
         if (Exponent >= 0)
         {
             Exponent -= (Exponent & 0x80) << 1; /* sign extend */
-            Value = EDSLIB_LDEXP(MantissaBits, Exponent - 63);
+            Value     = EDSLIB_LDEXP(MantissaBits, Exponent - 63);
         }
     }
     else if (EncodingStyle == EDSLIB_NUMBERENCODING_IEEE_754)
@@ -1219,13 +1248,12 @@ static void EdsLib_Internal_DoFloatUnpack(uint8_t *DstPtr, size_t DstSizeBytes, 
         if (EncodingBits == 128)
         {
             /* The first two bytes are the sign and exponent */
-            Exponent = ((ValBuf->BinaryData[0] & 0x7F) << 8) +
-                    (ValBuf->BinaryData[1] & 0xFF);
+            Exponent = ((ValBuf->BinaryData[0] & 0x7F) << 8) + (ValBuf->BinaryData[1] & 0xFF);
 
-            for (x=15; x >= 2; --x)
+            for (x = 15; x >= 2; --x)
             {
                 Value += ValBuf->BinaryData[x];
-                Value = EDSLIB_LDEXP(Value,-8);
+                Value  = EDSLIB_LDEXP(Value, -8);
             }
 
             if (Value != EDSLIB_FLOAT_C(0.0) || Exponent != 0)
@@ -1242,7 +1270,7 @@ static void EdsLib_Internal_DoFloatUnpack(uint8_t *DstPtr, size_t DstSizeBytes, 
         {
             /* Interpret as uint64, mask out bits for IEEE double */
             MantissaBits = (ValBuf->u64 & UINT64_C(0xFFFFFFFFFFFFF));
-            Exponent = (ValBuf->u64 >> 52) & 0x7FF;
+            Exponent     = (ValBuf->u64 >> 52) & 0x7FF;
 
             if (MantissaBits != 0 || Exponent != 0)
             {
@@ -1254,7 +1282,7 @@ static void EdsLib_Internal_DoFloatUnpack(uint8_t *DstPtr, size_t DstSizeBytes, 
         {
             /* Interpret as uint32, mask out bits for IEEE single */
             MantissaBits = (ValBuf->u32 & UINT32_C(0x7FFFFF));
-            Exponent = (ValBuf->u32 >> 23) & 0xFF;
+            Exponent     = (ValBuf->u32 >> 23) & 0xFF;
 
             if (MantissaBits != 0 || Exponent != 0)
             {
@@ -1284,17 +1312,19 @@ static void EdsLib_Internal_DoFloatUnpack(uint8_t *DstPtr, size_t DstSizeBytes, 
  * EdsLib local helper function
  *
  *-----------------------------------------------------------------*/
-static void EdsLib_Internal_DoBitwiseUnpack(uint8_t *DstPtr, const uint8_t *SrcPtr, const EdsLib_DataTypeDB_Entry_t *DataDictPtr, uint32_t SrcBitOffset)
+static void EdsLib_Internal_DoBitwiseUnpack(uint8_t                         *DstPtr,
+                                            const uint8_t                   *SrcPtr,
+                                            const EdsLib_DataTypeDB_Entry_t *DataDictPtr,
+                                            uint32_t                         SrcBitOffset)
 {
-    uint32_t ShiftRegister;
-    uint32_t LowBitPos;
-    uint32_t TotalBits;
-    EdsLib_GenericValueUnion_t NumBuf;
-    size_t FillBits;
-    uint8_t *StorePtr;
+    uint32_t                        ShiftRegister;
+    uint32_t                        LowBitPos;
+    uint32_t                        TotalBits;
+    EdsLib_GenericValueUnion_t      NumBuf;
+    size_t                          FillBits;
+    uint8_t                        *StorePtr;
     EdsLib_Internal_PackStyleInfo_t Pack;
-    size_t ConvSize;
-
+    size_t                          ConvSize;
 
     /*
      * General process of unpacking ints/floats
@@ -1345,8 +1375,7 @@ static void EdsLib_Internal_DoBitwiseUnpack(uint8_t *DstPtr, const uint8_t *SrcP
     }
 
     /* Do conversion to intermediate type, if indicated */
-    if (Pack.IntermediateType != EDSLIB_BASICTYPE_NONE &&
-            Pack.IntermediateSize != 0)
+    if (Pack.IntermediateType != EDSLIB_BASICTYPE_NONE && Pack.IntermediateSize != 0)
     {
         StorePtr = NumBuf.BinaryData;
         ConvSize = Pack.IntermediateSize;
@@ -1365,10 +1394,9 @@ static void EdsLib_Internal_DoBitwiseUnpack(uint8_t *DstPtr, const uint8_t *SrcP
         ConvSize = DataDictPtr->SizeInfo.Bytes;
     }
 
-
     ShiftRegister = 0;
-    LowBitPos = 24 + SrcBitOffset;
-    TotalBits = SrcBitOffset + DataDictPtr->SizeInfo.Bits;
+    LowBitPos     = 24 + SrcBitOffset;
+    TotalBits     = SrcBitOffset + DataDictPtr->SizeInfo.Bits;
 
     /*
      * When reading in reverse order,
@@ -1382,9 +1410,9 @@ static void EdsLib_Internal_DoBitwiseUnpack(uint8_t *DstPtr, const uint8_t *SrcP
     FillBits = 0;
     while ((FillBits + 8) <= Pack.LeadingPadBits)
     {
-        *StorePtr = 0;
-        StorePtr += Pack.MemStride;
-        FillBits += 8;
+        *StorePtr  = 0;
+        StorePtr  += Pack.MemStride;
+        FillBits  += 8;
     }
 
     ConvSize *= 8;
@@ -1403,8 +1431,8 @@ static void EdsLib_Internal_DoBitwiseUnpack(uint8_t *DstPtr, const uint8_t *SrcP
                     /* This could have gotten some extra bits beyond the last valid bit
                      * if so, clear them out of the shift register here */
                     ShiftRegister &= ~((UINT32_C(1) << (LowBitPos - TotalBits)) - 1);
-                    TotalBits = 0;
-                    LowBitPos = 0;
+                    TotalBits      = 0;
+                    LowBitPos      = 0;
                 }
                 else
                 {
@@ -1424,20 +1452,19 @@ static void EdsLib_Internal_DoBitwiseUnpack(uint8_t *DstPtr, const uint8_t *SrcP
             {
                 /* store a partial octet -
                  * the valid bits aligned to the MSB, and clear any LSBs */
-                *StorePtr = (ShiftRegister >> 16) &
-                        (((UINT32_C(1) << (Pack.LeadingPadBits - FillBits)) - 1) ^ 0xFF);
+                *StorePtr = (ShiftRegister >> 16) & (((UINT32_C(1) << (Pack.LeadingPadBits - FillBits)) - 1) ^ 0xFF);
 
-                FillBits += 8;
+                FillBits       += 8;
                 ShiftRegister <<= (FillBits - Pack.LeadingPadBits);
-                LowBitPos += (FillBits - Pack.LeadingPadBits);
+                LowBitPos      += (FillBits - Pack.LeadingPadBits);
             }
             else
             {
                 /* store a whole octet */
-                *StorePtr = ShiftRegister >> 16;
+                *StorePtr       = ShiftRegister >> 16;
                 ShiftRegister <<= 8;
-                LowBitPos += 8;
-                FillBits += 8;
+                LowBitPos      += 8;
+                FillBits       += 8;
             }
             StorePtr += Pack.MemStride;
         }
@@ -1446,38 +1473,38 @@ static void EdsLib_Internal_DoBitwiseUnpack(uint8_t *DstPtr, const uint8_t *SrcP
     /* Un-shift the numeric data if indicated */
     if (Pack.Invert || Pack.IntermediateShift > 0)
     {
-        EdsLib_Ptr_t ShiftDst;
+        EdsLib_Ptr_t       ShiftDst;
         EdsLib_BasicType_t ShiftType;
 
         if (Pack.IntermediateType != EDSLIB_BASICTYPE_NONE)
         {
             ShiftDst.u = &NumBuf;
-            ShiftType = Pack.IntermediateType;
+            ShiftType  = Pack.IntermediateType;
         }
         else
         {
-            ShiftType = DataDictPtr->BasicType;
+            ShiftType     = DataDictPtr->BasicType;
             ShiftDst.Addr = DstPtr;
         }
 
         if (Pack.Invert)
         {
-            switch(ConvSize)
+            switch (ConvSize)
             {
-            case 8:
-                NumBuf.u8 = ~NumBuf.u8;
-                break;
-            case 16:
-                NumBuf.u16 = ~NumBuf.u16;
-                break;
-            case 32:
-                NumBuf.u32 = ~NumBuf.u32;
-                break;
-            case 64:
-                NumBuf.u64 = ~NumBuf.u64;
-                break;
-            default:
-                break;
+                case 8:
+                    NumBuf.u8 = ~NumBuf.u8;
+                    break;
+                case 16:
+                    NumBuf.u16 = ~NumBuf.u16;
+                    break;
+                case 32:
+                    NumBuf.u32 = ~NumBuf.u32;
+                    break;
+                case 64:
+                    NumBuf.u64 = ~NumBuf.u64;
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -1495,41 +1522,42 @@ static void EdsLib_Internal_DoBitwiseUnpack(uint8_t *DstPtr, const uint8_t *SrcP
              * But every machine should implement this correctly.
              * The alternative is to divide by 1<<Shift
              */
-            switch(ConvSize)
+            switch (ConvSize)
             {
-            case 8:
-                ShiftDst.u->i8 = NumBuf.i8 >> Pack.IntermediateShift;
-                break;
-            case 16:
-                ShiftDst.u->i16 = NumBuf.i16 >> Pack.IntermediateShift;
-                break;
-            case 32:
-                ShiftDst.u->i32 = NumBuf.i32 >> Pack.IntermediateShift;
-                break;
-            case 64:
-                ShiftDst.u->i64 = NumBuf.i64 >> Pack.IntermediateShift;
-                break;
-            default:
-                break;
+                case 8:
+                    ShiftDst.u->i8 = NumBuf.i8 >> Pack.IntermediateShift;
+                    break;
+                case 16:
+                    ShiftDst.u->i16 = NumBuf.i16 >> Pack.IntermediateShift;
+                    break;
+                case 32:
+                    ShiftDst.u->i32 = NumBuf.i32 >> Pack.IntermediateShift;
+                    break;
+                case 64:
+                    ShiftDst.u->i64 = NumBuf.i64 >> Pack.IntermediateShift;
+                    break;
+                default:
+                    break;
             }
         }
-        else switch(ConvSize)  /* anything else is unsigned shift */
-        {
-        case 8:
-            ShiftDst.u->u8 = NumBuf.u8 >> Pack.IntermediateShift;
-            break;
-        case 16:
-            ShiftDst.u->u16 = NumBuf.u16 >> Pack.IntermediateShift;
-            break;
-        case 32:
-            ShiftDst.u->u32 = NumBuf.u32 >> Pack.IntermediateShift;
-            break;
-        case 64:
-            ShiftDst.u->u64 = NumBuf.u64 >> Pack.IntermediateShift;
-            break;
-        default:
-            break;
-        }
+        else
+            switch (ConvSize) /* anything else is unsigned shift */
+            {
+                case 8:
+                    ShiftDst.u->u8 = NumBuf.u8 >> Pack.IntermediateShift;
+                    break;
+                case 16:
+                    ShiftDst.u->u16 = NumBuf.u16 >> Pack.IntermediateShift;
+                    break;
+                case 32:
+                    ShiftDst.u->u32 = NumBuf.u32 >> Pack.IntermediateShift;
+                    break;
+                case 64:
+                    ShiftDst.u->u64 = NumBuf.u64 >> Pack.IntermediateShift;
+                    break;
+                default:
+                    break;
+            }
     }
 
     /*
@@ -1541,13 +1569,19 @@ static void EdsLib_Internal_DoBitwiseUnpack(uint8_t *DstPtr, const uint8_t *SrcP
     {
         if (DataDictPtr->BasicType == EDSLIB_BASICTYPE_SIGNED_INT)
         {
-            EdsLib_Internal_DoSignedIntUnpack(DstPtr, DataDictPtr->SizeInfo.Bytes, &NumBuf,
-                    DataDictPtr->Detail.Number.Encoding, DataDictPtr->SizeInfo.Bits);
+            EdsLib_Internal_DoSignedIntUnpack(DstPtr,
+                                              DataDictPtr->SizeInfo.Bytes,
+                                              &NumBuf,
+                                              DataDictPtr->Detail.Number.Encoding,
+                                              DataDictPtr->SizeInfo.Bits);
         }
         else if (DataDictPtr->BasicType == EDSLIB_BASICTYPE_FLOAT)
         {
-            EdsLib_Internal_DoFloatUnpack(DstPtr, DataDictPtr->SizeInfo.Bytes, &NumBuf,
-                    DataDictPtr->Detail.Number.Encoding, DataDictPtr->SizeInfo.Bits);
+            EdsLib_Internal_DoFloatUnpack(DstPtr,
+                                          DataDictPtr->SizeInfo.Bytes,
+                                          &NumBuf,
+                                          DataDictPtr->Detail.Number.Encoding,
+                                          DataDictPtr->SizeInfo.Bits);
         }
     }
 }
@@ -1557,11 +1591,14 @@ static void EdsLib_Internal_DoBitwiseUnpack(uint8_t *DstPtr, const uint8_t *SrcP
  * EdsLib local helper function
  *
  *-----------------------------------------------------------------*/
-static int32_t EdsLib_DataTypePackUnpack_CheckPresence(const EdsLib_DatabaseObject_t *GD,
-        const EdsLib_IdentityCheckSequence_t *Presence, const void *Buffer, size_t MaxOffset, bool *Result)
+static int32_t EdsLib_DataTypePackUnpack_CheckPresence(const EdsLib_DatabaseObject_t        *GD,
+                                                       const EdsLib_IdentityCheckSequence_t *Presence,
+                                                       const void                           *Buffer,
+                                                       size_t                                MaxOffset,
+                                                       bool                                 *Result)
 {
     const EdsLib_IdentSequenceEntry_t *IdentResultPtr;
-    int32_t RetCode;
+    int32_t                            RetCode;
 
     RetCode = EDSLIB_SUCCESS;
 
@@ -1572,13 +1609,12 @@ static int32_t EdsLib_DataTypePackUnpack_CheckPresence(const EdsLib_DatabaseObje
     else if (Buffer == NULL)
     {
         /* buffer is needed because object is not fixed size */
-        RetCode = EDSLIB_NOT_FIXED_SIZE;
+        RetCode        = EDSLIB_NOT_FIXED_SIZE;
         IdentResultPtr = NULL;
     }
     else
     {
-        IdentResultPtr = EdsLib_DataTypeExecuteConstraintSequence_Impl(GD,
-                Presence, Buffer, MaxOffset);
+        IdentResultPtr = EdsLib_DataTypeExecuteConstraintSequence_Impl(GD, Presence, Buffer, MaxOffset);
     }
 
     if (IdentResultPtr == NULL)
@@ -1605,45 +1641,45 @@ static int32_t EdsLib_DataTypePackUnpack_CheckPresence(const EdsLib_DatabaseObje
  * EdsLib local helper function
  *
  *-----------------------------------------------------------------*/
-static EdsLib_PackAction_t EdsLib_DataTypePackUnpack_GetPackAction(
-        const EdsLib_DataTypeDB_Entry_t *DataDictPtr, bool IsByteAligned)
+static EdsLib_PackAction_t EdsLib_DataTypePackUnpack_GetPackAction(const EdsLib_DataTypeDB_Entry_t *DataDictPtr,
+                                                                   bool                             IsByteAligned)
 {
     EdsLib_PackAction_t PackAction;
-    bool IsPacked;
-    bool IsByteOrderMatch;
+    bool                IsPacked;
+    bool                IsByteOrderMatch;
 
     PackAction = EDSLIB_PACKACTION_NONE;
 
     /*
-    * Determine if this field is a candidate for optimized handling, i.e. direct copy.
-    *
-    * If the data type is exactly equivalent to a C type with no embedded padding
-    * or unused bits, and (in the case of structures) has no special element types,
-    * then this flag should be set.  This was determined by the EDS tool at compile time.
-    */
+     * Determine if this field is a candidate for optimized handling, i.e. direct copy.
+     *
+     * If the data type is exactly equivalent to a C type with no embedded padding
+     * or unused bits, and (in the case of structures) has no special element types,
+     * then this flag should be set.  This was determined by the EDS tool at compile time.
+     */
     IsPacked = (DataDictPtr->Flags & EDSLIB_DATATYPE_FLAG_PACKED) != 0;
 
     /*
-    * Determine if the native byte-ordering matches that of the message format (typically big-endian)
-    * This determines if resulting bytes need to be inverted in memory or if they can be copied in-order
-    */
+     * Determine if the native byte-ordering matches that of the message format (typically big-endian)
+     * This determines if resulting bytes need to be inverted in memory or if they can be copied in-order
+     */
     IsByteOrderMatch = (DataDictPtr->Flags & EDSLIB_DATATYPE_FLAG_PACKED) == EDSLIB_NATIVE_BYTE_PACK;
 
-    switch(DataDictPtr->BasicType)
+    switch (DataDictPtr->BasicType)
     {
         case EDSLIB_BASICTYPE_CONTAINER:
         case EDSLIB_BASICTYPE_COMPONENT:
         case EDSLIB_BASICTYPE_ARRAY:
         {
             /*
-            * Optimization:
-            * 1) if the machine encoding is the same as the packed encoding
-            * 2) if the entire sub-structure does not contain any padding
-            * 3) The packed bits start on a byte boundary (so no shifting is required)
-            *
-            * THEN -- this can be a simple byte-wise memory copy operation, which will
-            * be much more efficient than iterating over all the sub-structure contents
-            */
+             * Optimization:
+             * 1) if the machine encoding is the same as the packed encoding
+             * 2) if the entire sub-structure does not contain any padding
+             * 3) The packed bits start on a byte boundary (so no shifting is required)
+             *
+             * THEN -- this can be a simple byte-wise memory copy operation, which will
+             * be much more efficient than iterating over all the sub-structure contents
+             */
             if (IsByteOrderMatch && IsPacked && IsByteAligned)
             {
                 PackAction = EDSLIB_PACKACTION_BYTECOPY_STRAIGHT;
@@ -1702,7 +1738,7 @@ static void EdsLib_DataTypePack_ByteSwapCopy(uint8_t *DstPtr, const uint8_t *Src
 {
     /* need to invert byte order while copying, so use custom routine */
     DstPtr += Size;
-    while(Size > 0)
+    while (Size > 0)
     {
         --DstPtr;
         *DstPtr = *SrcPtr;
@@ -1716,22 +1752,21 @@ static void EdsLib_DataTypePack_ByteSwapCopy(uint8_t *DstPtr, const uint8_t *Src
  * EdsLib local helper function
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypePack_HandleMember(
-        EdsLib_DataTypePackUnpack_ControlBlock_t *Parent,
-    const EdsLib_DataTypeIterator_StackEntry_t *CbInfo,
-    uint32_t BitPosition,
-    EdsLib_PackAction_t PackAction)
+int32_t EdsLib_DataTypePack_HandleMember(EdsLib_DataTypePackUnpack_ControlBlock_t   *Parent,
+                                         const EdsLib_DataTypeIterator_StackEntry_t *CbInfo,
+                                         uint32_t                                    BitPosition,
+                                         EdsLib_PackAction_t                         PackAction)
 {
     EdsLib_DataTypePack_State_t *PackState = (EdsLib_DataTypePack_State_t *)Parent;
-    int32_t StatusCode;
-    const uint8_t *SrcPtr;
-    uint8_t *DstPtr;
-    size_t UnitSize;
+    int32_t                      StatusCode;
+    const uint8_t               *SrcPtr;
+    uint8_t                     *DstPtr;
+    size_t                       UnitSize;
 
     StatusCode = EDSLIB_SUCCESS;
-    UnitSize = 0;
-    SrcPtr = PackState->NativeSrcPtr;
-    DstPtr = PackState->PackedDstPtr;
+    UnitSize   = 0;
+    SrcPtr     = PackState->NativeSrcPtr;
+    DstPtr     = PackState->PackedDstPtr;
 
     if (PackAction == EDSLIB_PACKACTION_PREPARE)
     {
@@ -1746,35 +1781,34 @@ int32_t EdsLib_DataTypePack_HandleMember(
          * object being handled, all other START callbacks will be for sub-objects
          * inside this.
          */
-        if (EdsLib_DatabaseRef_IsEqual(&PackState->Common.RefObj, &CbInfo->Details.RefObj) &&
-            PackState->Common.MaxSize.Bits > PackState->Common.LastActualTailBitPos)
+        if (EdsLib_DatabaseRef_IsEqual(&PackState->Common.RefObj, &CbInfo->Details.RefObj)
+            && PackState->Common.MaxSize.Bits > PackState->Common.LastActualTailBitPos)
         {
-            UnitSize = EdsLib_BITS_TO_OCTETS(PackState->Common.LastActualTailBitPos);
-            DstPtr += UnitSize;
-            UnitSize = EdsLib_BITS_TO_OCTETS(PackState->Common.MaxSize.Bits) - UnitSize;
+            UnitSize  = EdsLib_BITS_TO_OCTETS(PackState->Common.LastActualTailBitPos);
+            DstPtr   += UnitSize;
+            UnitSize  = EdsLib_BITS_TO_OCTETS(PackState->Common.MaxSize.Bits) - UnitSize;
         }
         else
         {
             PackAction = EDSLIB_PACKACTION_NONE;
         }
-
     }
-    else if (CbInfo->StartOffset.Bytes < PackState->Common.LastNominalTail.Bytes ||
-        CbInfo->Details.EntryType == EDSLIB_ENTRYTYPE_CONTAINER_ERROR_CONTROL_ENTRY ||
-        CbInfo->Details.EntryType == EDSLIB_ENTRYTYPE_CONTAINER_LENGTH_ENTRY ||
-        CbInfo->Details.EntryType == EDSLIB_ENTRYTYPE_CONTAINER_FIXED_VALUE_ENTRY)
+    else if (CbInfo->StartOffset.Bytes < PackState->Common.LastNominalTail.Bytes
+             || CbInfo->Details.EntryType == EDSLIB_ENTRYTYPE_CONTAINER_ERROR_CONTROL_ENTRY
+             || CbInfo->Details.EntryType == EDSLIB_ENTRYTYPE_CONTAINER_LENGTH_ENTRY
+             || CbInfo->Details.EntryType == EDSLIB_ENTRYTYPE_CONTAINER_FIXED_VALUE_ENTRY)
     {
         /* nothing to do here, it was either already handled, or will be handled later */
         PackAction = EDSLIB_PACKACTION_NONE;
     }
     else
     {
-        SrcPtr += CbInfo->StartOffset.Bytes;
-        DstPtr += (BitPosition / 8);
-        UnitSize = CbInfo->DataDictPtr->SizeInfo.Bytes;
+        SrcPtr   += CbInfo->StartOffset.Bytes;
+        DstPtr   += (BitPosition / 8);
+        UnitSize  = CbInfo->DataDictPtr->SizeInfo.Bytes;
     }
 
-    switch(PackAction)
+    switch (PackAction)
     {
         case EDSLIB_PACKACTION_PREPARE:
         {
@@ -1812,22 +1846,21 @@ int32_t EdsLib_DataTypePack_HandleMember(
  * EdsLib local helper function
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeUnpack_HandleMember(
-        EdsLib_DataTypePackUnpack_ControlBlock_t *Parent,
-    const EdsLib_DataTypeIterator_StackEntry_t *CbInfo,
-    uint32_t BitPosition,
-    EdsLib_PackAction_t PackAction)
+int32_t EdsLib_DataTypeUnpack_HandleMember(EdsLib_DataTypePackUnpack_ControlBlock_t   *Parent,
+                                           const EdsLib_DataTypeIterator_StackEntry_t *CbInfo,
+                                           uint32_t                                    BitPosition,
+                                           EdsLib_PackAction_t                         PackAction)
 {
     EdsLib_DataTypeUnpack_State_t *UnpackState = (EdsLib_DataTypeUnpack_State_t *)Parent;
-    int32_t StatusCode;
-    const uint8_t *SrcPtr;
-    uint8_t *DstPtr;
-    size_t UnitSize;
+    int32_t                        StatusCode;
+    const uint8_t                 *SrcPtr;
+    uint8_t                       *DstPtr;
+    size_t                         UnitSize;
 
     StatusCode = EDSLIB_SUCCESS;
-    UnitSize = 0;
-    DstPtr = UnpackState->NativeDstPtr;
-    SrcPtr = UnpackState->PackedSrcPtr;
+    UnitSize   = 0;
+    DstPtr     = UnpackState->NativeDstPtr;
+    SrcPtr     = UnpackState->PackedSrcPtr;
 
     if (PackAction == EDSLIB_PACKACTION_PREPARE)
     {
@@ -1842,17 +1875,16 @@ int32_t EdsLib_DataTypeUnpack_HandleMember(
          * object being handled, all other START callbacks will be for sub-objects
          * inside this.
          */
-        if (EdsLib_DatabaseRef_IsEqual(&UnpackState->Common.RefObj, &CbInfo->Details.RefObj) &&
-            UnpackState->Common.MaxSize.Bytes > UnpackState->Common.LastNominalTail.Bytes)
+        if (EdsLib_DatabaseRef_IsEqual(&UnpackState->Common.RefObj, &CbInfo->Details.RefObj)
+            && UnpackState->Common.MaxSize.Bytes > UnpackState->Common.LastNominalTail.Bytes)
         {
-            DstPtr += UnpackState->Common.LastNominalTail.Bytes;
-            UnitSize = UnpackState->Common.MaxSize.Bytes - UnpackState->Common.LastNominalTail.Bytes;
+            DstPtr   += UnpackState->Common.LastNominalTail.Bytes;
+            UnitSize  = UnpackState->Common.MaxSize.Bytes - UnpackState->Common.LastNominalTail.Bytes;
         }
         else
         {
             PackAction = EDSLIB_PACKACTION_NONE;
         }
-
     }
     else if (CbInfo->StartOffset.Bytes >= UnpackState->Common.LastNominalTail.Bytes)
     {
@@ -1867,7 +1899,7 @@ int32_t EdsLib_DataTypeUnpack_HandleMember(
         PackAction = EDSLIB_PACKACTION_NONE;
     }
 
-    switch(PackAction)
+    switch (PackAction)
     {
         case EDSLIB_PACKACTION_PREPARE:
         {
@@ -1905,20 +1937,20 @@ int32_t EdsLib_DataTypeUnpack_HandleMember(
  * EdsLib local helper function
  *
  *-----------------------------------------------------------------*/
-static EdsLib_Iterator_Rc_t EdsLib_DataTypePackUnpack_Callback(const EdsLib_DatabaseObject_t *GD,
-        EdsLib_Iterator_CbType_t CbType,
-        const EdsLib_DataTypeIterator_StackEntry_t *CbInfo,
-        void *OpaqueArg)
+static EdsLib_Iterator_Rc_t EdsLib_DataTypePackUnpack_Callback(const EdsLib_DatabaseObject_t              *GD,
+                                                               EdsLib_Iterator_CbType_t                    CbType,
+                                                               const EdsLib_DataTypeIterator_StackEntry_t *CbInfo,
+                                                               void                                       *OpaqueArg)
 {
     EdsLib_DataTypePackUnpack_ControlBlock_t *Base = (EdsLib_DataTypePackUnpack_ControlBlock_t *)OpaqueArg;
-    EdsLib_Iterator_Rc_t RetCode;
-    bool HasBits;
-    uint32_t ActualBitPosition;
-    EdsLib_PackAction_t PackAction;
+    EdsLib_Iterator_Rc_t                      RetCode;
+    bool                                      HasBits;
+    uint32_t                                  ActualBitPosition;
+    EdsLib_PackAction_t                       PackAction;
 
-    RetCode = EDSLIB_ITERATOR_RC_CONTINUE;
+    RetCode    = EDSLIB_ITERATOR_RC_CONTINUE;
     PackAction = EDSLIB_PACKACTION_NONE;
-    HasBits = false;
+    HasBits    = false;
 
     if (CbInfo->EndOffset.Bits <= Base->LastNominalTail.Bits)
     {
@@ -1939,8 +1971,8 @@ static EdsLib_Iterator_Rc_t EdsLib_DataTypePackUnpack_Callback(const EdsLib_Data
     /* Padding entries just show as a gap between the nominal bit position of members,
      * they do not have their own entry in the tables. So if the start of this member
      * is not the same as the end of the previous, then there is padding */
-    if (CbInfo->StartOffset.Bytes == Base->LastNominalTail.Bytes &&
-        CbInfo->StartOffset.Bits > Base->LastNominalTail.Bits)
+    if (CbInfo->StartOffset.Bytes == Base->LastNominalTail.Bytes
+        && CbInfo->StartOffset.Bits > Base->LastNominalTail.Bits)
     {
         /* add the padding to the output */
         Base->LastActualTailBitPos += CbInfo->StartOffset.Bits - Base->LastNominalTail.Bits;
@@ -1955,7 +1987,11 @@ static EdsLib_Iterator_Rc_t EdsLib_DataTypePackUnpack_Callback(const EdsLib_Data
     else if (CbType == EDSLIB_ITERATOR_CBTYPE_MEMBER)
     {
         /* If this has a presence tag, check if should be packed or skipped */
-        Base->Status = EdsLib_DataTypePackUnpack_CheckPresence(GD, CbInfo->Details.CheckSequence, Base->NativeBufferPtr, Base->MaxSize.Bytes, &HasBits);
+        Base->Status = EdsLib_DataTypePackUnpack_CheckPresence(GD,
+                                                               CbInfo->Details.CheckSequence,
+                                                               Base->NativeBufferPtr,
+                                                               Base->MaxSize.Bytes,
+                                                               &HasBits);
         if (Base->Status != EDSLIB_SUCCESS)
         {
             PackAction = EDSLIB_PACKACTION_FAULT;
@@ -1966,7 +2002,7 @@ static EdsLib_Iterator_Rc_t EdsLib_DataTypePackUnpack_Callback(const EdsLib_Data
         }
     }
 
-    switch(PackAction)
+    switch (PackAction)
     {
         case EDSLIB_PACKACTION_BYTECOPY_STRAIGHT:
         case EDSLIB_PACKACTION_BYTECOPY_INVERT:
@@ -1974,8 +2010,8 @@ static EdsLib_Iterator_Rc_t EdsLib_DataTypePackUnpack_Callback(const EdsLib_Data
         case EDSLIB_PACKACTION_PREPARE:
         {
             /* if this will have actual bits in the final object, ensure there is space for them */
-            if ((HasBits && (ActualBitPosition + CbInfo->DataDictPtr->SizeInfo.Bits) > Base->MaxSize.Bits) ||
-                CbInfo->EndOffset.Bytes > Base->MaxSize.Bytes)
+            if ((HasBits && (ActualBitPosition + CbInfo->DataDictPtr->SizeInfo.Bits) > Base->MaxSize.Bits)
+                || CbInfo->EndOffset.Bytes > Base->MaxSize.Bytes)
             {
                 /* No data for this object, stop here */
                 Base->Status = EDSLIB_BUFFER_SIZE_ERROR;
@@ -1988,10 +2024,10 @@ static EdsLib_Iterator_Rc_t EdsLib_DataTypePackUnpack_Callback(const EdsLib_Data
         case EDSLIB_PACKACTION_SUBCOMPONENTS:
         {
             /*
-            * If the structure contains sub-components then the iterator
-            * must dig down into the sub-components.  The bits will be
-            * accounted for when processing the sub-components.
-            */
+             * If the structure contains sub-components then the iterator
+             * must dig down into the sub-components.  The bits will be
+             * accounted for when processing the sub-components.
+             */
             RetCode = EDSLIB_ITERATOR_RC_DESCEND;
             HasBits = false; /* the bits will be accounted later */
             break;
@@ -2024,7 +2060,6 @@ static EdsLib_Iterator_Rc_t EdsLib_DataTypePackUnpack_Callback(const EdsLib_Data
         Base->LastNominalTail = CbInfo->EndOffset;
     }
 
-
     return RetCode;
 }
 
@@ -2033,16 +2068,18 @@ static EdsLib_Iterator_Rc_t EdsLib_DataTypePackUnpack_Callback(const EdsLib_Data
  * EdsLib local helper function
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_PackUnpackFindTailEntity(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId,
-    const EdsLib_SizeInfo_t *TargetOffset, EdsLib_DataTypeDB_EntityInfo_t *ResultInfo)
+int32_t EdsLib_DataTypeDB_PackUnpackFindTailEntity(const EdsLib_DatabaseObject_t  *GD,
+                                                   EdsLib_Id_t                     EdsId,
+                                                   const EdsLib_SizeInfo_t        *TargetOffset,
+                                                   EdsLib_DataTypeDB_EntityInfo_t *ResultInfo)
 {
-    EdsLib_SizeInfo_t CurrentOffset;
+    EdsLib_SizeInfo_t              CurrentOffset;
     EdsLib_DataTypeDB_EntityInfo_t TempInfo;
-    int32_t Status;
+    int32_t                        Status;
 
     memset(ResultInfo, 0, sizeof(*ResultInfo));
     memset(&TempInfo, 0, sizeof(TempInfo));
-    CurrentOffset = *TargetOffset;
+    CurrentOffset  = *TargetOffset;
     TempInfo.EdsId = EdsId;
     do
     {
@@ -2065,12 +2102,12 @@ int32_t EdsLib_DataTypeDB_PackUnpackFindTailEntity(const EdsLib_DatabaseObject_t
             break;
         }
 
-        ResultInfo->EdsId = TempInfo.EdsId;
-        ResultInfo->Flags &= ~EDSLIB_DATATYPE_FLAG_VARIABLE;
-        ResultInfo->Flags |= TempInfo.Flags;
+        ResultInfo->EdsId         = TempInfo.EdsId;
+        ResultInfo->Flags        &= ~EDSLIB_DATATYPE_FLAG_VARIABLE;
+        ResultInfo->Flags        |= TempInfo.Flags;
         ResultInfo->Offset.Bytes += TempInfo.Offset.Bytes;
-        ResultInfo->Offset.Bits += TempInfo.Offset.Bits;
-        ResultInfo->MaxSize = TempInfo.MaxSize;
+        ResultInfo->Offset.Bits  += TempInfo.Offset.Bits;
+        ResultInfo->MaxSize       = TempInfo.MaxSize;
 
         if (TargetOffset->Bytes != 0 && ResultInfo->Offset.Bytes >= TargetOffset->Bytes)
         {
@@ -2092,8 +2129,7 @@ int32_t EdsLib_DataTypeDB_PackUnpackFindTailEntity(const EdsLib_DatabaseObject_t
         {
             CurrentOffset.Bits -= TempInfo.Offset.Bits;
         }
-    }
-    while(true);
+    } while (true);
 
     return Status;
 }
@@ -2104,11 +2140,13 @@ int32_t EdsLib_DataTypeDB_PackUnpackFindTailEntity(const EdsLib_DatabaseObject_t
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_DataTypeDB_PackUnpackFindTail(const EdsLib_DatabaseObject_t *GD, EdsLib_Id_t EdsId,
-    const EdsLib_SizeInfo_t *InputPtr, EdsLib_DataTypePackUnpack_ControlBlock_t *CbPtr)
+int32_t EdsLib_DataTypeDB_PackUnpackFindTail(const EdsLib_DatabaseObject_t            *GD,
+                                             EdsLib_Id_t                               EdsId,
+                                             const EdsLib_SizeInfo_t                  *InputPtr,
+                                             EdsLib_DataTypePackUnpack_ControlBlock_t *CbPtr)
 {
     EdsLib_DataTypeDB_EntityInfo_t EntityInfo;
-    int32_t Status;
+    int32_t                        Status;
 
     memset(&CbPtr->LastNominalTail, 0, sizeof(CbPtr->LastNominalTail));
 
@@ -2120,7 +2158,7 @@ int32_t EdsLib_DataTypeDB_PackUnpackFindTail(const EdsLib_DatabaseObject_t *GD, 
     }
     else
     {
-        CbPtr->LastActualTailBitPos = InputPtr->Bits;
+        CbPtr->LastActualTailBitPos  = InputPtr->Bits;
         CbPtr->LastNominalTail.Bytes = InputPtr->Bytes;
         Status = EdsLib_DataTypeDB_PackUnpackFindTailEntity(GD, EdsId, &CbPtr->LastNominalTail, &EntityInfo);
         if (Status == EDSLIB_SUCCESS)
@@ -2138,23 +2176,24 @@ int32_t EdsLib_DataTypeDB_PackUnpackFindTail(const EdsLib_DatabaseObject_t *GD, 
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-void EdsLib_DataTypePackUnpack_Impl(const EdsLib_DatabaseObject_t *GD, EdsLib_DataTypePackUnpack_ControlBlock_t *PackState)
+void EdsLib_DataTypePackUnpack_Impl(const EdsLib_DatabaseObject_t            *GD,
+                                    EdsLib_DataTypePackUnpack_ControlBlock_t *PackState)
 {
     const EdsLib_DataTypeDB_Entry_t *DataDictPtr;
-    EdsLib_DatabaseRef_t NextBaseObj;
-    uint32_t PassCount;
-    int32_t Status;
+    EdsLib_DatabaseRef_t             NextBaseObj;
+    uint32_t                         PassCount;
+    int32_t                          Status;
 
     EDSLIB_DECLARE_ITERATOR_CB(IteratorState,
-            EDSLIB_ITERATOR_MAX_DEEP_DEPTH,
-            EdsLib_DataTypePackUnpack_Callback,
-            PackState);
+                               EDSLIB_ITERATOR_MAX_DEEP_DEPTH,
+                               EdsLib_DataTypePackUnpack_Callback,
+                               PackState);
 
-    Status = EDSLIB_SUCCESS;
+    Status    = EDSLIB_SUCCESS;
     PassCount = 0;
 
     NextBaseObj = PackState->RefObj;
-    while(1)
+    while (1)
     {
         DataDictPtr = EdsLib_DataTypeDB_GetEntry(GD, &NextBaseObj);
         if (DataDictPtr == NULL)
@@ -2195,7 +2234,12 @@ void EdsLib_DataTypePackUnpack_Impl(const EdsLib_DatabaseObject_t *GD, EdsLib_Da
          * Note this must use the "native" representation, so the buffer which contains
          * native data will be the source when packing or destination when unpacking
          */
-        Status = EdsLib_DataTypeIdentifyBuffer_Impl(GD, DataDictPtr, PackState->NativeBufferPtr, DataDictPtr->SizeInfo.Bytes, NULL, &NextBaseObj);
+        Status = EdsLib_DataTypeIdentifyBuffer_Impl(GD,
+                                                    DataDictPtr,
+                                                    PackState->NativeBufferPtr,
+                                                    DataDictPtr->SizeInfo.Bytes,
+                                                    NULL,
+                                                    &NextBaseObj);
         if (Status != EDSLIB_SUCCESS)
         {
             /* Not further derived; normal stop condition */
@@ -2216,10 +2260,13 @@ void EdsLib_DataTypePackUnpack_Impl(const EdsLib_DatabaseObject_t *GD, EdsLib_Da
  * Local Helper function
  *
  *-----------------------------------------------------------------*/
-void EdsLib_PackedObject_UpdateSingleField(void *PackedObject, uint32_t BitPosition, const EdsLib_DataTypeDB_Entry_t *DataDictPtr, EdsLib_GenericValueBuffer_t *ValBuf)
+void EdsLib_PackedObject_UpdateSingleField(void                            *PackedObject,
+                                           uint32_t                         BitPosition,
+                                           const EdsLib_DataTypeDB_Entry_t *DataDictPtr,
+                                           EdsLib_GenericValueBuffer_t     *ValBuf)
 {
     EdsLib_ConstPtr_t TempSrc;
-    EdsLib_Ptr_t TempDst;
+    EdsLib_Ptr_t      TempDst;
 
     if (DataDictPtr->BasicType != EDSLIB_BASICTYPE_BINARY)
     {
@@ -2228,8 +2275,8 @@ void EdsLib_PackedObject_UpdateSingleField(void *PackedObject, uint32_t BitPosit
         EdsLib_DataTypeStore_Impl(TempDst, ValBuf, DataDictPtr);
     }
 
-    TempSrc.u = &ValBuf->Value;
-    TempDst.Ptr = PackedObject;
+    TempSrc.u     = &ValBuf->Value;
+    TempDst.Ptr   = PackedObject;
     TempDst.Addr += BitPosition / 8;
     EdsLib_Internal_DoBitwisePack(TempDst.Addr, TempSrc.Addr, DataDictPtr, BitPosition % 0x08);
 }
@@ -2239,10 +2286,9 @@ void EdsLib_PackedObject_UpdateSingleField(void *PackedObject, uint32_t BitPosit
  * Local Helper function
  *
  *-----------------------------------------------------------------*/
-void EdsLib_PackUnpack_GetFixedValueRef(
-    EdsLib_GenericValueBuffer_t *ScratchBuf,
-    const EdsLib_DataTypeDB_Entry_t *DataDictPtr,
-    const EdsLib_HandlerArgument_t *HandlerArg)
+void EdsLib_PackUnpack_GetFixedValueRef(EdsLib_GenericValueBuffer_t     *ScratchBuf,
+                                        const EdsLib_DataTypeDB_Entry_t *DataDictPtr,
+                                        const EdsLib_HandlerArgument_t  *HandlerArg)
 {
     if (DataDictPtr->BasicType == EDSLIB_BASICTYPE_BINARY)
     {
@@ -2255,17 +2301,17 @@ void EdsLib_PackUnpack_GetFixedValueRef(
     else if (DataDictPtr->BasicType == EDSLIB_BASICTYPE_SIGNED_INT)
     {
         ScratchBuf->Value.SignedInteger = HandlerArg->FixedInteger;
-        ScratchBuf->ValueType = EDSLIB_BASICTYPE_SIGNED_INT;
+        ScratchBuf->ValueType           = EDSLIB_BASICTYPE_SIGNED_INT;
     }
     else if (DataDictPtr->BasicType == EDSLIB_BASICTYPE_UNSIGNED_INT)
     {
         ScratchBuf->Value.UnsignedInteger = HandlerArg->FixedUnsigned;
-        ScratchBuf->ValueType = EDSLIB_BASICTYPE_UNSIGNED_INT;
+        ScratchBuf->ValueType             = EDSLIB_BASICTYPE_UNSIGNED_INT;
     }
     else if (DataDictPtr->BasicType == EDSLIB_BASICTYPE_FLOAT)
     {
         ScratchBuf->Value.FloatingPoint = HandlerArg->FixedFloat;
-        ScratchBuf->ValueType = EDSLIB_BASICTYPE_FLOAT;
+        ScratchBuf->ValueType           = EDSLIB_BASICTYPE_FLOAT;
     }
 }
 
@@ -2275,36 +2321,35 @@ void EdsLib_PackUnpack_GetFixedValueRef(
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_PackedObject_PostProc_Callback(
-        EdsLib_DataTypePackUnpack_ControlBlock_t *Parent,
-    const EdsLib_DataTypeIterator_StackEntry_t *CbInfo,
-    uint32_t BitPosition,
-    EdsLib_PackAction_t PackAction)
+int32_t EdsLib_PackedObject_PostProc_Callback(EdsLib_DataTypePackUnpack_ControlBlock_t   *Parent,
+                                              const EdsLib_DataTypeIterator_StackEntry_t *CbInfo,
+                                              uint32_t                                    BitPosition,
+                                              EdsLib_PackAction_t                         PackAction)
 {
-    EdsLib_PackedPostProc_ControlBlock_t *Base = (EdsLib_PackedPostProc_ControlBlock_t *)Parent;
+    EdsLib_PackedPostProc_ControlBlock_t  *Base = (EdsLib_PackedPostProc_ControlBlock_t *)Parent;
     EdsLib_PackedPostProc_DeferredField_t *DeferredFieldPtr;
-    EdsLib_GenericValueBuffer_t ScratchBuf;
-    int32_t StatusCode;
+    EdsLib_GenericValueBuffer_t            ScratchBuf;
+    int32_t                                StatusCode;
 
-    DeferredFieldPtr = NULL;
-    StatusCode = EDSLIB_SUCCESS;
+    DeferredFieldPtr     = NULL;
+    StatusCode           = EDSLIB_SUCCESS;
     ScratchBuf.ValueType = EDSLIB_BASICTYPE_NONE;
 
     switch (CbInfo->Details.EntryType)
     {
         case EDSLIB_ENTRYTYPE_CONTAINER_ERROR_CONTROL_ENTRY:
             /*
-            * Error control fields still cannot be handled yet --
-            * the correct value is not known at the moment, and other special fields
-            * may affect its value (e.g. length needs to be populated before error control)
-            */
+             * Error control fields still cannot be handled yet --
+             * the correct value is not known at the moment, and other special fields
+             * may affect its value (e.g. length needs to be populated before error control)
+             */
             if (Base->DeferredFieldCount < EDSLIB_PACKEDPOSTPROC_MAX_DEFERRED_FIELDS)
             {
                 DeferredFieldPtr = &Base->DeferredFields[Base->DeferredFieldCount];
 
-                DeferredFieldPtr->DictPtr = CbInfo->DataDictPtr;
-                DeferredFieldPtr->EntryType = CbInfo->Details.EntryType;
-                DeferredFieldPtr->HandlerArg = CbInfo->Details.HandlerArg;
+                DeferredFieldPtr->DictPtr         = CbInfo->DataDictPtr;
+                DeferredFieldPtr->EntryType       = CbInfo->Details.EntryType;
+                DeferredFieldPtr->HandlerArg      = CbInfo->Details.HandlerArg;
                 DeferredFieldPtr->PackedBitOffset = BitPosition;
 
                 ++Base->DeferredFieldCount;
@@ -2317,11 +2362,11 @@ int32_t EdsLib_PackedObject_PostProc_Callback(
 
         case EDSLIB_ENTRYTYPE_CONTAINER_LENGTH_ENTRY:
             ScratchBuf.Value.SignedInteger = EdsLib_BITS_TO_OCTETS(Base->Pack.Common.MaxSize.Bits);
-            ScratchBuf.ValueType = EDSLIB_BASICTYPE_SIGNED_INT;
+            ScratchBuf.ValueType           = EDSLIB_BASICTYPE_SIGNED_INT;
             if (CbInfo->Details.HandlerArg.IntegerCalibrator.Reverse)
             {
                 ScratchBuf.Value.SignedInteger =
-                        CbInfo->Details.HandlerArg.IntegerCalibrator.Reverse(ScratchBuf.Value.SignedInteger);
+                    CbInfo->Details.HandlerArg.IntegerCalibrator.Reverse(ScratchBuf.Value.SignedInteger);
             }
             break;
 
@@ -2348,8 +2393,8 @@ int32_t EdsLib_PackedObject_PostProc_Callback(
  *-----------------------------------------------------------------*/
 void EdsLib_PackedObject_PostProc_Deferred(EdsLib_PackedPostProc_ControlBlock_t *Base)
 {
-    EdsLib_GenericValueBuffer_t ScratchBuf;
-    uint32_t i;
+    EdsLib_GenericValueBuffer_t            ScratchBuf;
+    uint32_t                               i;
     EdsLib_PackedPostProc_DeferredField_t *DeferredFieldPtr;
 
     /* error control MUST be calculated last, since
@@ -2362,16 +2407,21 @@ void EdsLib_PackedObject_PostProc_Deferred(EdsLib_PackedPostProc_ControlBlock_t 
      * this actually has to be the case since the contents of one would affect
      * the validity of the other.
      */
-    for (i=0; i < Base->DeferredFieldCount; ++i)
+    for (i = 0; i < Base->DeferredFieldCount; ++i)
     {
         DeferredFieldPtr = &Base->DeferredFields[i];
         if (DeferredFieldPtr->EntryType == EDSLIB_ENTRYTYPE_CONTAINER_ERROR_CONTROL_ENTRY)
         {
-            ScratchBuf.ValueType = EDSLIB_BASICTYPE_UNSIGNED_INT;
+            ScratchBuf.ValueType             = EDSLIB_BASICTYPE_UNSIGNED_INT;
             ScratchBuf.Value.UnsignedInteger = EdsLib_ErrorControlCompute(DeferredFieldPtr->HandlerArg.ErrorControl,
-                    Base->Pack.PackedDstPtr, Base->Pack.Common.MaxSize.Bits, DeferredFieldPtr->PackedBitOffset);
+                                                                          Base->Pack.PackedDstPtr,
+                                                                          Base->Pack.Common.MaxSize.Bits,
+                                                                          DeferredFieldPtr->PackedBitOffset);
 
-            EdsLib_PackedObject_UpdateSingleField(Base->Pack.PackedDstPtr, DeferredFieldPtr->PackedBitOffset, DeferredFieldPtr->DictPtr, &ScratchBuf);
+            EdsLib_PackedObject_UpdateSingleField(Base->Pack.PackedDstPtr,
+                                                  DeferredFieldPtr->PackedBitOffset,
+                                                  DeferredFieldPtr->DictPtr,
+                                                  &ScratchBuf);
         }
     }
 }
@@ -2382,25 +2432,24 @@ void EdsLib_PackedObject_PostProc_Deferred(EdsLib_PackedPostProc_ControlBlock_t 
  * See description in header file for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32_t EdsLib_NativeObject_PostProc_Callback(
-        EdsLib_DataTypePackUnpack_ControlBlock_t *Parent,
-    const EdsLib_DataTypeIterator_StackEntry_t *CbInfo,
-    uint32_t BitPosition,
-    EdsLib_PackAction_t PackAction)
+int32_t EdsLib_NativeObject_PostProc_Callback(EdsLib_DataTypePackUnpack_ControlBlock_t   *Parent,
+                                              const EdsLib_DataTypeIterator_StackEntry_t *CbInfo,
+                                              uint32_t                                    BitPosition,
+                                              EdsLib_PackAction_t                         PackAction)
 {
     EdsLib_NativePostProc_ControlBlock_t *Base = (EdsLib_NativePostProc_ControlBlock_t *)Parent;
-    EdsLib_GenericValueBuffer_t ActualValue;
-    EdsLib_GenericValueBuffer_t ExpectedValue;
-    EdsLib_GenericValueBuffer_t InitValue;
-    bool CompareResult;
-    EdsLib_ConstPtr_t TempSrc;
-    EdsLib_Ptr_t TempDst;
-    int32_t RetCode;
+    EdsLib_GenericValueBuffer_t           ActualValue;
+    EdsLib_GenericValueBuffer_t           ExpectedValue;
+    EdsLib_GenericValueBuffer_t           InitValue;
+    bool                                  CompareResult;
+    EdsLib_ConstPtr_t                     TempSrc;
+    EdsLib_Ptr_t                          TempDst;
+    int32_t                               RetCode;
 
-    RetCode = EDSLIB_SUCCESS;
-    ActualValue.ValueType = EDSLIB_BASICTYPE_NONE;
+    RetCode                 = EDSLIB_SUCCESS;
+    ActualValue.ValueType   = EDSLIB_BASICTYPE_NONE;
     ExpectedValue.ValueType = EDSLIB_BASICTYPE_NONE;
-    InitValue.ValueType = EDSLIB_BASICTYPE_NONE;
+    InitValue.ValueType     = EDSLIB_BASICTYPE_NONE;
 
     switch (CbInfo->Details.EntryType)
     {
@@ -2410,36 +2459,36 @@ int32_t EdsLib_NativeObject_PostProc_Callback(
             {
                 /* verify value in existing field */
                 ExpectedValue.Value.UnsignedInteger = EdsLib_BITS_TO_OCTETS(Base->Unpack.Common.MaxSize.Bits);
-                ExpectedValue.ValueType = EDSLIB_BASICTYPE_UNSIGNED_INT;
+                ExpectedValue.ValueType             = EDSLIB_BASICTYPE_UNSIGNED_INT;
                 if (CbInfo->Details.HandlerArg.IntegerCalibrator.Reverse)
                 {
                     EdsLib_DataTypeConvert(&ExpectedValue, EDSLIB_BASICTYPE_SIGNED_INT);
                     ExpectedValue.Value.SignedInteger =
-                            CbInfo->Details.HandlerArg.IntegerCalibrator.Reverse(ExpectedValue.Value.SignedInteger);
+                        CbInfo->Details.HandlerArg.IntegerCalibrator.Reverse(ExpectedValue.Value.SignedInteger);
                 }
             }
 
             /*
-            * Initialization value for native object:
-            *
-            * Many historical applications assume that the length field
-            * in the native struct will be based on sizeof(struct).
-            *
-            * But In the EDS world the encoded and decoded sizes may
-            * be different.
-            *
-            * So in this case the InitValue for the native object is different than
-            * the ExpectedValue in a packed object.
-            */
+             * Initialization value for native object:
+             *
+             * Many historical applications assume that the length field
+             * in the native struct will be based on sizeof(struct).
+             *
+             * But In the EDS world the encoded and decoded sizes may
+             * be different.
+             *
+             * So in this case the InitValue for the native object is different than
+             * the ExpectedValue in a packed object.
+             */
 
             if ((Base->RecomputeFields & EDSLIB_DATATYPEDB_RECOMPUTE_LENGTH) != 0)
             {
-                InitValue.ValueType = EDSLIB_BASICTYPE_SIGNED_INT;
+                InitValue.ValueType           = EDSLIB_BASICTYPE_SIGNED_INT;
                 InitValue.Value.SignedInteger = Base->Unpack.Common.MaxSize.Bytes;
                 if (CbInfo->Details.HandlerArg.IntegerCalibrator.Reverse)
                 {
                     InitValue.Value.SignedInteger =
-                            CbInfo->Details.HandlerArg.IntegerCalibrator.Reverse(InitValue.Value.SignedInteger);
+                        CbInfo->Details.HandlerArg.IntegerCalibrator.Reverse(InitValue.Value.SignedInteger);
                 }
             }
             break;
@@ -2450,18 +2499,21 @@ int32_t EdsLib_NativeObject_PostProc_Callback(
             /* If PackedPtr is supplied, will verify value in existing field */
             if (Base->CheckFields & EDSLIB_DATATYPEDB_RECOMPUTE_ERRORCONTROL)
             {
-                ExpectedValue.Value.UnsignedInteger = EdsLib_ErrorControlCompute(
-                        CbInfo->Details.HandlerArg.ErrorControl, Base->Unpack.PackedSrcPtr,
-                        Base->Unpack.Common.MaxSize.Bits, BitPosition);
+                ExpectedValue.Value.UnsignedInteger =
+                    EdsLib_ErrorControlCompute(CbInfo->Details.HandlerArg.ErrorControl,
+                                               Base->Unpack.PackedSrcPtr,
+                                               Base->Unpack.Common.MaxSize.Bits,
+                                               BitPosition);
                 ExpectedValue.ValueType = EDSLIB_BASICTYPE_UNSIGNED_INT;
             }
 
             if (Base->RecomputeFields & EDSLIB_DATATYPEDB_RECOMPUTE_ERRORCONTROL)
             {
-                InitValue.Value.UnsignedInteger = EdsLib_ErrorControlCompute(
-                        CbInfo->Details.HandlerArg.ErrorControl, Base->Unpack.NativeDstPtr,
-                        EdsLib_OCTETS_TO_BITS(Base->Unpack.Common.MaxSize.Bytes),
-                        EdsLib_OCTETS_TO_BITS(CbInfo->StartOffset.Bytes));
+                InitValue.Value.UnsignedInteger =
+                    EdsLib_ErrorControlCompute(CbInfo->Details.HandlerArg.ErrorControl,
+                                               Base->Unpack.NativeDstPtr,
+                                               EdsLib_OCTETS_TO_BITS(Base->Unpack.Common.MaxSize.Bytes),
+                                               EdsLib_OCTETS_TO_BITS(CbInfo->StartOffset.Bytes));
                 InitValue.ValueType = EDSLIB_BASICTYPE_UNSIGNED_INT;
             }
             break;
@@ -2488,7 +2540,6 @@ int32_t EdsLib_NativeObject_PostProc_Callback(
             break;
     }
 
-
     if (ExpectedValue.ValueType != EDSLIB_BASICTYPE_NONE)
     {
         TempSrc.Ptr = Base->Unpack.NativeDstPtr + CbInfo->StartOffset.Bytes;
@@ -2499,25 +2550,28 @@ int32_t EdsLib_NativeObject_PostProc_Callback(
         {
             CompareResult = false;
         }
-        else switch(ExpectedValue.ValueType)
-        {
-        case EDSLIB_BASICTYPE_SIGNED_INT:
-            CompareResult = (ActualValue.Value.SignedInteger == ExpectedValue.Value.SignedInteger);
-            break;
-        case EDSLIB_BASICTYPE_UNSIGNED_INT:
-            CompareResult = (ActualValue.Value.UnsignedInteger == ExpectedValue.Value.UnsignedInteger);
-            break;
-        case EDSLIB_BASICTYPE_FLOAT:
-            CompareResult = (ActualValue.Value.FloatingPoint == ExpectedValue.Value.FloatingPoint);
-            break;
-        case EDSLIB_BASICTYPE_BINARY:
-            CompareResult = memcmp(ActualValue.Value.BinaryData,
-                    ExpectedValue.Value.BinaryData, CbInfo->DataDictPtr->SizeInfo.Bytes) == 0;
-            break;
-        default:
-            CompareResult = false;
-            break;
-        }
+        else
+            switch (ExpectedValue.ValueType)
+            {
+                case EDSLIB_BASICTYPE_SIGNED_INT:
+                    CompareResult = (ActualValue.Value.SignedInteger == ExpectedValue.Value.SignedInteger);
+                    break;
+                case EDSLIB_BASICTYPE_UNSIGNED_INT:
+                    CompareResult = (ActualValue.Value.UnsignedInteger == ExpectedValue.Value.UnsignedInteger);
+                    break;
+                case EDSLIB_BASICTYPE_FLOAT:
+                    CompareResult = (ActualValue.Value.FloatingPoint == ExpectedValue.Value.FloatingPoint);
+                    break;
+                case EDSLIB_BASICTYPE_BINARY:
+                    CompareResult = memcmp(ActualValue.Value.BinaryData,
+                                           ExpectedValue.Value.BinaryData,
+                                           CbInfo->DataDictPtr->SizeInfo.Bytes)
+                                    == 0;
+                    break;
+                default:
+                    CompareResult = false;
+                    break;
+            }
 
         if (!CompareResult)
         {
