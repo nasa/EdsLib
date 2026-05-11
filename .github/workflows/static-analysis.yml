@@ -1,3 +1,4 @@
+
 name: Static Analysis
 
 # Run on pull requests and by dispatch
@@ -50,8 +51,7 @@ jobs:
           path: source
 
       - name: CMake Setup
-        run: |
-          cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE -DENABLE_UNIT_TESTS=FALSE -B build -S source
+        run: cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE -DENABLE_UNIT_TESTS=FALSE -B build -S source
 
       - name: Run general cppcheck
         run: cppcheck --force --inline-suppr --xml --project=build/compile_commands.json 2> cppcheck_err.xml
