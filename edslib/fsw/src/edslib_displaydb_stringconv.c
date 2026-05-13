@@ -32,12 +32,55 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <strings.h>
 #include <ctype.h>
 #include <limits.h>
 
 #include <stdint.h>
 #include "edslib_internal.h"
+
+
+/*----------------------------------------------------------------
+ * 
+ * EdsLib local helper function
+ *
+ *----------------------------------------------------------------*/
+static int32_t EdsLib_Internal_StringCompare_IgnoreCase(const char *String1,
+                                                        const char *String2)
+{
+    uint32_t Index  = 0U;
+    int32_t  Result = 0;
+    int32_t  Char1  = 0;
+    int32_t  Char2  = 0;
+
+    while (Result == 0)
+    {
+        if (String1[Index] == '\0' || String2[Index] == '\0')
+        {
+            Result = String1[Index] - String2[Index];
+            break;
+        }
+
+        Char1 = (int32_t)String1[Index];
+        Char2 = (int32_t)String2[Index];
+
+        /* Convert characters to lower case if they're alphabetical */
+        if (isalpha(Char1))
+        {
+            Char1 = tolower(Char1);
+        }
+
+        if (isalpha(Char2))
+        {
+            Char2 = tolower(Char2);
+        }
+
+        Result = Char1 - Char2;
+
+        ++Index;
+    }
+
+    return Result;
+}
 
 /*----------------------------------------------------------------
  *
@@ -419,22 +462,22 @@ int32_t EdsLib_DisplayScalarConv_FromString_Impl(const EdsLib_DataTypeDB_Entry_t
                 {
                     /* typically TRUE/FALSE, also accept YES/NO or 0/1 */
                     const char *EndPtr = SrcString;
-                    if (strcasecmp(SrcString, "true") == 0)
+                    if (EdsLib_Internal_StringCompare_IgnoreCase(SrcString, "true") == 0)
                     {
                         EndPtr                             += 4;
                         NumberBuffer.Value.UnsignedInteger  = 1;
                     }
-                    else if (strcasecmp(SrcString, "false") == 0)
+                    else if (EdsLib_Internal_StringCompare_IgnoreCase(SrcString, "false") == 0)
                     {
                         EndPtr                             += 4;
                         NumberBuffer.Value.UnsignedInteger  = 0;
                     }
-                    else if (strcasecmp(SrcString, "yes") == 0)
+                    else if (EdsLib_Internal_StringCompare_IgnoreCase(SrcString, "yes") == 0)
                     {
                         EndPtr                             += 3;
                         NumberBuffer.Value.UnsignedInteger  = 1;
                     }
-                    else if (strcasecmp(SrcString, "no") == 0)
+                    else if (EdsLib_Internal_StringCompare_IgnoreCase(SrcString, "no") == 0)
                     {
                         EndPtr                             += 2;
                         NumberBuffer.Value.UnsignedInteger  = 0;
