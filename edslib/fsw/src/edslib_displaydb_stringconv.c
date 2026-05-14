@@ -49,19 +49,19 @@ static int32_t EdsLib_Internal_StringCompare_IgnoreCase(const char *String1,
 {
     uint32_t Index  = 0U;
     int32_t  Result = 0;
-    int32_t  Char1  = 0;
-    int32_t  Char2  = 0;
+    int      Char1;
+    int      Char2;
 
     while (Result == 0)
     {
-        if (String1[Index] == '\0' || String2[Index] == '\0')
+        Char1 = (int)String1[Index];
+        Char2 = (int)String2[Index];
+
+        if (Char1 == '\0' || Char2 == '\0')
         {
-            Result = String1[Index] - String2[Index];
+            Result = Char1 - Char2;
             break;
         }
-
-        Char1 = (int32_t)String1[Index];
-        Char2 = (int32_t)String2[Index];
 
         /* Convert characters to lower case if they're alphabetical */
         if (isalpha(Char1))
