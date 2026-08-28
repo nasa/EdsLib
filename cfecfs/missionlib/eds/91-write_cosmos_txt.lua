@@ -57,11 +57,25 @@ local append_qual_prefix = function(old_prefix,add_prefix)
 end
 
 -- -------------------------------------------------------------------------
+-- Helper function: Write the enumeration labels associated with a lineitem (STATE tags)
+-- -------------------------------------------------------------------------
+write_cosmos_states = function(output,attribs)
+  if (attribs.labels) then
+    output:start_group()
+    for label in attribs.labels:iterate_subtree("ENUMERATION_ENTRY") do
+      output:write(string.format("STATE %s %d",string.upper(label.name),label.value))
+    end
+    output:end_group()
+  end
+end
+
+-- -------------------------------------------------------------------------
 -- Helper function: Write a single line-item to a TLM definition (APPEND_ITEM)
 -- -------------------------------------------------------------------------
 write_cosmos_tlm_lineitem = function(output,attribs)
 
   output:write(string.format("APPEND_ITEM %s %d %s \"%s\"", attribs.name, attribs.bitsize, attribs.ctype, attribs.descr))
+  write_cosmos_states(output,attribs)
 
 end
 
@@ -101,6 +115,7 @@ write_cosmos_cmd_lineitem = function(output,attribs)
     output:write(string.format("APPEND_PARAMETER %s %d %s %s %s %d \"%s\"",
       attribs.name, attribs.bitsize, attribs.ctype, min, max, attribs.defaultval or 0, attribs.descr or ""))
 
+    write_cosmos_states(output,attribs)
   end
 
 end
@@ -158,6 +173,11 @@ write_cosmos_lineitem = function(output,line_writer,entry,qual_prefix,descr)
     attribs.ctype = "FLOAT"
   elseif (entry.entity_type == "BOOLEAN_DATATYPE" or SEDS.index_datatype_filter(entry)) then
     attribs.ctype = (entry.is_signed and "INT") or "UINT"
+
+    -- collect the labels if this is an enum
+    if (entry.entity_type == "ENUMERATION_DATATYPE") then
+      attribs.labels = entry:find_first("ENUMERATION_LIST")
+    end
 
     -- This only handles integers
     if (entry.resolved_range) then
