@@ -34,13 +34,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <setjmp.h>
-#include <unistd.h>
 #include <errno.h>
 #include <time.h>
 #include <ctype.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 
 #include "edslib_id.h"
 #include "edslib_datatypedb.h"
