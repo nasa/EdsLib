@@ -50,6 +50,8 @@ output:write(string.format("%s: $(O)/%s $(O)/%s",
   SEDS.to_filename("sb_topicdb_impl.o"),
   SEDS.to_filename("sb_global_impl.o")))
 output:add_whitespace(1)
+output:write(string.format("$(O)/%s$(SHARED_SUFFIX): $(O)/%s$(SHARED_SUFFIX)", libname, SEDS.to_filename("db")))
+output:add_whitespace(1)
 SEDS.output_close(output)
 
 -- ------------------------------------------------
