@@ -44,5 +44,8 @@ all: db_objects sb_dispatchdb_objects
 	@echo All target-specific EDS objects built
 
 db_objects: $(addprefix $(O)/$(EDS_FILE_PREFIX)_db,$(SHARED_SUFFIX) $(STATIC_SUFFIX))
+
 sb_dispatchdb_objects: $(addprefix $(O)/$(EDS_FILE_PREFIX)_sb_dispatchdb,$(SHARED_SUFFIX) $(STATIC_SUFFIX))
+
+$(O)/$(EDS_FILE_PREFIX)_sb_dispatchdb.so: $(O)/$(EDS_FILE_PREFIX)_db.so
 
