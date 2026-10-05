@@ -63,6 +63,10 @@
  *
  * If the message payload is defined by the application's EDS, the correct
  * handler function in the dispatch table will be called.
+ * Types with registered derivatives must match one of those derivatives;
+ * a failed identification returns CFE_STATUS_VALIDATION_FAILURE without invoking
+ * a handler. Only types without derivatives use dispatch table position zero
+ * directly. Both paths validate the message size against the selected type.
  *
  * \note this function is generally not directly invoked from applications, it
  * should be invoked through a wrapper generated from the EDS tool.  The wrapper
