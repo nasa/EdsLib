@@ -23,7 +23,7 @@ include $(EDS_REPO_SOURCE_DIR)/edslib/cmake/base_patternrules.mk
 
 $(O)/%.so:
 	@echo EDS: Linking shared object $(@) for $(EDSTOOL_ARCH)
-	$(LD) $(SHARED_LDFLAGS) -shared -o $@ $^
+	$(LD) $(SHARED_LDFLAGS) -shared -o $@ $(filter-out %.so,$^) -L$(O) $(foreach lib,$(filter %.so,$^),-l:$(notdir $(lib)))
 
 $(O)/%.obj:
 	@echo EDS: Linking relocatable object $(@) for $(EDSTOOL_ARCH)
