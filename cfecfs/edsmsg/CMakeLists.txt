@@ -29,4 +29,5 @@ target_link_libraries(edsmsg PRIVATE core_private)
 
 if (ENABLE_UNIT_TESTS)
     add_subdirectory(fsw/ut-stubs)
+    add_subdirectory(fsw/unit-test)
 endif()
