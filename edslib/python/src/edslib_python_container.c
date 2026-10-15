@@ -281,14 +281,13 @@ static PyObject *EdsLib_Python_ObjectContainer_items(PyObject *obj)
 static Py_ssize_t EdsLib_Python_ObjectContainer_map_len(PyObject *obj)
 {
     EdsLib_Python_DatabaseEntry_t *dbent = (EdsLib_Python_DatabaseEntry_t *)obj->ob_type;
-    lenfunc                        lenf  = dbent->type_base.as_sequence.sq_length;
 
-    if (lenf == NULL)
+    if (dbent->SubEntityList == NULL || !PyList_Check(dbent->SubEntityList))
     {
         return 0;
     }
 
-    return lenf((PyObject *)dbent);
+    return PyList_GET_SIZE(dbent->SubEntityList);
 }
 
 static PyObject *EdsLib_Python_ObjectContainer_iter(PyObject *obj)

@@ -14,7 +14,9 @@ to interoperate with JSON, Lua, and Python.
 
 This software is also intended to work with the Core Flight System:
 
-[cFS](https://github.com/nasa/cFS)
+[Demonstration bundle of cFS](https://github.com/nasa/cFS)
+
+For information about a mission ready cFS bundle, see: <https://github.com/nasa/cFS#cfs-gov-mission-ready-version> 
 
 A set of patches to CFS to enable EDS features is also available.
 
@@ -70,3 +72,7 @@ numeric prefix, which indicates the correct position in the set.  This way, when
 executed in a simple alphanumeric order, and this will always produce the correct result.
 Furthermore, additional scripts can be added into the sequence simply by choosing an appropriate
 prefix number, without needing to specify explicit dependencies or complicated rules.
+
+## Known issues
+
+See all [open issues](https://github.com/nasa/EdsLib/issues).
