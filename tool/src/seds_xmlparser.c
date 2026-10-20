@@ -58,6 +58,18 @@
 #define XML_CHAR_C(x) x
 
 /*
+ * 64-bit location functions
+ * After many years of an unchanging API, Expat 2.9.0 introduces 64-bit
+ * versions of the functions that deal with location.  Since these are only
+ * available/existing in the latest versions, we need to check for it.
+ */
+#if (XML_MAJOR_VERSION > 2) || (XML_MAJOR_VERSION == 2 && XML_MINOR_VERSION >= 9)
+#define XML_LOCATION_FUNCTION(f, p) XML_##f##64(p)
+#else
+#define XML_LOCATION_FUNCTION(f, p) XML_##f(p)
+#endif
+
+/*
  * Define the functions used for basic string ops on XML strings.
  * Allows override with custom / wide-char versions if needed.
  *
@@ -964,7 +976,7 @@ static int seds_xmlparser_get_property(lua_State *lua)
         }
         else
         {
-            lua_pushinteger(lua, XML_GetCurrentLineNumber(pself->xmlp));
+            lua_pushinteger(lua, XML_LOCATION_FUNCTION(GetCurrentLineNumber, pself->xmlp));
         }
     }
     else
@@ -1114,9 +1126,9 @@ int seds_xmlparser_readfile(lua_State *lua)
         if (!XML_ParseBuffer(pself->xmlp, len, file_flag))
         {
             lua_pushfstring(lua,
-                            "%s:%d: XML Parsing Error: %s",
+                            "%s:%I: XML Parsing Error: %s",
                             lua_tostring(lua, 2),
-                            XML_GetCurrentLineNumber(pself->xmlp),
+                            (lua_Integer)XML_LOCATION_FUNCTION(GetCurrentLineNumber, pself->xmlp),
                             XML_ErrorString(XML_GetErrorCode(pself->xmlp)));
             return lua_error(lua);
         }
