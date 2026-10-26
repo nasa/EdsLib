@@ -11,7 +11,7 @@ EDSTOOL_ARCH ?= host
 # NOTE: using "abspath" here makes any error reports clickable in IDEs like VSCode
 $(O)/%_impl.o: $(S)/%_impl.c
 	@echo EDS: Compiling $(<) for $(EDSTOOL_ARCH)
-	$(CC) $(CFLAGS) -Iinc -D_EDSLIB_BUILD_ -MMD -c -o $@ $(abspath $<)
+	$(CC) $(CFLAGS) $(CFLAGS_PIC) -Iinc -D_EDSLIB_BUILD_ -MMD -c -o $@ $(abspath $<)
 
 
 #

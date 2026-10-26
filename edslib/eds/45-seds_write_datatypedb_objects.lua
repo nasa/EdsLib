@@ -896,21 +896,18 @@ local function write_c_derivative_descriptor(output,node)
       vref.reftype = entitylist[entitymap[vref.refent]].reftype
     end
 
-    descriptor_fields.DerivativeList = string.format("%s_DERIVATIVE_LIST", basename)
-    output:write(string.format("static const EdsLib_DerivativeEntry_t %s[] =", descriptor_fields.DerivativeList))
-    output:start_group("{")
+    local derivlist_c_initializer = {}
     local deriviter = SEDS.sorted_keys(derivset, function(a,b)
       return (a.edslib_refobj_typedb_initializer < b.edslib_refobj_typedb_initializer)
     end)
     for deriv in deriviter do
       local setlist = derivset[deriv]
       if (type(setlist) == "table") then
-        output:append_previous(",")
         deriv.edslib_basetype_derivtable_idx = #derivlist -- save in DOM for future scripts
         derivlist[1 + #derivlist] = deriv
         local _,first_val = next(setlist)
-        output:write(string.format("{ .IdentSeqIdx =%4d, .RefObj = %40s }",
-            first_val or 0,deriv.edslib_refobj_typedb_initializer))
+        derivlist_c_initializer[1 + #derivlist_c_initializer] =
+          string.format("{ .IdentSeqIdx =%4d, .RefObj = %40s }", first_val or 0,deriv.edslib_refobj_typedb_initializer)
 
         for _,seqidx in pairs(setlist) do
           local seq = identseq[seqidx]
@@ -920,11 +917,19 @@ local function write_c_derivative_descriptor(output,node)
         end
       end
     end
-    output:end_group("};")
-    output:add_whitespace(1)
-    node.edslib_derivtable_list = derivlist -- stash flattened list in DOM for future scripts
-    descriptor_fields.DerivativeListSize = #derivlist
-
+    if (#derivlist_c_initializer > 0) then
+      descriptor_fields.DerivativeList = string.format("%s_DERIVATIVE_LIST", basename)
+      output:write(string.format("static const EdsLib_DerivativeEntry_t %s[] =", descriptor_fields.DerivativeList))
+      output:start_group("{")
+      for _,c_initializer in ipairs(derivlist_c_initializer) do
+        output:append_previous(",")
+        output:write(c_initializer)
+      end
+      output:end_group("};")
+      output:add_whitespace(1)
+      node.edslib_derivtable_list = derivlist -- stash flattened list in DOM for future scripts
+      descriptor_fields.DerivativeListSize = #derivlist_c_initializer
+    end
   end
 
   if (#identseq > 1) then

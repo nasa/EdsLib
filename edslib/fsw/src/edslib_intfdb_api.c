@@ -107,14 +107,19 @@ void EdsLib_IntfDB_ExportInterfaceInfo(const EdsLib_IntfDB_InterfaceEntry_t *Int
 
     if (IntfInfoBuffer != NULL)
     {
-        /* Not copying the name for now, should be OK as the output is const */
-        IntfInfoBuffer->InterfaceName   = IntfEntry->Name;
-        IntfInfoBuffer->IntfTypeEdsId   = EdsLib_Encode_StructId(&IntfEntry->IntfTypeRef);
-        ParentRefObj                    = *SelfRefObj;
-        ParentRefObj.SubIndex           = IntfEntry->ParentIdx;
-        IntfInfoBuffer->ParentCompEdsId = EdsLib_Encode_StructId(&ParentRefObj);
+        memset(IntfInfoBuffer, 0, sizeof(*IntfInfoBuffer));
 
-        IntfInfoBuffer->GenericTypeMapCount = IntfEntry->GenericTypeMapCount;
+        if (IntfEntry != NULL)
+        {
+            /* Not copying the name for now, should be OK as the output is const */
+            IntfInfoBuffer->InterfaceName   = IntfEntry->Name;
+            IntfInfoBuffer->IntfTypeEdsId   = EdsLib_Encode_StructId(&IntfEntry->IntfTypeRef);
+            ParentRefObj                    = *SelfRefObj;
+            ParentRefObj.SubIndex           = IntfEntry->ParentIdx;
+            IntfInfoBuffer->ParentCompEdsId = EdsLib_Encode_StructId(&ParentRefObj);
+
+            IntfInfoBuffer->GenericTypeMapCount = IntfEntry->GenericTypeMapCount;
+        }
     }
 }
 
@@ -495,9 +500,11 @@ int32_t EdsLib_IntfDB_GetComponentInterfaceInfo(const EdsLib_DatabaseObject_t *G
     }
     else
     {
-        EdsLib_IntfDB_ExportInterfaceInfo(IntfEntry, IntfInfoBuffer, &RefObj);
         Status = EDSLIB_SUCCESS;
     }
+
+    /* If the entry is invalid, this will wipe the output buffer */
+    EdsLib_IntfDB_ExportInterfaceInfo(IntfEntry, IntfInfoBuffer, &RefObj);
 
     return Status;
 }

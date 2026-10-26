@@ -402,6 +402,7 @@ local component_output_handlers =
 local global_sym_prefix = SEDS.get_define("EDSTOOL_PROJECT_NAME")
 local global_file_prefix = global_sym_prefix and string.lower(global_sym_prefix) or "eds"
 global_sym_prefix = global_sym_prefix and string.upper(global_sym_prefix) or "EDS"
+all_intf_db_objs = {}
 
 -- --------------------------------------
 -- Generate the "intfdb_impl.c" file per datasheet
@@ -423,16 +424,20 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
   merge_fields(ds_fields, execute_output_handlers(output,ds:find_first("DECLARED_INTERFACE_SET"),write_declared_intfs))
   merge_fields(ds_fields, execute_output_handlers(output,ds:find_first("COMPONENT_SET"),write_components))
 
-  output:section_marker("Database Object")
-  output:write(string.format("const struct EdsLib_App_IntfDB %s_INTF_DB =", ds_flat_name))
-  output:start_group("{")
-  for key in SEDS.sorted_keys(ds_fields) do
-    if (ds_fields[key] ~= nil) then
-      output:append_previous(",")
-      output:write(string.format(".%s = %s", key, ds_fields[key]))
+  if (type(ds_fields) == "table" and next(ds_fields) ~= nil) then
+    local obj_name = string.format("%s_INTF_DB", ds_flat_name)
+    all_intf_db_objs[ds_flat_name] =  "&" .. obj_name
+    output:section_marker("Database Object")
+    output:write(string.format("const struct EdsLib_App_IntfDB %s =", obj_name))
+    output:start_group("{")
+    for key in SEDS.sorted_keys(ds_fields) do
+      if (ds_fields[key] ~= nil) then
+        output:append_previous(",")
+        output:write(string.format(".%s = %s", key, ds_fields[key]))
+      end
     end
+    output:end_group("};")
   end
-  output:end_group("};")
 
   -- Close the output files
   SEDS.output_close(output)
@@ -459,7 +464,7 @@ output:start_group("{")
 for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
   local ds_name, ds_flat_name = get_toplevel_names(ds)
   output:append_previous(",");
-  output:write(string.format("[%s_INDEX_%s] = &%s_INTF_DB",global_sym_prefix,ds_name,ds_flat_name))
+  output:write(string.format("[%s_INDEX_%s] = %s",global_sym_prefix,ds_name,all_intf_db_objs[ds_flat_name] or "NULL"))
 end
 output:end_group("};")
 

@@ -14,11 +14,15 @@ export SHARED_LDFLAGS := ${CMAKE_SHARED_LINKER_FLAGS}
 export SHARED_SUFFIX  := ${CMAKE_SHARED_LIBRARY_SUFFIX}
 export STATIC_LDFLAGS := ${CMAKE_STATIC_LINKER_FLAGS}
 export STATIC_SUFFIX  := ${CMAKE_STATIC_LIBRARY_SUFFIX}
+export CFLAGS_PIC     := ${CMAKE_C_COMPILE_OPTIONS_PIC}
 
-# Special treatment for CFLAGS - code compiled here 
-# will require access to the EdsLib API headers.  This assumes
-# a gnu-style compiler option (-I), but should with clang too.
-CFLAGS ?= ${CMAKE_C_FLAGS} ${EDSLIB_C_FLAGS}
-CFLAGS ?= -Wall -Werror -std=c99 -pedantic
+# initialize the CFLAGS from the passed-in info
+# NOTE: the vaiable refs here are make refs, NOT cmake refs
+# these are passed in at compile time, they are not known
+# at the time when this file is generated
+CFLAGS =  $(subst ;, ,$(CMAKE_C_FLAGS))
 CFLAGS += -I$(EDS_REPO_SOURCE_DIR)/edslib/fsw/inc
+CFLAGS += $(addprefix -I,$(subst ;, ,$(CMAKE_INCLUDE_DIRECTORIES)))
+CFLAGS += $(addprefix -D,$(subst ;, ,$(CMAKE_COMPILE_DEFINITIONS)))
 export CFLAGS
+

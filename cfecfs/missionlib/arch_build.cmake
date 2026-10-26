@@ -19,6 +19,9 @@ add_custom_target(edstool-execute
     COMMAND "\$(MAKE)"
         BUILD_CONFIG="${BUILD_CONFIG_${TARGETSYSTEM}}"
         EDSTOOL_PROJECT_NAME=${MISSION_NAME}
+        CMAKE_C_FLAGS=\"$<TARGET_PROPERTY:edslib_api,COMPILE_OPTIONS>\"
+        CMAKE_INCLUDE_DIRECTORIES=\"$<TARGET_PROPERTY:edslib_api,INCLUDE_DIRECTORIES>\"
+        CMAKE_COMPILE_DEFINITIONS=\"$<TARGET_PROPERTY:edslib_api,COMPILE_DEFINITIONS>\"
         O="${EDSTOOL_ARCH_SUBDIR}/obj"
         S="src"
         -f ${missionlib_MISSION_DIR}/cmake/edstool-execute-arch.mk
@@ -34,6 +37,9 @@ if (ENABLE_UNIT_TESTS)
     COMMAND "\$(MAKE)"
         BUILD_CONFIG="${BUILD_CONFIG_${TARGETSYSTEM}}"
         EDSTOOL_PROJECT_NAME="ut"
+        CMAKE_C_FLAGS=\"$<TARGET_PROPERTY:edslib_api,COMPILE_OPTIONS>\"
+        CMAKE_INCLUDE_DIRECTORIES=\"$<TARGET_PROPERTY:edslib_api,INCLUDE_DIRECTORIES>\"
+        CMAKE_COMPILE_DEFINITIONS=\"$<TARGET_PROPERTY:edslib_api,COMPILE_DEFINITIONS>\"
         O="${EDSTOOL_ARCH_SUBDIR}/obj"
         S="src"
         -f ${missionlib_MISSION_DIR}/cmake/edstool-execute-arch.mk

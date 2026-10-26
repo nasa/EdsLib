@@ -1,9 +1,9 @@
 #####################################################
-# 
+#
 # CFE/CFS mission build makefile helper
 # This calls the EDS tooling to generate all artifacts
 # The process also includes building those artifacts for the host
-# 
+#
 #####################################################
 
 # This checks the sanity of the calling environment.  If any of these fail
@@ -26,7 +26,7 @@ LOCAL_STAMPFILE := $(O)/edstool-execute-${EDSTOOL_PROJECT_NAME}.stamp
 # Read all context info from files exported from CMake
 include $(EDSNAMESPACE)
 include $(EDSSOURCES)
-include $(O)/edstool-buildenv.mk 
+include $(O)/edstool-buildenv.mk
 
 # Sanity check: all of these vars should have been part of the context info
 ifeq ($(EDSTOOL_OUTPUT_DIR),)

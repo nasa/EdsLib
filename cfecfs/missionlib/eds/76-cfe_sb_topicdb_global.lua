@@ -57,19 +57,21 @@ for tid = 1,SEDS.get_define("CFE_MISSION/MAX_TOPICID") do
     for j,cmd in ipairs(cmdlist) do
       if (cmd.subcommand_arg) then
         local derivlist = cmd.args[cmd.subcommand_arg].type.edslib_derivtable_list
-        chain.dispatch_symbol_name = string.format("EDS_DISPATCHTABLE_%s_%s", intf:get_flattened_name(), cmd.refnode.name)
-        chain.dispatch_table_size = #derivlist
-        dbout:write(string.format("static const CFE_MissionLib_DispatchTable_Entry_t %s[] =",chain.dispatch_symbol_name))
-        dbout:start_group("{")
-        for _,deriv in ipairs(derivlist) do
-          dbout:append_previous(",")
+        if (derivlist) then
+          chain.dispatch_symbol_name = string.format("EDS_DISPATCHTABLE_%s_%s", intf:get_flattened_name(), cmd.refnode.name)
+          chain.dispatch_table_size = #derivlist
+          dbout:write(string.format("static const CFE_MissionLib_DispatchTable_Entry_t %s[] =",chain.dispatch_symbol_name))
           dbout:start_group("{")
-          dbout:write(string.format(".DispatchOffset = offsetof(struct %s, %s)",
-            intf:get_ctype_basename("Commands"), deriv.name .. "_" .. cmd.refnode.name))
-          dbout:end_group("}")
+          for _,deriv in ipairs(derivlist) do
+            dbout:append_previous(",")
+            dbout:start_group("{")
+            dbout:write(string.format(".DispatchOffset = offsetof(struct %s, %s)",
+              intf:get_ctype_basename("Commands"), deriv.name .. "_" .. cmd.refnode.name))
+            dbout:end_group("}")
+          end
+          dbout:end_group("};")
+          dbout:add_whitespace(1)
         end
-        dbout:end_group("};")
-        dbout:add_whitespace(1)
       end
     end
   end

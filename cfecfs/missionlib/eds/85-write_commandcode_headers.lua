@@ -41,7 +41,7 @@ for ds in SEDS.root:iterate_children(SEDS.basenode_filter) do
           local constraint_values = {}
           local constraint_argtype = {}
 
-          for _,subcommand in ipairs(argtype.edslib_derivtable_list) do
+          for _,subcommand in ipairs(argtype.edslib_derivtable_list or {}) do
             -- Note that this list is not in value-order, the index relates to the lookup table, not the actual cmdcode value
             -- To get the command code value, need to drill down into the constraint set.  This assumes a single value constraint.
             local cmdname = subcommand:get_flattened_name()
