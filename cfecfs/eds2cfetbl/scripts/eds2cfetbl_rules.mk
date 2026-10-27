@@ -29,16 +29,24 @@ eds/%.source:
 # the key is to pipe it through the C preprocessor so it handles all #include and #ifdef properly,
 # then strip out all content from files other than the directly-supplied file.  Importantly, this
 # will resolve any C macros used in that file, including CFE_TBL_FILEDEF, leaving only the real definition
-eds/%.tbldef.c: eds/%.source $(TABLETOOL_SCRIPT_DIR)/extract_filedef.awk
-	$(CC) -E $(DEPENDENCY_FLAGS) $(CFLAGS) $(LOCAL_CFLAGS) "$(SRC)" |\
-	    $(AWK) -v SRC="$(SRC)" -f "$(TABLETOOL_SCRIPT_DIR)/extract_filedef.awk" > "$(@).tmp"
+eds/%.tbldef.c.pp: eds/%.source
+	$(CC) -E $(DEPENDENCY_FLAGS) $(CFLAGS) $(LOCAL_CFLAGS) "$(SRC)" > "$(@).tmp"
+	mv "$(@).tmp" "$(@)"
+
+eds/%.tbldef.c: eds/%.tbldef.c.pp $(TABLETOOL_SCRIPT_DIR)/extract_filedef.awk
+	$(AWK) -v SRC="$(SRC)" -f "$(TABLETOOL_SCRIPT_DIR)/extract_filedef.awk" "$(<)" > "$(@).tmp"
 	mv "$(@).tmp" "$(@)"
 
 # The "filedef.c" contains only the C FILEDEF macro/object, not the defintion of that object
-# Because it is separating the filedef from the object definition, it also needs to remove "sizeof" refs
 eds/%.filedef.c: eds/%.tbldef.c $(TABLETOOL_SCRIPT_DIR)/separate_filedef.awk
-	$(AWK) -v WANT_FILEDEF=1 -f "$(TABLETOOL_SCRIPT_DIR)/separate_filedef.awk" "$(<)" |\
-	    $(M4) -P -E -D sizeof=0 > "$(@).tmp"
+	$(AWK) -v WANT_FILEDEF=1 -f "$(TABLETOOL_SCRIPT_DIR)/separate_filedef.awk" "$(<)" > "$(@).tmp"
+	mv "$(@).tmp" "$(@)"
+
+# Scrub the "sizeof" operator from the filedef.c file
+# After splitting the filedef macro from the instatiation of the object, the sizeof() reference
+# is likely to break.  This is why it has to be scrubbed.  EDS has its own size knowledge so its not needed.
+eds/%.filedef.scrubbed.c: eds/%.filedef.c
+	$(M4) -P -E -D sizeof=0 "$(<)" > "$(@).tmp"
 	mv "$(@).tmp" "$(@)"
 
 # The "objdef.c" contains only the C object definition/instantiation (not the FILEDEF macro/object)
@@ -49,7 +57,7 @@ eds/%.objdef.c: eds/%.tbldef.c $(TABLETOOL_SCRIPT_DIR)/separate_filedef.awk
 filedef_extract.o: $(TABLETOOL_SCRIPT_DIR)/filedef_extract.c
 	$(CC) $(DEPENDENCY_FLAGS) $(CFLAGS) $(LOCAL_CFLAGS) -c -o "$(@)" "$(<)"
 
-eds/%.filedef.o: eds/%.filedef.c
+eds/%.filedef.o: eds/%.filedef.scrubbed.c
 	$(CC) $(DEPENDENCY_FLAGS) -include cfe_tbl_filedef.h $(CFLAGS) $(LOCAL_CFLAGS) -c -o "$(@)" "$(<)"
 
 # The "objname" file will contain strictly the C object name used in the table definition
