@@ -205,6 +205,7 @@ CFE_Status_t CFE_EDSMSG_Dispatch_CheckActualBufferType(const CFE_SB_Buffer_t *Bu
 {
     const EdsLib_DatabaseObject_t           *GD;
     EdsLib_DataTypeDB_TypeInfo_t             TypeInfo;
+    EdsLib_DataTypeDB_DerivedTypeInfo_t      DerivedInfo;
     EdsLib_DataTypeDB_DerivativeObjectInfo_t DerivObjInfo;
     int32_t                                  Status;
     CFE_MSG_Size_t                           MessageSize;
@@ -212,21 +213,34 @@ CFE_Status_t CFE_EDSMSG_Dispatch_CheckActualBufferType(const CFE_SB_Buffer_t *Bu
 
     GD = CFE_Config_GetObjPointer(CFE_CONFIGID_MISSION_EDS_DB);
 
-    CFE_MSG_GetSize(&Buffer->Msg, &MessageSize);
-
-    /* Check if the argument type has derivatives.  This is typical for CMD interfaces where there
-     * are many possible command codes, and in this case each command code will have its own
-     * entry in the dispatch table. If this fails, it does not fail the overall process, it just
-     * means that the argument is not derived.  */
-    Status = EdsLib_DataTypeDB_IdentifyBufferWithSize(GD, *EdsId, Buffer, MessageSize, &DerivObjInfo);
-    if (Status == EDSLIB_SUCCESS)
+    ReturnCode = CFE_MSG_GetSize(&Buffer->Msg, &MessageSize);
+    if (ReturnCode != CFE_SUCCESS)
     {
+        return ReturnCode;
+    }
+
+    /* A failed identification is not evidence that a type is non-derived.
+     * Consult the database before allowing the sole-handler fallback. */
+    Status = EdsLib_DataTypeDB_GetDerivedInfo(GD, *EdsId, &DerivedInfo);
+    if (Status != EDSLIB_SUCCESS)
+    {
+        return CFE_SB_INTERNAL_ERR;
+    }
+
+    if (DerivedInfo.NumDerivatives > 0)
+    {
+        Status = EdsLib_DataTypeDB_IdentifyBufferWithSize(GD, *EdsId, Buffer, MessageSize, &DerivObjInfo);
+        if (Status != EDSLIB_SUCCESS)
+        {
+            return CFE_STATUS_VALIDATION_FAILURE;
+        }
+
         *EdsId               = DerivObjInfo.EdsId;
         *DispatchTblPosition = DerivObjInfo.DerivativeTableIndex;
     }
     else
     {
-        /* Non derived, there is just one entry, it is always first */
+        /* A genuinely non-derived type has exactly one handler. */
         *DispatchTblPosition = 0;
     }
 
